@@ -110,12 +110,15 @@ Vendor sidebar also includes an **Active store** picker. All three share the sam
 - Negotiated offer prices are transaction-specific and never overwrite the commodity standard price.
 - Checkout uses the negotiated unit price only when a valid accepted / counter-accepted offer applies.
 
+## Live demo
+
+**GitHub Pages:** https://phycxsv.github.io/paranaque-palengke/
+
 ## GitHub Pages
 
-- App uses `HashRouter`.
-- Optional base path via `VITE_BASE_PATH` (workflow sets `/${{ github.event.repository.name }}/`).
-- Workflow file: `.github/workflows/deploy-pages.yml` (manual/push to `main`). Enable GitHub Pages (GitHub Actions) on the repository when ready.
-- This project does not auto-create remotes or push without your permission.
+- App uses `HashRouter` for static hosting compatibility.
+- Base path is set at build time via `VITE_BASE_PATH` (CI uses `/${{ github.event.repository.name }}/`).
+- Deploy workflow: `.github/workflows/deploy-pages.yml` (runs on push to `main`).
 
 ## Tests run
 
