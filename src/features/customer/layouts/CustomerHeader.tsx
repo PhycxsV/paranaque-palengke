@@ -1,11 +1,13 @@
 import { useState, type FormEvent } from 'react'
 import { Link, NavLink, useNavigate } from 'react-router-dom'
-import { Menu, MessageSquare, Search, ShoppingCart, X } from 'lucide-react'
+import { Menu, MessageCircle, MessageSquare, Search, ShoppingCart, X } from 'lucide-react'
 import { BRAND_NAME } from '@/constants'
 import { PortalSwitcher } from '@/components/shared/PortalSwitcher'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { getTotalUnread } from '@/lib/chat'
 import { useCartStore } from '@/stores/cart-store'
+import { useChatStore } from '@/stores/chat-store'
 import { cn } from '@/lib/utils'
 
 const navLinkClass = ({ isActive }: { isActive: boolean }) =>
@@ -18,6 +20,9 @@ export function CustomerHeader() {
   const navigate = useNavigate()
   const items = useCartStore((s) => s.items)
   const cartCount = items.reduce((sum, item) => sum + item.quantity, 0)
+  const chatThreads = useChatStore((s) => s.threads)
+  const chatMessages = useChatStore((s) => s.messages)
+  const chatUnread = getTotalUnread(chatThreads, chatMessages, 'customer')
   const [query, setQuery] = useState('')
   const [mobileOpen, setMobileOpen] = useState(false)
 
@@ -75,12 +80,32 @@ export function CustomerHeader() {
           <NavLink to="/customer/orders" className={navLinkClass}>
             My Orders
           </NavLink>
+          <NavLink to="/customer/chat" className={navLinkClass}>
+            Chat
+          </NavLink>
           <NavLink to="/customer/offers" className={navLinkClass}>
             My Offers
           </NavLink>
         </nav>
 
         <div className="flex items-center gap-1 sm:gap-2">
+          <Button asChild variant="ghost" size="icon" className="relative hidden sm:inline-flex">
+            <Link
+              to="/customer/chat"
+              aria-label={
+                chatUnread > 0
+                  ? `Chat with vendors, ${chatUnread} unread`
+                  : 'Chat with vendors'
+              }
+            >
+              <MessageCircle className="h-5 w-5" />
+              {chatUnread > 0 ? (
+                <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-white">
+                  {chatUnread > 9 ? '9+' : chatUnread}
+                </span>
+              ) : null}
+            </Link>
+          </Button>
           <Button asChild variant="ghost" size="icon" className="relative">
             <Link to="/customer/cart" aria-label={`Cart with ${cartCount} items`}>
               <ShoppingCart className="h-5 w-5" />
@@ -119,6 +144,10 @@ export function CustomerHeader() {
             </NavLink>
             <NavLink to="/customer/orders" className={navLinkClass} onClick={() => setMobileOpen(false)}>
               My Orders
+            </NavLink>
+            <NavLink to="/customer/chat" className={navLinkClass} onClick={() => setMobileOpen(false)}>
+              <MessageCircle className="mr-1 inline h-4 w-4" />
+              Chat
             </NavLink>
             <NavLink to="/customer/offers" className={navLinkClass} onClick={() => setMobileOpen(false)}>
               <MessageSquare className="mr-1 inline h-4 w-4" />

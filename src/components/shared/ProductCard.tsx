@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { ProductImage } from '@/components/shared/ProductImage'
 import { getStandardPrice } from '@/lib/pricing'
+import { isVendorAcceptingOrders } from '@/lib/vendor-hours'
 import { useCommodityStore } from '@/stores/commodity-store'
 import { formatPeso } from '@/lib/utils'
 import type { Product, Vendor } from '@/types'
@@ -17,7 +18,9 @@ interface ProductCardProps {
 export function ProductCard({ product, vendor, onAdd }: ProductCardProps) {
   const commodities = useCommodityStore((s) => s.commodities)
   const standardPrice = getStandardPrice(product, commodities)
-  const unavailable = !product.isAvailable || product.stock <= 0
+  const vendorClosed = vendor ? !isVendorAcceptingOrders(vendor) : false
+  const unavailable =
+    !product.isAvailable || product.stock <= 0 || vendorClosed
 
   return (
     <article className="group flex h-full flex-col overflow-hidden rounded-xl border border-border bg-surface shadow-[var(--shadow-soft)] transition hover:-translate-y-0.5 hover:shadow-md">
@@ -37,7 +40,7 @@ export function ProductCard({ product, vendor, onAdd }: ProductCardProps) {
             {product.name}
           </Link>
           <Badge variant={unavailable ? 'muted' : 'secondary'} className="shrink-0">
-            {unavailable ? 'Unavailable' : 'In stock'}
+            {vendorClosed ? 'Past cut-off' : unavailable ? 'Unavailable' : 'In stock'}
           </Badge>
         </div>
         <div>

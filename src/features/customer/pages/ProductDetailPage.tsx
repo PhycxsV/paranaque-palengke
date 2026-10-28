@@ -26,6 +26,7 @@ import { useCommodityStore } from '@/stores/commodity-store'
 import { useOfferStore } from '@/stores/offer-store'
 import { useAddToCart } from '@/hooks/useAddToCart'
 import { getStandardPrice, getAcceptedOfferUnitPrice } from '@/lib/pricing'
+import { formatVendorTime, isVendorAcceptingOrders } from '@/lib/vendor-hours'
 import { PRICE_DISCLAIMER, OFFER_STATUS_LABELS } from '@/constants'
 import { formatPeso } from '@/lib/utils'
 import type { OfferFormInput } from '@/types'
@@ -72,7 +73,9 @@ export default function ProductDetailPage() {
     )
   }
 
-  const unavailable = !product.isAvailable || product.stock <= 0
+  const vendorClosed = vendor ? !isVendorAcceptingOrders(vendor) : false
+  const unavailable =
+    !product.isAvailable || product.stock <= 0 || vendorClosed
 
   const relatedProducts = products
     .filter(
@@ -160,7 +163,11 @@ export default function ProductDetailPage() {
             <div className="mb-2 flex flex-wrap items-center gap-2">
               <Badge variant="secondary">{product.category}</Badge>
               <Badge variant={unavailable ? 'muted' : 'success'}>
-                {unavailable ? 'Unavailable' : `${product.stock} ${product.unit} in stock`}
+                {vendorClosed
+                  ? `Past cut-off (${vendor ? formatVendorTime(vendor.cutoffTime) : ''})`
+                  : unavailable
+                    ? 'Unavailable'
+                    : `${product.stock} ${product.unit} in stock`}
               </Badge>
             </div>
             <h1 className="text-2xl font-extrabold text-primary-deep sm:text-3xl">

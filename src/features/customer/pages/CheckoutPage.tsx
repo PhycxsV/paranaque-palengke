@@ -14,7 +14,9 @@ import { useVendorStore } from '@/stores/vendor-store'
 import { useOrderStore } from '@/stores/order-store'
 import { useCommodityStore } from '@/stores/commodity-store'
 import { useOfferStore } from '@/stores/offer-store'
+import { DELIVERY_FEE } from '@/constants'
 import { resolveCartUnitPrice, calculateCartTotalWithPricing } from '@/lib/pricing'
+import { formatVendorTime, isVendorAcceptingOrders } from '@/lib/vendor-hours'
 import { formatPeso } from '@/lib/utils'
 import type { CheckoutFormInput } from '@/types'
 
@@ -56,6 +58,8 @@ export default function CheckoutPage() {
   })
 
   const subtotal = calculateCartTotalWithPricing(items, products, commodities, allOffers)
+  const deliveryFee = DELIVERY_FEE
+  const total = subtotal + deliveryFee
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault()
@@ -70,6 +74,12 @@ export default function CheckoutPage() {
     }
     if (!vendorId || !vendor) {
       toast.error('Vendor information is missing.')
+      return
+    }
+    if (!isVendorAcceptingOrders(vendor)) {
+      toast.error(
+        `This vendor is past cut-off (${formatVendorTime(vendor.cutoffTime)}) and is not accepting new orders.`,
+      )
       return
     }
 
@@ -192,9 +202,19 @@ export default function CheckoutPage() {
               )
             })}
           </div>
-          <div className="mt-4 flex items-center justify-between border-t border-border pt-4 text-lg font-bold text-primary-deep">
-            <span>Total</span>
-            <span>{formatPeso(subtotal)}</span>
+          <div className="mt-4 space-y-2 border-t border-border pt-4">
+            <div className="flex items-center justify-between text-sm text-ink/80">
+              <span>Subtotal</span>
+              <span>{formatPeso(subtotal)}</span>
+            </div>
+            <div className="flex items-center justify-between text-sm text-ink/80">
+              <span>Delivery fee</span>
+              <span>{formatPeso(deliveryFee)}</span>
+            </div>
+            <div className="flex items-center justify-between text-lg font-bold text-primary-deep">
+              <span>Total</span>
+              <span>{formatPeso(total)}</span>
+            </div>
           </div>
         </section>
 
@@ -204,16 +224,16 @@ export default function CheckoutPage() {
           <div className="flex items-center gap-3 rounded-lg border border-primary/20 bg-primary-50 p-4">
             <CreditCard className="h-5 w-5 text-primary" />
             <div>
-              <p className="text-sm font-semibold text-primary-deep">Demo QR Payment</p>
+              <p className="text-sm font-semibold text-primary-deep">QRPH / Demo QR Payment</p>
               <p className="text-xs text-muted">
-                You will scan a demo QR code after placing the order.
+                Total includes the ₱{deliveryFee} delivery fee. Scan the QR after placing the order.
               </p>
             </div>
           </div>
           <div className="mt-4">
             <DemoQrPlaceholder
               label={vendor?.demoQrLabel ?? 'Demo QR'}
-              amountLabel={formatPeso(subtotal)}
+              amountLabel={formatPeso(total)}
             />
           </div>
         </section>

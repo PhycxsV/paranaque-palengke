@@ -20,6 +20,7 @@ import { useVendorStore } from '@/stores/vendor-store'
 import { useCommodityStore } from '@/stores/commodity-store'
 import { useAddToCart } from '@/hooks/useAddToCart'
 import { getStandardPrice } from '@/lib/pricing'
+import { isVendorAcceptingOrders } from '@/lib/vendor-hours'
 
 type SortOption = 'name-asc' | 'price-asc' | 'price-desc'
 
@@ -68,7 +69,11 @@ export default function ProductsPage() {
     }
 
     if (availability === 'available') {
-      result = result.filter((p) => p.isAvailable && p.stock > 0)
+      result = result.filter((p) => {
+        if (!p.isAvailable || p.stock <= 0) return false
+        const productVendor = vendors.find((v) => v.id === p.vendorId)
+        return productVendor ? isVendorAcceptingOrders(productVendor) : false
+      })
     }
 
     result = [...result].sort((a, b) => {
@@ -84,7 +89,7 @@ export default function ProductsPage() {
     })
 
     return result
-  }, [activeProducts, search, category, vendor, availability, sort, commodities])
+  }, [activeProducts, search, category, vendor, availability, sort, commodities, vendors])
 
   const applySearch = () => {
     const params = new URLSearchParams()

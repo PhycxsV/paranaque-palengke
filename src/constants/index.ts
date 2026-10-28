@@ -7,9 +7,11 @@ import type {
 
 export const BRAND_NAME = 'Parañaque Palengke'
 export const BRAND_TAGLINE = 'Preskong Pamalengke, Mas Madaling Mamili.'
-export const STORAGE_PREFIX = 'paranaque-palengke-v5'
+export const STORAGE_PREFIX = 'paranaque-palengke-v6'
 export const PRICE_DISCLAIMER =
   'Illustrative demo prices — not official Parañaque LGU market rates.'
+/** Flat delivery fee (Keri) included in QRPH / demo QR payment total. */
+export const DELIVERY_FEE = 100
 
 export const CATEGORIES: ProductCategory[] = [
   'Vegetables',

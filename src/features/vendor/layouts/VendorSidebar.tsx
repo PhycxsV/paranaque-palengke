@@ -1,8 +1,9 @@
 import { Link, NavLink } from 'react-router-dom'
 import {
   ClipboardList,
+  HandCoins,
   LayoutDashboard,
-  MessageSquare,
+  MessageCircle,
   Package,
   ShoppingBag,
   Store,
@@ -16,6 +17,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { getTotalUnread } from '@/lib/chat'
+import { useChatStore } from '@/stores/chat-store'
 import { useDemoSessionStore } from '@/stores/demo-session-store'
 import { useVendorStore } from '@/stores/vendor-store'
 import { cn } from '@/lib/utils'
@@ -24,7 +27,8 @@ const links = [
   { to: '/vendor', label: 'Dashboard', icon: LayoutDashboard, end: true },
   { to: '/vendor/orders', label: 'Orders', icon: ClipboardList },
   { to: '/vendor/products', label: 'Products', icon: Package },
-  { to: '/vendor/offers', label: 'Offers', icon: MessageSquare },
+  { to: '/vendor/chat', label: 'Chat', icon: MessageCircle },
+  { to: '/vendor/offers', label: 'Offers', icon: HandCoins },
   { to: '/vendor/store', label: 'Store profile', icon: Store },
 ]
 
@@ -33,6 +37,14 @@ export function VendorSidebar({ onNavigate }: { onNavigate?: () => void }) {
   const setActiveVendorId = useDemoSessionStore((s) => s.setActiveVendorId)
   const vendors = useVendorStore((s) => s.vendors)
   const vendor = vendors.find((v) => v.id === activeVendorId)
+  const chatThreads = useChatStore((s) => s.threads)
+  const chatMessages = useChatStore((s) => s.messages)
+  const chatUnread = getTotalUnread(
+    chatThreads,
+    chatMessages,
+    'vendor',
+    activeVendorId,
+  )
 
   return (
     <aside className="flex h-full flex-col bg-primary-deep text-white">
@@ -75,7 +87,12 @@ export function VendorSidebar({ onNavigate }: { onNavigate?: () => void }) {
             }
           >
             <Icon className="h-4 w-4" />
-            {label}
+            <span className="flex-1">{label}</span>
+            {to === '/vendor/chat' && chatUnread > 0 ? (
+              <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-gold px-1 text-[10px] font-bold text-primary-deep">
+                {chatUnread > 9 ? '9+' : chatUnread}
+              </span>
+            ) : null}
           </NavLink>
         ))}
       </nav>

@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react'
-import { useParams } from 'react-router-dom'
-import { MapPin, Search, Store } from 'lucide-react'
+import { Link, useParams } from 'react-router-dom'
+import { Clock, MapPin, MessageCircle, Search, Store } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
   Select,
@@ -17,6 +18,10 @@ import { VendorConflictDialog } from '@/components/shared/VendorConflictDialog'
 import { useProductStore } from '@/stores/product-store'
 import { useVendorStore } from '@/stores/vendor-store'
 import { useAddToCart } from '@/hooks/useAddToCart'
+import {
+  formatVendorTime,
+  isVendorAcceptingOrders,
+} from '@/lib/vendor-hours'
 
 export default function VendorStorePage() {
   const { vendorId } = useParams<{ vendorId: string }>()
@@ -29,6 +34,7 @@ export default function VendorStorePage() {
   const [category, setCategory] = useState('')
 
   const vendor = vendors.find((v) => v.id === vendorId)
+  const acceptingOrders = vendor ? isVendorAcceptingOrders(vendor) : false
 
   const vendorProducts = useMemo(() => {
     if (!vendor) return []
@@ -76,24 +82,44 @@ export default function VendorStorePage() {
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
         <div className="absolute bottom-0 left-0 right-0 px-4 pb-6 sm:px-6">
           <div className="mx-auto max-w-7xl">
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <h1 className="text-2xl font-extrabold text-white sm:text-3xl">
                 {vendor.name}
               </h1>
-              <Badge variant={vendor.isAvailable ? 'success' : 'muted'}>
-                {vendor.isAvailable ? 'Open' : 'Closed'}
+              <Badge variant={acceptingOrders ? 'success' : 'muted'}>
+                {acceptingOrders ? 'Open' : 'Closed'}
               </Badge>
             </div>
             <p className="mt-1 flex items-center gap-1 text-sm text-white/80">
               <MapPin className="h-3.5 w-3.5" />
               {vendor.location}
             </p>
+            <p className="mt-1 flex items-center gap-1 text-sm text-white/80">
+              <Clock className="h-3.5 w-3.5" />
+              {formatVendorTime(vendor.opensAt)} – cut-off{' '}
+              {formatVendorTime(vendor.cutoffTime)}
+            </p>
           </div>
         </div>
       </div>
 
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
-        <p className="mb-6 max-w-2xl text-sm text-ink/75">{vendor.description}</p>
+        {!acceptingOrders && (
+          <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            This vendor is past today&apos;s order cut-off (
+            {formatVendorTime(vendor.cutoffTime)}). You can browse products, but
+            new orders are disabled.
+          </div>
+        )}
+        <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
+          <p className="max-w-2xl text-sm text-ink/75">{vendor.description}</p>
+          <Button asChild variant="secondary" size="sm">
+            <Link to={`/customer/chat?vendor=${vendor.id}`}>
+              <MessageCircle className="h-4 w-4" />
+              Message vendor
+            </Link>
+          </Button>
+        </div>
 
         {/* Filters */}
         <div className="mb-6 flex flex-col gap-3 sm:flex-row">

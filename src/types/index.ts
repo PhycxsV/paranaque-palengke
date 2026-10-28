@@ -57,6 +57,10 @@ export interface Vendor {
   location: string
   imageUrl: string
   isAvailable: boolean
+  /** Daily open time in 24h `HH:mm` (local). */
+  opensAt: string
+  /** Order cut-off in 24h `HH:mm` (local). Past this, vendor is closed for new orders. */
+  cutoffTime: string
   isDemo: true
   demoQrLabel: string
 }
@@ -127,6 +131,7 @@ export interface Order {
   notes?: string
   items: OrderItemSnapshot[]
   subtotal: number
+  deliveryFee: number
   total: number
   status: OrderStatus
   createdAt: string
@@ -151,6 +156,8 @@ export interface VendorProfileInput {
   description: string
   location: string
   isAvailable: boolean
+  opensAt: string
+  cutoffTime: string
 }
 
 export interface CheckoutFormInput {
@@ -165,4 +172,27 @@ export interface OfferFormInput {
   proposedUnitPrice: number
   customerLabel?: string
   note?: string
+}
+
+export type ChatSender = 'customer' | 'vendor'
+
+export interface ChatThread {
+  id: string
+  vendorId: string
+  customerLabel: string
+  createdAt: string
+  updatedAt: string
+  lastMessagePreview: string
+  /** ISO timestamp — customer has read messages up to this time. */
+  customerLastReadAt: string
+  /** ISO timestamp — vendor has read messages up to this time. */
+  vendorLastReadAt: string
+}
+
+export interface ChatMessage {
+  id: string
+  threadId: string
+  sender: ChatSender
+  body: string
+  createdAt: string
 }

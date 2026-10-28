@@ -9,6 +9,7 @@ import {
   Egg,
   Wheat,
   Flame,
+  Clock,
   MapPin,
   ShoppingBag,
   ShoppingCart,
@@ -21,6 +22,10 @@ import { ProductImage } from '@/components/shared/ProductImage'
 import { useProductStore } from '@/stores/product-store'
 import { useVendorStore } from '@/stores/vendor-store'
 import { useAddToCart } from '@/hooks/useAddToCart'
+import {
+  formatVendorTime,
+  isVendorAcceptingOrders,
+} from '@/lib/vendor-hours'
 import type { ProductCategory } from '@/types'
 
 const lucideIcons: Record<string, ElementType> = {
@@ -48,7 +53,7 @@ export default function HomePage() {
   const activeProducts = products.filter((p) => !p.isArchived && p.isAvailable)
   const featuredProducts = activeProducts.filter((p) => p.isFeatured).slice(0, 4)
   const popularProducts = activeProducts.filter((p) => p.isPopular).slice(0, 6)
-  const activeVendors = vendors.filter((v) => v.isAvailable).slice(0, 4)
+  const listedVendors = vendors.filter((v) => v.isAvailable)
 
   return (
     <>
@@ -96,6 +101,83 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* Featured Vendors — first after hero (vendor-selection first) */}
+      {listedVendors.length > 0 && (
+        <section className="bg-primary-50/40 py-12">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6">
+            <div className="mb-8 text-center">
+              <h2 className="text-2xl font-extrabold text-primary-deep">
+                Meet Our Vendors
+              </h2>
+              <p className="mt-2 text-sm text-muted">
+                Pick a stall first — buy from one vendor per product type when you can
+              </p>
+            </div>
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {listedVendors.map((v) => {
+                const accepting = isVendorAcceptingOrders(v)
+                const cardInner = (
+                  <>
+                    <ProductImage
+                      src={v.imageUrl}
+                      alt={v.name}
+                      className="aspect-[16/10]"
+                    />
+                    <div className="p-4">
+                      <div className="flex items-start justify-between gap-2">
+                        <h3
+                          className={`font-bold ${accepting ? 'text-primary-deep group-hover:text-primary' : 'text-muted'}`}
+                        >
+                          {v.name}
+                        </h3>
+                        {!accepting && (
+                          <span className="shrink-0 rounded-md bg-gray-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted">
+                            Past cut-off
+                          </span>
+                        )}
+                      </div>
+                      <p className="mt-1 flex items-center gap-1 text-xs text-muted">
+                        <MapPin className="h-3 w-3" />
+                        {v.location}
+                      </p>
+                      <p className="mt-1 flex items-center gap-1 text-xs text-muted">
+                        <Clock className="h-3 w-3" />
+                        Orders until {formatVendorTime(v.cutoffTime)}
+                      </p>
+                      <p className="mt-2 line-clamp-2 text-sm text-ink/70">
+                        {v.description}
+                      </p>
+                    </div>
+                  </>
+                )
+
+                if (!accepting) {
+                  return (
+                    <div
+                      key={v.id}
+                      className="overflow-hidden rounded-xl border border-border bg-surface opacity-60 shadow-[var(--shadow-soft)]"
+                      aria-disabled
+                    >
+                      {cardInner}
+                    </div>
+                  )
+                }
+
+                return (
+                  <Link
+                    key={v.id}
+                    to={`/customer/stores/${v.id}`}
+                    className="group overflow-hidden rounded-xl border border-border bg-surface shadow-[var(--shadow-soft)] transition hover:-translate-y-0.5 hover:shadow-md"
+                  >
+                    {cardInner}
+                  </Link>
+                )
+              })}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Featured Categories */}
       <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:py-16">
@@ -160,49 +242,6 @@ export default function HomePage() {
                 View all products <ArrowRight className="h-4 w-4" />
               </Link>
             </Button>
-          </div>
-        </section>
-      )}
-
-      {/* Featured Vendors */}
-      {activeVendors.length > 0 && (
-        <section className="bg-primary-50/40 py-12">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6">
-            <div className="mb-8 text-center">
-              <h2 className="text-2xl font-extrabold text-primary-deep">
-                Meet Our Vendors
-              </h2>
-              <p className="mt-2 text-sm text-muted">
-                Local palengke stalls ready to serve you
-              </p>
-            </div>
-            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-              {activeVendors.map((v) => (
-                <Link
-                  key={v.id}
-                  to={`/customer/stores/${v.id}`}
-                  className="group overflow-hidden rounded-xl border border-border bg-surface shadow-[var(--shadow-soft)] transition hover:-translate-y-0.5 hover:shadow-md"
-                >
-                  <ProductImage
-                    src={v.imageUrl}
-                    alt={v.name}
-                    className="aspect-[16/10]"
-                  />
-                  <div className="p-4">
-                    <h3 className="font-bold text-primary-deep group-hover:text-primary">
-                      {v.name}
-                    </h3>
-                    <p className="mt-1 flex items-center gap-1 text-xs text-muted">
-                      <MapPin className="h-3 w-3" />
-                      {v.location}
-                    </p>
-                    <p className="mt-2 line-clamp-2 text-sm text-ink/70">
-                      {v.description}
-                    </p>
-                  </div>
-                </Link>
-              ))}
-            </div>
           </div>
         </section>
       )}

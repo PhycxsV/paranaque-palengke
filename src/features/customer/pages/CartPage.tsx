@@ -8,6 +8,7 @@ import { useProductStore } from '@/stores/product-store'
 import { useVendorStore } from '@/stores/vendor-store'
 import { useCommodityStore } from '@/stores/commodity-store'
 import { useOfferStore } from '@/stores/offer-store'
+import { DELIVERY_FEE } from '@/constants'
 import {
   resolveCartUnitPrice,
   calculateCartTotalWithPricing,
@@ -35,6 +36,8 @@ export default function CartPage() {
   })
 
   const subtotal = calculateCartTotalWithPricing(items, products, commodities, allOffers)
+  const deliveryFee = DELIVERY_FEE
+  const total = subtotal + deliveryFee
 
   if (items.length === 0) {
     return (
@@ -153,12 +156,22 @@ export default function CartPage() {
 
       {/* Summary */}
       <div className="mt-6 rounded-xl border border-border bg-surface p-5 shadow-[var(--shadow-soft)]">
-        <div className="flex items-center justify-between text-lg font-bold text-primary-deep">
-          <span>Subtotal</span>
-          <span>{formatPeso(subtotal)}</span>
+        <div className="space-y-2">
+          <div className="flex items-center justify-between text-sm text-ink/80">
+            <span>Subtotal</span>
+            <span>{formatPeso(subtotal)}</span>
+          </div>
+          <div className="flex items-center justify-between text-sm text-ink/80">
+            <span>Delivery fee</span>
+            <span>{formatPeso(deliveryFee)}</span>
+          </div>
+          <div className="flex items-center justify-between border-t border-border pt-2 text-lg font-bold text-primary-deep">
+            <span>Total</span>
+            <span>{formatPeso(total)}</span>
+          </div>
         </div>
-        <p className="mt-1 text-xs text-muted">
-          Delivery and fees are not included in this demo.
+        <p className="mt-2 text-xs text-muted">
+          Delivery fee is included in the QRPH payment total at checkout.
         </p>
 
         <div className="mt-5 flex flex-col gap-3 sm:flex-row">

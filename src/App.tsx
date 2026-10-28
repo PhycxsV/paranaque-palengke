@@ -13,12 +13,14 @@ import PaymentPage from '@/features/customer/pages/PaymentPage'
 import OrdersPage from '@/features/customer/pages/OrdersPage'
 import OrderDetailPage from '@/features/customer/pages/OrderDetailPage'
 import CustomerOffersPage from '@/features/customer/pages/CustomerOffersPage'
+import CustomerChatPage from '@/features/customer/pages/CustomerChatPage'
 import VendorDashboardPage from '@/features/vendor/pages/VendorDashboardPage'
 import VendorOrdersPage from '@/features/vendor/pages/VendorOrdersPage'
 import VendorOrderDetailPage from '@/features/vendor/pages/VendorOrderDetailPage'
 import VendorProductsPage from '@/features/vendor/pages/VendorProductsPage'
 import VendorStoreProfilePage from '@/features/vendor/pages/VendorStorePage'
 import VendorOffersPage from '@/features/vendor/pages/VendorOffersPage'
+import VendorChatPage from '@/features/vendor/pages/VendorChatPage'
 import AdminDashboardPage from '@/features/admin/pages/AdminDashboardPage'
 import AdminCommoditiesPage from '@/features/admin/pages/AdminCommoditiesPage'
 import AdminPriceHistoryPage from '@/features/admin/pages/AdminPriceHistoryPage'
@@ -43,6 +45,8 @@ export default function App() {
           <Route path="orders" element={<OrdersPage />} />
           <Route path="orders/:orderId" element={<OrderDetailPage />} />
           <Route path="offers" element={<CustomerOffersPage />} />
+          <Route path="chat" element={<CustomerChatPage />} />
+          <Route path="chat/:threadId" element={<CustomerChatPage />} />
         </Route>
 
         <Route path="vendor" element={<VendorLayout />}>
@@ -52,6 +56,8 @@ export default function App() {
           <Route path="products" element={<VendorProductsPage />} />
           <Route path="store" element={<VendorStoreProfilePage />} />
           <Route path="offers" element={<VendorOffersPage />} />
+          <Route path="chat" element={<VendorChatPage />} />
+          <Route path="chat/:threadId" element={<VendorChatPage />} />
         </Route>
 
         <Route path="admin" element={<AdminLayout />}>

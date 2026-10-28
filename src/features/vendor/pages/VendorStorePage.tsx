@@ -11,12 +11,19 @@ import { DemoQrPlaceholder } from '@/components/shared/DemoQrPlaceholder'
 import { EmptyState } from '@/components/shared/EmptyState'
 import { useDemoSessionStore } from '@/stores/demo-session-store'
 import { useVendorStore } from '@/stores/vendor-store'
+import {
+  formatVendorTime,
+  isVendorAcceptingOrders,
+  parseTimeToMinutes,
+} from '@/lib/vendor-hours'
 import type { VendorProfileInput } from '@/types'
 
 interface FormErrors {
   name?: string
   description?: string
   location?: string
+  opensAt?: string
+  cutoffTime?: string
 }
 
 export default function VendorStorePage() {
@@ -31,6 +38,8 @@ export default function VendorStorePage() {
     description: '',
     location: '',
     isAvailable: true,
+    opensAt: '06:00',
+    cutoffTime: '17:00',
   })
   const [errors, setErrors] = useState<FormErrors>({})
 
@@ -41,6 +50,8 @@ export default function VendorStorePage() {
         description: vendor.description,
         location: vendor.location,
         isAvailable: vendor.isAvailable,
+        opensAt: vendor.opensAt,
+        cutoffTime: vendor.cutoffTime,
       })
     }
   }, [vendor])
@@ -60,6 +71,17 @@ export default function VendorStorePage() {
     if (!form.name.trim()) errs.name = 'Store name is required'
     if (!form.description.trim()) errs.description = 'Description is required'
     if (!form.location.trim()) errs.location = 'Location is required'
+    if (parseTimeToMinutes(form.opensAt) === null) {
+      errs.opensAt = 'Use a valid time (HH:mm)'
+    }
+    if (parseTimeToMinutes(form.cutoffTime) === null) {
+      errs.cutoffTime = 'Use a valid time (HH:mm)'
+    }
+    const opens = parseTimeToMinutes(form.opensAt)
+    const cutoff = parseTimeToMinutes(form.cutoffTime)
+    if (opens !== null && cutoff !== null && cutoff <= opens) {
+      errs.cutoffTime = 'Cut-off must be after opening time'
+    }
     return errs
   }
 
@@ -74,6 +96,8 @@ export default function VendorStorePage() {
       description: form.description.trim(),
       location: form.location.trim(),
       isAvailable: form.isAvailable,
+      opensAt: form.opensAt,
+      cutoffTime: form.cutoffTime,
     })
     setErrors({})
     toast.success('Store profile updated')
@@ -87,6 +111,12 @@ export default function VendorStorePage() {
     setErrors((prev) => ({ ...prev, [key]: undefined }))
   }
 
+  const acceptingNow = isVendorAcceptingOrders({
+    isAvailable: form.isAvailable,
+    opensAt: form.opensAt,
+    cutoffTime: form.cutoffTime,
+  })
+
   return (
     <div className="space-y-6">
       <div>
@@ -94,7 +124,7 @@ export default function VendorStorePage() {
           Store profile
         </h1>
         <p className="mt-1 text-sm text-muted">
-          Update your store details and availability
+          Update your store details, hours, and order cut-off
         </p>
       </div>
 
@@ -137,6 +167,36 @@ export default function VendorStorePage() {
                 <p className="text-xs text-red-600">{errors.location}</p>
               ) : null}
             </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid gap-1.5">
+                <Label htmlFor="vs-opens">Opens at</Label>
+                <Input
+                  id="vs-opens"
+                  type="time"
+                  value={form.opensAt}
+                  onChange={(e) => updateField('opensAt', e.target.value)}
+                />
+                {errors.opensAt ? (
+                  <p className="text-xs text-red-600">{errors.opensAt}</p>
+                ) : null}
+              </div>
+              <div className="grid gap-1.5">
+                <Label htmlFor="vs-cutoff">Order cut-off</Label>
+                <Input
+                  id="vs-cutoff"
+                  type="time"
+                  value={form.cutoffTime}
+                  onChange={(e) => updateField('cutoffTime', e.target.value)}
+                />
+                {errors.cutoffTime ? (
+                  <p className="text-xs text-red-600">{errors.cutoffTime}</p>
+                ) : (
+                  <p className="text-xs text-muted">
+                    Customers cannot place new orders after this time.
+                  </p>
+                )}
+              </div>
+            </div>
             <div className="flex items-center gap-3">
               <Switch
                 id="vs-avail"
@@ -176,16 +236,16 @@ export default function VendorStorePage() {
             <CardContent className="space-y-2">
               <div className="flex items-center gap-2">
                 <span
-                  className={`inline-block h-2.5 w-2.5 rounded-full ${vendor.isAvailable ? 'bg-emerald-500' : 'bg-gray-400'}`}
+                  className={`inline-block h-2.5 w-2.5 rounded-full ${acceptingNow ? 'bg-emerald-500' : 'bg-gray-400'}`}
                 />
                 <span className="text-sm font-medium text-ink">
-                  {vendor.isAvailable ? 'Open' : 'Closed'}
+                  {acceptingNow ? 'Accepting orders' : 'Not accepting orders'}
                 </span>
               </div>
               <p className="text-xs text-muted">
-                {vendor.isAvailable
-                  ? 'Your store is visible and accepting orders.'
-                  : 'Your store is currently hidden from customers.'}
+                Hours: {formatVendorTime(form.opensAt)} – cut-off{' '}
+                {formatVendorTime(form.cutoffTime)}. Past cut-off, your stall is
+                disabled on the customer side.
               </p>
             </CardContent>
           </Card>

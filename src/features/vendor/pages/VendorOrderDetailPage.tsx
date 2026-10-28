@@ -223,13 +223,15 @@ export default function VendorOrderDetailPage() {
               </div>
             ))}
           </div>
-          <div className="mt-4 flex items-center justify-end border-t border-border pt-4">
-            <div className="text-right">
-              <p className="text-xs text-muted">Order total</p>
-              <p className="text-xl font-extrabold text-primary-deep">
-                {formatPeso(order.total)}
-              </p>
-            </div>
+          <div className="mt-4 space-y-1 border-t border-border pt-4 text-right">
+            <p className="text-xs text-muted">
+              Subtotal {formatPeso(order.subtotal)} · Delivery{' '}
+              {formatPeso(order.deliveryFee ?? 0)}
+            </p>
+            <p className="text-xs text-muted">Order total</p>
+            <p className="text-xl font-extrabold text-primary-deep">
+              {formatPeso(order.total)}
+            </p>
           </div>
         </CardContent>
       </Card>

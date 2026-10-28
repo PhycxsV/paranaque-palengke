@@ -155,9 +155,19 @@ export default function OrderDetailPage() {
               </div>
             ))}
           </div>
-          <div className="mt-4 flex items-center justify-between border-t border-border pt-4 text-lg font-bold text-primary-deep">
-            <span>Total</span>
-            <span>{formatPeso(order.total)}</span>
+          <div className="mt-4 space-y-2 border-t border-border pt-4">
+            <div className="flex items-center justify-between text-sm text-ink/80">
+              <span>Subtotal</span>
+              <span>{formatPeso(order.subtotal)}</span>
+            </div>
+            <div className="flex items-center justify-between text-sm text-ink/80">
+              <span>Delivery fee</span>
+              <span>{formatPeso(order.deliveryFee ?? 0)}</span>
+            </div>
+            <div className="flex items-center justify-between text-lg font-bold text-primary-deep">
+              <span>Total</span>
+              <span>{formatPeso(order.total)}</span>
+            </div>
           </div>
         </section>
       </div>

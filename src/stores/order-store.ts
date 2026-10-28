@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { STORAGE_PREFIX } from '@/constants'
+import { DELIVERY_FEE, STORAGE_PREFIX } from '@/constants'
 import {
   buildOrderSnapshots,
   calculateCartTotal,
@@ -69,7 +69,9 @@ export const useOrderStore = create<OrderState>()(
           commodities,
           offers,
         )
-        const total = calculateCartTotal(items, products, commodities, offers)
+        const subtotal = calculateCartTotal(items, products, commodities, offers)
+        const deliveryFee = DELIVERY_FEE
+        const total = subtotal + deliveryFee
         const now = new Date().toISOString()
         const order: Order = {
           id: generateId('ORD'),
@@ -79,7 +81,8 @@ export const useOrderStore = create<OrderState>()(
           contactNumber: customer.contactNumber.trim(),
           notes: customer.notes?.trim() || undefined,
           items: snapshots,
-          subtotal: total,
+          subtotal,
+          deliveryFee,
           total,
           status: 'pending_payment',
           createdAt: now,
