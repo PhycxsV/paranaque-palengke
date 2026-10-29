@@ -14,6 +14,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { StatusBadge } from '@/components/shared/StatusBadge'
 import { EmptyState } from '@/components/shared/EmptyState'
+import { FEATURE_TAWAD_ENABLED } from '@/constants'
 import { useDemoSessionStore } from '@/stores/demo-session-store'
 import { useVendorStore } from '@/stores/vendor-store'
 import { useOrderStore } from '@/stores/order-store'
@@ -83,13 +84,17 @@ export default function VendorDashboardPage() {
       color: 'text-red-600',
       bg: 'bg-red-50',
     },
-    {
-      label: 'Pending offers',
-      value: stats.pendingOffers,
-      icon: MessageSquare,
-      color: 'text-violet-600',
-      bg: 'bg-violet-50',
-    },
+    ...(FEATURE_TAWAD_ENABLED
+      ? [
+          {
+            label: 'Pending offers',
+            value: stats.pendingOffers,
+            icon: MessageSquare,
+            color: 'text-violet-600',
+            bg: 'bg-violet-50',
+          },
+        ]
+      : []),
   ]
 
   return (
@@ -138,7 +143,7 @@ export default function VendorDashboardPage() {
             Manage products
           </Link>
         </Button>
-        {stats.pendingOffers > 0 && (
+        {FEATURE_TAWAD_ENABLED && stats.pendingOffers > 0 && (
           <Button variant="secondary" asChild>
             <Link to="/vendor/offers">
               <MessageSquare className="h-4 w-4" />

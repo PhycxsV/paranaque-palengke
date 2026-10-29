@@ -1,6 +1,7 @@
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft, CreditCard, Package } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { DeliveryMilestoneTracker } from '@/components/shared/DeliveryMilestoneTracker'
 import { EmptyState } from '@/components/shared/EmptyState'
 import { StatusBadge } from '@/components/shared/StatusBadge'
 import { ProductImage } from '@/components/shared/ProductImage'
@@ -54,6 +55,13 @@ export default function OrderDetailPage() {
           {ORDER_STATUS_MESSAGES[order.status]}
         </p>
       </div>
+
+      {order.status === 'confirmed' && (
+        <DeliveryMilestoneTracker
+          className="mb-6"
+          deliveryStatus={order.deliveryStatus ?? 'awaiting_pickup'}
+        />
+      )}
 
       {/* Payment action */}
       {canPay && (

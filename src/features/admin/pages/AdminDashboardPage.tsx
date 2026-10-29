@@ -10,6 +10,7 @@ import { useCommodityStore } from '@/stores/commodity-store'
 import { useOfferStore } from '@/stores/offer-store'
 import { useOrderStore } from '@/stores/order-store'
 import { useVendorStore } from '@/stores/vendor-store'
+import { FEATURE_TAWAD_ENABLED } from '@/constants'
 import { formatPeso, formatDateTime } from '@/lib/utils'
 
 function StatCard({
@@ -74,12 +75,14 @@ export default function AdminDashboardPage() {
           value={vendors.length}
           sub={`${vendors.filter((v) => v.isAvailable).length} available`}
         />
-        <StatCard
-          icon={HandCoins}
-          label="Pending Offers"
-          value={pendingOffers}
-          sub={`${offers.length} total offers`}
-        />
+        {FEATURE_TAWAD_ENABLED ? (
+          <StatCard
+            icon={HandCoins}
+            label="Pending Offers"
+            value={pendingOffers}
+            sub={`${offers.length} total offers`}
+          />
+        ) : null}
         <StatCard
           icon={ClipboardList}
           label="Orders Awaiting"

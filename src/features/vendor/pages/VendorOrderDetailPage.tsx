@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { ArrowLeft, CheckCircle2, XCircle } from 'lucide-react'
+import { ArrowLeft, CheckCircle2, Truck, XCircle } from 'lucide-react'
 import { toast } from 'sonner'
+import { DELIVERY_STATUS_LABELS } from '@/constants'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -15,6 +16,7 @@ import {
 } from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { DeliveryMilestoneTracker } from '@/components/shared/DeliveryMilestoneTracker'
 import { StatusBadge } from '@/components/shared/StatusBadge'
 import { EmptyState } from '@/components/shared/EmptyState'
 import { ProductImage } from '@/components/shared/ProductImage'
@@ -29,6 +31,7 @@ export default function VendorOrderDetailPage() {
   const orders = useOrderStore((s) => s.orders)
   const confirmPayment = useOrderStore((s) => s.confirmPayment)
   const rejectPayment = useOrderStore((s) => s.rejectPayment)
+  const advanceDelivery = useOrderStore((s) => s.advanceDelivery)
 
   const [processing, setProcessing] = useState(false)
 
@@ -98,6 +101,24 @@ export default function VendorOrderDetailPage() {
     }
     setProcessing(false)
   }
+
+  const handleAdvanceDelivery = () => {
+    if (processing) return
+    setProcessing(true)
+    const result = advanceDelivery(order.id, activeVendorId)
+    if (result.ok) {
+      const label =
+        DELIVERY_STATUS_LABELS[result.order.deliveryStatus ?? 'awaiting_pickup']
+      toast.success(`Keri delivery updated: ${label}`)
+    } else {
+      toast.error(result.message)
+    }
+    setProcessing(false)
+  }
+
+  const deliveryStatus = order.deliveryStatus ?? 'awaiting_pickup'
+  const canAdvanceDelivery =
+    order.status === 'confirmed' && deliveryStatus !== 'delivered'
 
   return (
     <div className="space-y-6">
@@ -236,6 +257,22 @@ export default function VendorOrderDetailPage() {
         </CardContent>
       </Card>
 
+      {order.status === 'confirmed' && (
+        <div className="space-y-4">
+          <DeliveryMilestoneTracker deliveryStatus={deliveryStatus} />
+          {canAdvanceDelivery ? (
+            <Button onClick={handleAdvanceDelivery} disabled={processing}>
+              <Truck className="h-4 w-4" />
+              {deliveryStatus === 'awaiting_pickup'
+                ? 'Mark out for delivery (Keri)'
+                : 'Mark delivered'}
+            </Button>
+          ) : (
+            <p className="text-sm text-muted">Keri delivery is complete.</p>
+          )}
+        </div>
+      )}
+
       {/* Action buttons */}
       {canProcess ? (
         <Card>
@@ -251,8 +288,8 @@ export default function VendorOrderDetailPage() {
                 <AlertDialogHeader>
                   <AlertDialogTitle>Confirm payment?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    This will mark the order as confirmed. The customer will be
-                    notified that their payment has been verified.
+                    This will mark the order as confirmed and start Keri delivery
+                    tracking. The customer will see delivery milestones.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
@@ -292,15 +329,13 @@ export default function VendorOrderDetailPage() {
             </AlertDialog>
           </CardContent>
         </Card>
-      ) : (
+      ) : order.status !== 'confirmed' ? (
         <p className="text-sm text-muted">
-          {order.status === 'confirmed'
-            ? 'This order has already been confirmed.'
-            : order.status === 'payment_rejected'
-              ? 'This payment was rejected. The customer may resubmit.'
-              : 'This order is not yet ready for vendor confirmation.'}
+          {order.status === 'payment_rejected'
+            ? 'This payment was rejected. The customer may resubmit.'
+            : 'This order is not yet ready for vendor confirmation.'}
         </p>
-      )}
+      ) : null}
     </div>
   )
 }

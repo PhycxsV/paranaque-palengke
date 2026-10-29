@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { Link, NavLink, useNavigate } from 'react-router-dom'
 import { Menu, MessageCircle, MessageSquare, Search, ShoppingCart, X } from 'lucide-react'
-import { BRAND_NAME } from '@/constants'
+import { BRAND_NAME, FEATURE_TAWAD_ENABLED } from '@/constants'
 import { PortalSwitcher } from '@/components/shared/PortalSwitcher'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -83,9 +83,11 @@ export function CustomerHeader() {
           <NavLink to="/customer/chat" className={navLinkClass}>
             Chat
           </NavLink>
-          <NavLink to="/customer/offers" className={navLinkClass}>
-            My Offers
-          </NavLink>
+          {FEATURE_TAWAD_ENABLED ? (
+            <NavLink to="/customer/offers" className={navLinkClass}>
+              My Offers
+            </NavLink>
+          ) : null}
         </nav>
 
         <div className="flex items-center gap-1 sm:gap-2">
@@ -149,10 +151,12 @@ export function CustomerHeader() {
               <MessageCircle className="mr-1 inline h-4 w-4" />
               Chat
             </NavLink>
-            <NavLink to="/customer/offers" className={navLinkClass} onClick={() => setMobileOpen(false)}>
-              <MessageSquare className="mr-1 inline h-4 w-4" />
-              My Offers
-            </NavLink>
+            {FEATURE_TAWAD_ENABLED ? (
+              <NavLink to="/customer/offers" className={navLinkClass} onClick={() => setMobileOpen(false)}>
+                <MessageSquare className="mr-1 inline h-4 w-4" />
+                My Offers
+              </NavLink>
+            ) : null}
             <NavLink to="/customer/cart" className={navLinkClass} onClick={() => setMobileOpen(false)}>
               Cart
             </NavLink>

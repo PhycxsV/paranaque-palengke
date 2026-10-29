@@ -27,7 +27,11 @@ import { useOfferStore } from '@/stores/offer-store'
 import { useAddToCart } from '@/hooks/useAddToCart'
 import { getStandardPrice, getAcceptedOfferUnitPrice } from '@/lib/pricing'
 import { formatVendorTime, isVendorAcceptingOrders } from '@/lib/vendor-hours'
-import { PRICE_DISCLAIMER, OFFER_STATUS_LABELS } from '@/constants'
+import {
+  FEATURE_TAWAD_ENABLED,
+  PRICE_DISCLAIMER,
+  OFFER_STATUS_LABELS,
+} from '@/constants'
 import { formatPeso } from '@/lib/utils'
 import type { OfferFormInput } from '@/types'
 
@@ -231,7 +235,8 @@ export default function ProductDetailPage() {
             </Button>
           </div>
 
-          {/* Tawad / Offer Section */}
+          {/* Tawad / Offer Section — hidden while FEATURE_TAWAD_ENABLED is false */}
+          {FEATURE_TAWAD_ENABLED ? (
           <div className="mt-6 rounded-xl border border-border bg-warm-white p-5">
             <div className="mb-3 flex items-center justify-between">
               <h2 className="flex items-center gap-2 text-lg font-bold text-primary-deep">
@@ -398,6 +403,7 @@ export default function ProductDetailPage() {
               </div>
             )}
           </div>
+          ) : null}
         </div>
       </div>
 

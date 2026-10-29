@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { BRAND_NAME } from '@/constants'
+import { BRAND_NAME, FEATURE_TAWAD_ENABLED } from '@/constants'
 
 export function CustomerFooter() {
   return (
@@ -25,11 +25,13 @@ export function CustomerFooter() {
                 My orders
               </Link>
             </li>
-            <li>
-              <Link to="/customer/offers" className="hover:text-gold">
-                My offers
-              </Link>
-            </li>
+            {FEATURE_TAWAD_ENABLED ? (
+              <li>
+                <Link to="/customer/offers" className="hover:text-gold">
+                  My offers
+                </Link>
+              </li>
+            ) : null}
             <li>
               <Link to="/vendor" className="hover:text-gold">
                 Vendor portal

@@ -12,7 +12,7 @@ import {
   X,
   Wheat,
 } from 'lucide-react'
-import { BRAND_NAME, PRICE_DISCLAIMER } from '@/constants'
+import { BRAND_NAME, FEATURE_TAWAD_ENABLED, PRICE_DISCLAIMER } from '@/constants'
 import { PortalSwitcher } from '@/components/shared/PortalSwitcher'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -24,7 +24,7 @@ const links = [
   { to: '/admin/vendors', label: 'Vendors', icon: Store },
   { to: '/admin/offers', label: 'Offers', icon: HandCoins },
   { to: '/admin/orders', label: 'Orders', icon: ClipboardList },
-]
+].filter((link) => FEATURE_TAWAD_ENABLED || link.to !== '/admin/offers')
 
 function AdminSidebar({ onNavigate }: { onNavigate?: () => void }) {
   return (

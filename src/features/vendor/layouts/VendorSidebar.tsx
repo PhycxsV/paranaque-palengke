@@ -9,7 +9,7 @@ import {
   Store,
 } from 'lucide-react'
 import { PortalSwitcher } from '@/components/shared/PortalSwitcher'
-import { BRAND_NAME } from '@/constants'
+import { BRAND_NAME, FEATURE_TAWAD_ENABLED } from '@/constants'
 import {
   Select,
   SelectContent,
@@ -30,7 +30,7 @@ const links = [
   { to: '/vendor/chat', label: 'Chat', icon: MessageCircle },
   { to: '/vendor/offers', label: 'Offers', icon: HandCoins },
   { to: '/vendor/store', label: 'Store profile', icon: Store },
-]
+].filter((link) => FEATURE_TAWAD_ENABLED || link.to !== '/vendor/offers')
 
 export function VendorSidebar({ onNavigate }: { onNavigate?: () => void }) {
   const activeVendorId = useDemoSessionStore((s) => s.activeVendorId)

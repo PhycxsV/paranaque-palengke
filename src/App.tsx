@@ -1,5 +1,6 @@
 import { HashRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { Toaster } from 'sonner'
+import { FEATURE_TAWAD_ENABLED } from '@/constants'
 import { CustomerLayout } from '@/features/customer/layouts/CustomerLayout'
 import { VendorLayout } from '@/features/vendor/layouts/VendorLayout'
 import AdminLayout from '@/features/admin/layouts/AdminLayout'
@@ -44,7 +45,16 @@ export default function App() {
           <Route path="payment/:orderId" element={<PaymentPage />} />
           <Route path="orders" element={<OrdersPage />} />
           <Route path="orders/:orderId" element={<OrderDetailPage />} />
-          <Route path="offers" element={<CustomerOffersPage />} />
+          <Route
+            path="offers"
+            element={
+              FEATURE_TAWAD_ENABLED ? (
+                <CustomerOffersPage />
+              ) : (
+                <Navigate to="/customer" replace />
+              )
+            }
+          />
           <Route path="chat" element={<CustomerChatPage />} />
           <Route path="chat/:threadId" element={<CustomerChatPage />} />
         </Route>
@@ -55,7 +65,16 @@ export default function App() {
           <Route path="orders/:orderId" element={<VendorOrderDetailPage />} />
           <Route path="products" element={<VendorProductsPage />} />
           <Route path="store" element={<VendorStoreProfilePage />} />
-          <Route path="offers" element={<VendorOffersPage />} />
+          <Route
+            path="offers"
+            element={
+              FEATURE_TAWAD_ENABLED ? (
+                <VendorOffersPage />
+              ) : (
+                <Navigate to="/vendor" replace />
+              )
+            }
+          />
           <Route path="chat" element={<VendorChatPage />} />
           <Route path="chat/:threadId" element={<VendorChatPage />} />
         </Route>
@@ -66,7 +85,16 @@ export default function App() {
           <Route path="price-history" element={<AdminPriceHistoryPage />} />
           <Route path="vendors" element={<AdminVendorsPage />} />
           <Route path="vendors/:vendorId" element={<AdminVendorDetailPage />} />
-          <Route path="offers" element={<AdminOffersPage />} />
+          <Route
+            path="offers"
+            element={
+              FEATURE_TAWAD_ENABLED ? (
+                <AdminOffersPage />
+              ) : (
+                <Navigate to="/admin" replace />
+              )
+            }
+          />
           <Route path="orders" element={<AdminOrdersPage />} />
         </Route>
 

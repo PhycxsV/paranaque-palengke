@@ -5,6 +5,7 @@ import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { DeliveryMilestoneTracker } from '@/components/shared/DeliveryMilestoneTracker'
 import { DemoQrPlaceholder } from '@/components/shared/DemoQrPlaceholder'
 import { StatusBadge } from '@/components/shared/StatusBadge'
 import { EmptyState } from '@/components/shared/EmptyState'
@@ -88,15 +89,21 @@ export default function PaymentPage() {
 
       {/* Status-specific content */}
       {isConfirmed && (
-        <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-6 text-center">
-          <CheckCircle className="mx-auto mb-3 h-12 w-12 text-emerald-600" />
-          <h2 className="text-lg font-bold text-emerald-800">Payment Confirmed</h2>
-          <p className="mt-2 text-sm text-emerald-700">
-            Salamat! The vendor has confirmed your demo payment.
-          </p>
-          <Button asChild className="mt-4" variant="secondary">
-            <Link to={`/customer/orders/${order.id}`}>View order details</Link>
-          </Button>
+        <div className="space-y-6">
+          <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-6 text-center">
+            <CheckCircle className="mx-auto mb-3 h-12 w-12 text-emerald-600" />
+            <h2 className="text-lg font-bold text-emerald-800">Payment Confirmed</h2>
+            <p className="mt-2 text-sm text-emerald-700">
+              Salamat! The vendor has confirmed your demo payment. Keri delivery
+              milestones are below.
+            </p>
+            <Button asChild className="mt-4" variant="secondary">
+              <Link to={`/customer/orders/${order.id}`}>View order details</Link>
+            </Button>
+          </div>
+          <DeliveryMilestoneTracker
+            deliveryStatus={order.deliveryStatus ?? 'awaiting_pickup'}
+          />
         </div>
       )}
 

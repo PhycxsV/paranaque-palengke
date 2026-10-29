@@ -1,4 +1,5 @@
 import type {
+  DeliveryStatus,
   OfferStatus,
   OrderStatus,
   ProductCategory,
@@ -12,6 +13,41 @@ export const PRICE_DISCLAIMER =
   'Illustrative demo prices — not official Parañaque LGU market rates.'
 /** Flat delivery fee (Keri) included in QRPH / demo QR payment total. */
 export const DELIVERY_FEE = 100
+/**
+ * Tumawad / offer negotiation. Hidden for now — LGU feedback that
+ * negotiated prices may destabilize controlled standard pricing.
+ * Set true to restore Offers UI without deleting the feature code.
+ */
+export const FEATURE_TAWAD_ENABLED = false
+
+export const DELIVERY_STATUS_LABELS: Record<DeliveryStatus, string> = {
+  awaiting_pickup: 'Preparing for Keri',
+  out_for_delivery: 'Out for delivery',
+  delivered: 'Delivered',
+}
+
+/** Visual milestones for Keri delivery after payment is confirmed. */
+export const DELIVERY_MILESTONES: {
+  id: DeliveryStatus
+  label: string
+  description: string
+}[] = [
+  {
+    id: 'awaiting_pickup',
+    label: 'Preparing for Keri',
+    description: 'Vendor is packing your order for pickup by Keri.',
+  },
+  {
+    id: 'out_for_delivery',
+    label: 'Out for delivery',
+    description: 'Keri is on the way with your order.',
+  },
+  {
+    id: 'delivered',
+    label: 'Delivered',
+    description: 'Order handed off — salamat sa pag-order!',
+  },
+]
 
 export const CATEGORIES: ProductCategory[] = [
   'Vegetables',
@@ -38,7 +74,8 @@ export const ORDER_STATUS_MESSAGES: Record<OrderStatus, string> = {
     'Your order is ready. Complete the demo QR payment to continue.',
   awaiting_vendor_confirmation:
     'Payment submitted. Waiting for the vendor to verify your demo payment.',
-  confirmed: 'Payment confirmed by the vendor. Salamat sa pag-order!',
+  confirmed:
+    'Payment confirmed by the vendor. Keri delivery is underway — track milestones below.',
   payment_rejected:
     'The vendor could not verify the payment. You may resubmit demo payment details.',
 }

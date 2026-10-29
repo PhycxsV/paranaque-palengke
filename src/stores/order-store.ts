@@ -12,10 +12,17 @@ import type {
   CartItem,
   CheckoutFormInput,
   Commodity,
+  DeliveryStatus,
   Offer,
   Order,
   Product,
 } from '@/types'
+
+const DELIVERY_FLOW: DeliveryStatus[] = [
+  'awaiting_pickup',
+  'out_for_delivery',
+  'delivered',
+]
 
 interface OrderState {
   orders: Order[]
@@ -37,6 +44,10 @@ interface OrderState {
     vendorId: string,
   ) => { ok: true; order: Order } | { ok: false; message: string }
   rejectPayment: (
+    orderId: string,
+    vendorId: string,
+  ) => { ok: true; order: Order } | { ok: false; message: string }
+  advanceDelivery: (
     orderId: string,
     vendorId: string,
   ) => { ok: true; order: Order } | { ok: false; message: string }
@@ -121,7 +132,9 @@ export const useOrderStore = create<OrderState>()(
         }
 
         try {
-          const updated = transitionOrder(order, 'confirmed')
+          const updated = transitionOrder(order, 'confirmed', {
+            deliveryStatus: 'awaiting_pickup',
+          })
           set({
             orders: get().orders.map((o) => (o.id === orderId ? updated : o)),
           })
@@ -133,6 +146,36 @@ export const useOrderStore = create<OrderState>()(
               error instanceof Error ? error.message : 'Unable to confirm payment.',
           }
         }
+      },
+      advanceDelivery: (orderId, vendorId) => {
+        const order = get().orders.find((o) => o.id === orderId)
+        if (!order) return { ok: false, message: 'Order not found.' }
+        if (order.vendorId !== vendorId) {
+          return { ok: false, message: 'You can only update your own orders.' }
+        }
+        if (order.status !== 'confirmed') {
+          return {
+            ok: false,
+            message: 'Confirm payment before updating Keri delivery.',
+          }
+        }
+
+        const current = order.deliveryStatus ?? 'awaiting_pickup'
+        const idx = DELIVERY_FLOW.indexOf(current)
+        if (idx < 0 || idx >= DELIVERY_FLOW.length - 1) {
+          return { ok: false, message: 'Delivery is already complete.' }
+        }
+
+        const next = DELIVERY_FLOW[idx + 1]
+        const updated: Order = {
+          ...order,
+          deliveryStatus: next,
+          updatedAt: new Date().toISOString(),
+        }
+        set({
+          orders: get().orders.map((o) => (o.id === orderId ? updated : o)),
+        })
+        return { ok: true, order: updated }
       },
       rejectPayment: (orderId, vendorId) => {
         const order = get().orders.find((o) => o.id === orderId)

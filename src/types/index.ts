@@ -16,6 +16,8 @@ export type OrderStatus =
   | 'confirmed'
   | 'payment_rejected'
 
+export type DeliveryStatus = 'awaiting_pickup' | 'out_for_delivery' | 'delivered'
+
 export type OfferStatus =
   | 'pending'
   | 'accepted'
@@ -134,10 +136,22 @@ export interface Order {
   deliveryFee: number
   total: number
   status: OrderStatus
+  /** Set when payment is confirmed — tracks Keri delivery progress. */
+  deliveryStatus?: DeliveryStatus
   createdAt: string
   updatedAt: string
   transactionReference?: string
   paymentSubmittedAt?: string
+}
+
+export interface CommodityFormInput {
+  name: string
+  description: string
+  category: ProductCategory
+  unit: ProductUnit
+  standardPrice: number
+  imageUrl: string
+  isActive: boolean
 }
 
 export interface ProductFormInput {
