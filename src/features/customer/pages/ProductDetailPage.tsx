@@ -18,14 +18,17 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { ProductCard } from '@/components/shared/ProductCard'
 import { ProductImage } from '@/components/shared/ProductImage'
-import { VendorConflictDialog } from '@/components/shared/VendorConflictDialog'
 import { EmptyState } from '@/components/shared/EmptyState'
 import { useProductStore } from '@/stores/product-store'
 import { useVendorStore } from '@/stores/vendor-store'
 import { useCommodityStore } from '@/stores/commodity-store'
 import { useOfferStore } from '@/stores/offer-store'
 import { useAddToCart } from '@/hooks/useAddToCart'
-import { getStandardPrice, getAcceptedOfferUnitPrice } from '@/lib/pricing'
+import {
+  getAcceptedOfferUnitPrice,
+  getCommodityRange,
+  getVendorPrice,
+} from '@/lib/pricing'
 import { formatVendorTime, isVendorAcceptingOrders } from '@/lib/vendor-hours'
 import {
   FEATURE_TAWAD_ENABLED,
@@ -44,8 +47,7 @@ export default function ProductDetailPage() {
   const createOffer = useOfferStore((s) => s.createOffer)
   const acceptCounter = useOfferStore((s) => s.acceptCounter)
   const declineCounter = useOfferStore((s) => s.declineCounter)
-  const { addToCart, conflictOpen, currentVendorName, newVendorName, keepCurrentCart, replaceCart } =
-    useAddToCart()
+  const { addToCart } = useAddToCart()
 
   const [quantity, setQuantity] = useState(1)
   const [offerPrice, setOfferPrice] = useState('')
@@ -55,7 +57,8 @@ export default function ProductDetailPage() {
 
   const product = products.find((p) => p.id === productId && !p.isArchived)
   const vendor = product ? vendors.find((v) => v.id === product.vendorId) : undefined
-  const standardPrice = product ? getStandardPrice(product, commodities) : 0
+  const vendorPrice = product ? getVendorPrice(product, commodities) : 0
+  const lguRange = product ? getCommodityRange(product, commodities) : null
 
   const productOffers = product
     ? offers.filter((o) => o.productId === product.id)
@@ -178,12 +181,16 @@ export default function ProductDetailPage() {
               {product.name}
             </h1>
             <p className="mt-2 text-3xl font-bold text-primary">
-              {formatPeso(standardPrice)}
+              {formatPeso(vendorPrice)}
               <span className="ml-1 text-base font-medium text-muted">
-                /{product.unit}
+                /{product.unit === 'piece' ? 'pcs' : product.unit}
               </span>
             </p>
-            <p className="mt-1 text-xs font-medium text-muted">LGU standard price</p>
+            {lguRange ? (
+              <p className="mt-1 text-xs font-medium text-muted">
+                LGU range {formatPeso(lguRange.min)}–{formatPeso(lguRange.max)}
+              </p>
+            ) : null}
             <p className="mt-1 text-[11px] italic text-muted">{PRICE_DISCLAIMER}</p>
           </div>
 
@@ -271,7 +278,7 @@ export default function ProductDetailPage() {
                       step={0.01}
                       value={offerPrice}
                       onChange={(e) => setOfferPrice(e.target.value)}
-                      placeholder={`Less than ${formatPeso(standardPrice)}`}
+                      placeholder={`Less than ${formatPeso(vendorPrice)}`}
                       required
                     />
                   </div>
@@ -426,13 +433,6 @@ export default function ProductDetailPage() {
         </section>
       )}
 
-      <VendorConflictDialog
-        open={conflictOpen}
-        currentVendorName={currentVendorName}
-        newVendorName={newVendorName}
-        onKeep={keepCurrentCart}
-        onReplace={replaceCart}
-      />
     </div>
   )
 }

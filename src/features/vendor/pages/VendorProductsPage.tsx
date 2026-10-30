@@ -39,10 +39,14 @@ import { EmptyState } from '@/components/shared/EmptyState'
 import { useDemoSessionStore } from '@/stores/demo-session-store'
 import { useProductStore } from '@/stores/product-store'
 import { useCommodityStore } from '@/stores/commodity-store'
-import { getStandardPrice } from '@/lib/pricing'
-import { PRICE_DISCLAIMER } from '@/constants'
+import {
+  getCommodityRange,
+  getPriceRangeMessage,
+  getVendorPrice,
+} from '@/lib/pricing'
+import { PRICE_DISCLAIMER, VENDOR_STOCK_UNITS } from '@/constants'
 import { formatPeso } from '@/lib/utils'
-import type { Product, ProductFormInput } from '@/types'
+import type { Product, ProductFormInput, ProductUnit } from '@/types'
 
 const EMPTY_FORM: ProductFormInput = {
   commodityId: '',
@@ -50,6 +54,7 @@ const EMPTY_FORM: ProductFormInput = {
   description: '',
   category: 'Vegetables',
   unit: 'kg',
+  vendorPrice: 0,
   stock: 0,
   imageUrl: '',
   isAvailable: true,
@@ -59,17 +64,43 @@ interface FormErrors {
   commodityId?: string
   description?: string
   stock?: string
+  vendorPrice?: string
+  unit?: string
 }
 
-function validateForm(form: ProductFormInput): FormErrors {
+function validateForm(
+  form: ProductFormInput,
+  commodity: { priceMin: number; priceMax: number; name: string } | undefined,
+): FormErrors {
   const errors: FormErrors = {}
   if (!form.commodityId) errors.commodityId = 'Select a commodity'
   if (form.stock < 0) errors.stock = 'Stock cannot be negative'
+  if (!VENDOR_STOCK_UNITS.includes(form.unit as 'kg' | 'piece')) {
+    errors.unit = 'Unit must be kg or pcs'
+  }
+  if (commodity) {
+    const rangeMsg = getPriceRangeMessage(form.vendorPrice, commodity)
+    if (rangeMsg) errors.vendorPrice = rangeMsg
+  } else if (!Number.isFinite(form.vendorPrice) || form.vendorPrice <= 0) {
+    errors.vendorPrice = 'Enter a valid price.'
+  }
   return errors
 }
 
 function hasErrors(errors: FormErrors): boolean {
   return Object.keys(errors).length > 0
+}
+
+function formatUnitLabel(unit: ProductUnit): string {
+  return unit === 'piece' ? 'pcs' : unit
+}
+
+function formatLguRange(
+  min: number,
+  max: number,
+  unit: ProductUnit,
+): string {
+  return `${formatPeso(min)}–${formatPeso(max)}/${formatUnitLabel(unit)}`
 }
 
 export default function VendorProductsPage() {
@@ -109,6 +140,7 @@ export default function VendorProductsPage() {
       description: product.description,
       category: product.category,
       unit: product.unit,
+      vendorPrice: product.vendorPrice,
       stock: product.stock,
       imageUrl: product.imageUrl,
       isAvailable: product.isAvailable,
@@ -128,21 +160,33 @@ export default function VendorProductsPage() {
   const selectCommodity = (commodityId: string) => {
     const commodity = activeCommodities.find((c) => c.id === commodityId)
     if (commodity) {
+      const defaultUnit = VENDOR_STOCK_UNITS.includes(
+        commodity.unit as 'kg' | 'piece',
+      )
+        ? commodity.unit
+        : 'kg'
       setForm((prev) => ({
         ...prev,
         commodityId: commodity.id,
         name: commodity.name,
         description: prev.description || commodity.description,
         category: commodity.category,
-        unit: commodity.unit,
+        unit: defaultUnit,
+        vendorPrice:
+          prev.vendorPrice > 0
+            ? prev.vendorPrice
+            : Number(
+                ((commodity.priceMin + commodity.priceMax) / 2).toFixed(2),
+              ),
         imageUrl: prev.imageUrl || commodity.imageUrl,
       }))
     }
-    setErrors((prev) => ({ ...prev, commodityId: undefined }))
+    setErrors((prev) => ({ ...prev, commodityId: undefined, vendorPrice: undefined }))
   }
 
   const handleAdd = () => {
-    const validation = validateForm(form)
+    const commodity = activeCommodities.find((c) => c.id === form.commodityId)
+    const validation = validateForm(form, commodity)
     if (hasErrors(validation)) {
       setErrors(validation)
       return
@@ -152,6 +196,7 @@ export default function VendorProductsPage() {
       name: form.name.trim(),
       description: form.description.trim(),
       imageUrl: form.imageUrl.trim(),
+      vendorPrice: Number(form.vendorPrice.toFixed(2)),
     })
     setAddOpen(false)
     toast.success('Product added')
@@ -159,13 +204,16 @@ export default function VendorProductsPage() {
 
   const handleEdit = () => {
     if (!editProduct) return
-    const validation = validateForm(form)
+    const commodity = activeCommodities.find((c) => c.id === form.commodityId)
+    const validation = validateForm(form, commodity)
     if (hasErrors(validation)) {
       setErrors(validation)
       return
     }
     updateProduct(editProduct.id, {
       description: form.description.trim(),
+      unit: form.unit,
+      vendorPrice: Number(form.vendorPrice.toFixed(2)),
       stock: form.stock,
       imageUrl: form.imageUrl.trim(),
       isAvailable: form.isAvailable,
@@ -191,7 +239,9 @@ export default function VendorProductsPage() {
   const selectedCommodity = activeCommodities.find(
     (c) => c.id === form.commodityId,
   )
-  const selectedCommodityPrice = selectedCommodity?.standardPrice ?? 0
+  const livePriceMessage = selectedCommodity
+    ? getPriceRangeMessage(form.vendorPrice, selectedCommodity)
+    : null
 
   const isEditing = editProduct !== null
 
@@ -208,7 +258,7 @@ export default function VendorProductsPage() {
             <SelectContent>
               {activeCommodities.map((c) => (
                 <SelectItem key={c.id} value={c.id}>
-                  {c.name} — {formatPeso(c.standardPrice)}/{c.unit}
+                  {c.name} — {formatLguRange(c.priceMin, c.priceMax, c.unit)}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -222,9 +272,13 @@ export default function VendorProductsPage() {
                 {selectedCommodity.name}
               </p>
               <p className="text-xs text-muted">
-                LGU standard price:{' '}
+                LGU range:{' '}
                 <span className="font-bold text-primary">
-                  {formatPeso(selectedCommodityPrice)}/{selectedCommodity.unit}
+                  {formatLguRange(
+                    selectedCommodity.priceMin,
+                    selectedCommodity.priceMax,
+                    selectedCommodity.unit,
+                  )}
                 </span>
               </p>
               <p className="mt-1 text-[11px] italic text-muted">
@@ -243,9 +297,13 @@ export default function VendorProductsPage() {
             {selectedCommodity.name}
           </p>
           <p className="text-xs text-muted">
-            LGU standard price:{' '}
+            LGU range:{' '}
             <span className="font-bold text-primary">
-              {formatPeso(selectedCommodityPrice)}/{selectedCommodity.unit}
+              {formatLguRange(
+                selectedCommodity.priceMin,
+                selectedCommodity.priceMax,
+                selectedCommodity.unit,
+              )}
             </span>
           </p>
           <p className="mt-1 text-[10px] italic text-muted">{PRICE_DISCLAIMER}</p>
@@ -280,22 +338,62 @@ export default function VendorProductsPage() {
         </div>
         <div className="grid gap-1.5">
           <Label>Unit</Label>
-          <Input value={form.unit} readOnly className="bg-muted/20" />
+          <Select
+            value={form.unit}
+            onValueChange={(v) => updateField('unit', v as ProductUnit)}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {VENDOR_STOCK_UNITS.map((unit) => (
+                <SelectItem key={unit} value={unit}>
+                  {formatUnitLabel(unit)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {errors.unit ? (
+            <p className="text-xs text-red-600">{errors.unit}</p>
+          ) : null}
         </div>
       </div>
 
-      <div className="grid gap-1.5">
-        <Label htmlFor="pf-stock">Stock</Label>
-        <Input
-          id="pf-stock"
-          type="number"
-          min={0}
-          value={form.stock || ''}
-          onChange={(e) => updateField('stock', Number(e.target.value))}
-        />
-        {errors.stock ? (
-          <p className="text-xs text-red-600">{errors.stock}</p>
-        ) : null}
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-1.5">
+          <Label htmlFor="pf-price">Your price (₱)</Label>
+          <Input
+            id="pf-price"
+            type="number"
+            step="0.01"
+            min="0.01"
+            value={form.vendorPrice || ''}
+            onChange={(e) =>
+              updateField('vendorPrice', parseFloat(e.target.value) || 0)
+            }
+          />
+          {livePriceMessage ? (
+            <p className="text-xs text-amber-700">{livePriceMessage}</p>
+          ) : selectedCommodity && form.vendorPrice > 0 ? (
+            <p className="text-xs text-emerald-700">Within the LGU range.</p>
+          ) : null}
+          {errors.vendorPrice ? (
+            <p className="text-xs text-red-600">{errors.vendorPrice}</p>
+          ) : null}
+        </div>
+        <div className="grid gap-1.5">
+          <Label htmlFor="pf-stock">Stock</Label>
+          <Input
+            id="pf-stock"
+            type="number"
+            min={0}
+            value={form.stock || ''}
+            onChange={(e) => updateField('stock', Number(e.target.value))}
+          />
+          {errors.stock ? (
+            <p className="text-xs text-red-600">{errors.stock}</p>
+          ) : null}
+        </div>
       </div>
 
       <div className="grid gap-1.5">
@@ -347,7 +445,8 @@ export default function VendorProductsPage() {
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {vendorProducts.map((product) => {
-            const stdPrice = getStandardPrice(product, commodities)
+            const vendorPrice = getVendorPrice(product, commodities)
+            const range = getCommodityRange(product, commodities)
             return (
               <Card key={product.id} className="flex flex-col overflow-hidden">
                 <ProductImage
@@ -377,9 +476,14 @@ export default function VendorProductsPage() {
                   <div className="mt-auto flex items-center justify-between pt-2 text-sm">
                     <div>
                       <span className="font-bold text-primary-deep">
-                        {formatPeso(stdPrice)}/{product.unit}
+                        {formatPeso(vendorPrice)}/
+                        {formatUnitLabel(product.unit)}
                       </span>
-                      <span className="ml-1 text-[10px] text-muted">LGU price</span>
+                      {range ? (
+                        <p className="text-[10px] text-muted">
+                          LGU {formatPeso(range.min)}–{formatPeso(range.max)}
+                        </p>
+                      ) : null}
                     </div>
                     <span className="text-muted">
                       Stock: {product.stock}

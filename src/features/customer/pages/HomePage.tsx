@@ -17,7 +17,6 @@ import {
 import { BRAND_NAME, BRAND_TAGLINE, CATEGORIES, CATEGORY_ICONS } from '@/constants'
 import { Button } from '@/components/ui/button'
 import { ProductCard } from '@/components/shared/ProductCard'
-import { VendorConflictDialog } from '@/components/shared/VendorConflictDialog'
 import { ProductImage } from '@/components/shared/ProductImage'
 import { useProductStore } from '@/stores/product-store'
 import { useVendorStore } from '@/stores/vendor-store'
@@ -47,8 +46,7 @@ function getCategoryIcon(category: ProductCategory) {
 export default function HomePage() {
   const products = useProductStore((s) => s.products)
   const vendors = useVendorStore((s) => s.vendors)
-  const { addToCart, conflictOpen, currentVendorName, newVendorName, keepCurrentCart, replaceCart } =
-    useAddToCart()
+  const { addToCart } = useAddToCart()
 
   const activeProducts = products.filter((p) => !p.isArchived && p.isAvailable)
   const featuredProducts = activeProducts.filter((p) => p.isFeatured).slice(0, 4)
@@ -277,13 +275,6 @@ export default function HomePage() {
         </section>
       )}
 
-      <VendorConflictDialog
-        open={conflictOpen}
-        currentVendorName={currentVendorName}
-        newVendorName={newVendorName}
-        onKeep={keepCurrentCart}
-        onReplace={replaceCart}
-      />
     </>
   )
 }

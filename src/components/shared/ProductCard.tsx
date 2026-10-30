@@ -3,7 +3,7 @@ import { Plus } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { ProductImage } from '@/components/shared/ProductImage'
-import { getStandardPrice } from '@/lib/pricing'
+import { getCommodityRange, getVendorPrice } from '@/lib/pricing'
 import { isVendorAcceptingOrders } from '@/lib/vendor-hours'
 import { useCommodityStore } from '@/stores/commodity-store'
 import { formatPeso } from '@/lib/utils'
@@ -17,7 +17,8 @@ interface ProductCardProps {
 
 export function ProductCard({ product, vendor, onAdd }: ProductCardProps) {
   const commodities = useCommodityStore((s) => s.commodities)
-  const standardPrice = getStandardPrice(product, commodities)
+  const vendorPrice = getVendorPrice(product, commodities)
+  const range = getCommodityRange(product, commodities)
   const vendorClosed = vendor ? !isVendorAcceptingOrders(vendor) : false
   const unavailable =
     !product.isAvailable || product.stock <= 0 || vendorClosed
@@ -45,10 +46,14 @@ export function ProductCard({ product, vendor, onAdd }: ProductCardProps) {
         </div>
         <div>
           <p className="text-base font-bold text-primary">
-            {formatPeso(standardPrice)}
-            <span className="ml-1 text-xs font-medium text-muted">/{product.unit}</span>
+            {formatPeso(vendorPrice)}
+            <span className="ml-1 text-xs font-medium text-muted">/{product.unit === 'piece' ? 'pcs' : product.unit}</span>
           </p>
-          <p className="text-[10px] font-medium text-muted">LGU price</p>
+          {range ? (
+            <p className="text-[10px] font-medium text-muted">
+              LGU {formatPeso(range.min)}–{formatPeso(range.max)}
+            </p>
+          ) : null}
         </div>
         {vendor ? (
           <Link

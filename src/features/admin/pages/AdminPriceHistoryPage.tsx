@@ -4,6 +4,10 @@ import { EmptyState } from '@/components/shared/EmptyState'
 import { useCommodityStore } from '@/stores/commodity-store'
 import { formatPeso, formatDateTime } from '@/lib/utils'
 
+function formatRange(min: number, max: number): string {
+  return `${formatPeso(min)}–${formatPeso(max)}`
+}
+
 export default function AdminPriceHistoryPage() {
   const priceHistory = useCommodityStore((s) => s.priceHistory)
   const commodities = useCommodityStore((s) => s.commodities)
@@ -18,7 +22,7 @@ export default function AdminPriceHistoryPage() {
           Price History
         </h1>
         <p className="mt-1 text-sm text-muted">
-          Chronological log of all LGU standard-price updates (newest first)
+          Chronological log of all LGU price-range updates (newest first)
         </p>
       </div>
 
@@ -26,7 +30,7 @@ export default function AdminPriceHistoryPage() {
         <EmptyState
           icon={History}
           title="No price changes yet"
-          description="Price history entries will appear here when commodity standard prices are updated."
+          description="Price history entries will appear here when commodity price ranges are updated."
         />
       ) : (
         <div className="space-y-3">
@@ -42,11 +46,11 @@ export default function AdminPriceHistoryPage() {
                   </p>
                   <div className="flex flex-wrap items-center gap-2 text-sm">
                     <span className="text-muted line-through">
-                      {formatPeso(entry.previousPrice)}
+                      {formatRange(entry.previousPriceMin, entry.previousPriceMax)}
                     </span>
                     <span className="text-primary">→</span>
                     <span className="font-bold text-primary">
-                      {formatPeso(entry.newPrice)}
+                      {formatRange(entry.newPriceMin, entry.newPriceMax)}
                     </span>
                   </div>
                   {entry.note && (

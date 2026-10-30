@@ -8,7 +8,8 @@ export const seedCommodities: Commodity[] = [
     description: 'Ripe red tomatoes ideal for sinigang, salads, and sawsawan.',
     category: 'Vegetables',
     unit: 'kg',
-    standardPrice: 80,
+    priceMin: 68,
+    priceMax: 92,
     imageUrl: 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?auto=format&fit=crop&w=800&q=80',
     effectiveFrom: '2026-01-01T00:00:00.000Z',
     isActive: true
@@ -19,7 +20,8 @@ export const seedCommodities: Commodity[] = [
     description: 'Long purple eggplant for tortang talong and pinakbet.',
     category: 'Vegetables',
     unit: 'kg',
-    standardPrice: 70,
+    priceMin: 60,
+    priceMax: 81,
     imageUrl: 'https://images.unsplash.com/photo-1683543122945-513029986574?auto=format&fit=crop&w=800&q=80',
     effectiveFrom: '2026-01-01T00:00:00.000Z',
     isActive: true
@@ -30,7 +32,8 @@ export const seedCommodities: Commodity[] = [
     description: 'Fresh string beans bundled for ginisang sitaw and pinakbet.',
     category: 'Vegetables',
     unit: 'bundle',
-    standardPrice: 35,
+    priceMin: 30,
+    priceMax: 40,
     imageUrl: 'https://images.pexels.com/photos/5352037/pexels-photo-5352037.jpeg?auto=compress&cs=tinysrgb&w=800',
     effectiveFrom: '2026-01-01T00:00:00.000Z',
     isActive: true
@@ -41,7 +44,8 @@ export const seedCommodities: Commodity[] = [
     description: 'Sweet squash wedges ready for ginataang kalabasa.',
     category: 'Vegetables',
     unit: 'kg',
-    standardPrice: 55,
+    priceMin: 47,
+    priceMax: 63,
     imageUrl: 'https://images.unsplash.com/photo-1570586437263-ab629fccc818?auto=format&fit=crop&w=800&q=80',
     effectiveFrom: '2026-01-01T00:00:00.000Z',
     isActive: true
@@ -52,7 +56,8 @@ export const seedCommodities: Commodity[] = [
     description: 'Crisp pechay leaves for soups and stir-fries.',
     category: 'Vegetables',
     unit: 'bundle',
-    standardPrice: 30,
+    priceMin: 26,
+    priceMax: 35,
     imageUrl: 'https://images.pexels.com/photos/7225723/pexels-photo-7225723.jpeg?auto=compress&cs=tinysrgb&w=800',
     effectiveFrom: '2026-01-01T00:00:00.000Z',
     isActive: true
@@ -63,7 +68,8 @@ export const seedCommodities: Commodity[] = [
     description: 'Red onions for everyday saute bases and sawsawan.',
     category: 'Vegetables',
     unit: 'kg',
-    standardPrice: 90,
+    priceMin: 77,
+    priceMax: 103,
     imageUrl: 'https://images.unsplash.com/photo-1618512496248-a07fe83aa8cb?auto=format&fit=crop&w=800&q=80',
     effectiveFrom: '2026-01-01T00:00:00.000Z',
     isActive: true
@@ -74,7 +80,8 @@ export const seedCommodities: Commodity[] = [
     description: 'Aromatic garlic bulbs for Filipino home cooking.',
     category: 'Spices and Condiments',
     unit: 'kg',
-    standardPrice: 140,
+    priceMin: 119,
+    priceMax: 161,
     imageUrl: 'https://images.pexels.com/photos/2920402/pexels-photo-2920402.jpeg?auto=compress&cs=tinysrgb&w=800',
     effectiveFrom: '2026-01-01T00:00:00.000Z',
     isActive: true
@@ -85,7 +92,8 @@ export const seedCommodities: Commodity[] = [
     description: 'Firm potatoes for adobo, stews, and fritters.',
     category: 'Vegetables',
     unit: 'kg',
-    standardPrice: 75,
+    priceMin: 64,
+    priceMax: 86,
     imageUrl: 'https://images.unsplash.com/photo-1518977676601-b53f82aba655?auto=format&fit=crop&w=800&q=80',
     effectiveFrom: '2026-01-01T00:00:00.000Z',
     isActive: true
@@ -96,7 +104,8 @@ export const seedCommodities: Commodity[] = [
     description: 'Fresh ginger root for tinola and tea.',
     category: 'Spices and Condiments',
     unit: 'kg',
-    standardPrice: 120,
+    priceMin: 102,
+    priceMax: 138,
     imageUrl: 'https://images.pexels.com/photos/5621247/pexels-photo-5621247.jpeg?auto=compress&cs=tinysrgb&w=800',
     effectiveFrom: '2026-01-01T00:00:00.000Z',
     isActive: true
@@ -107,7 +116,8 @@ export const seedCommodities: Commodity[] = [
     description: 'Milkfish, cleaned and ready for frying or sinigang.',
     category: 'Seafood',
     unit: 'kg',
-    standardPrice: 220,
+    priceMin: 187,
+    priceMax: 253,
     imageUrl: 'https://images.pexels.com/photos/14062103/pexels-photo-14062103.jpeg?auto=compress&cs=tinysrgb&w=800',
     effectiveFrom: '2026-01-01T00:00:00.000Z',
     isActive: true
@@ -118,7 +128,8 @@ export const seedCommodities: Commodity[] = [
     description: 'Fresh tilapia suitable for grilling or frying.',
     category: 'Seafood',
     unit: 'kg',
-    standardPrice: 160,
+    priceMin: 136,
+    priceMax: 184,
     imageUrl: 'https://images.pexels.com/photos/8351647/pexels-photo-8351647.jpeg?auto=compress&cs=tinysrgb&w=800',
     effectiveFrom: '2026-01-01T00:00:00.000Z',
     isActive: true
@@ -129,7 +140,8 @@ export const seedCommodities: Commodity[] = [
     description: 'Everyday round scad — a classic Filipino market favorite.',
     category: 'Seafood',
     unit: 'kg',
-    standardPrice: 180,
+    priceMin: 153,
+    priceMax: 207,
     imageUrl: 'https://images.pexels.com/photos/14879227/pexels-photo-14879227.jpeg?auto=compress&cs=tinysrgb&w=800',
     effectiveFrom: '2026-01-01T00:00:00.000Z',
     isActive: true
@@ -140,7 +152,8 @@ export const seedCommodities: Commodity[] = [
     description: 'Fresh shrimp for sinigang, saute, or tempura-style cooking.',
     category: 'Seafood',
     unit: 'kg',
-    standardPrice: 380,
+    priceMin: 323,
+    priceMax: 437,
     imageUrl: 'https://images.pexels.com/photos/12417979/pexels-photo-12417979.jpeg?auto=compress&cs=tinysrgb&w=800',
     effectiveFrom: '2026-01-01T00:00:00.000Z',
     isActive: true
@@ -151,7 +164,8 @@ export const seedCommodities: Commodity[] = [
     description: 'Cleaned squid for adobong pusit or grilled servings.',
     category: 'Seafood',
     unit: 'kg',
-    standardPrice: 280,
+    priceMin: 238,
+    priceMax: 322,
     imageUrl: 'https://images.pexels.com/photos/9995821/pexels-photo-9995821.jpeg?auto=compress&cs=tinysrgb&w=800',
     effectiveFrom: '2026-01-01T00:00:00.000Z',
     isActive: true
@@ -162,7 +176,8 @@ export const seedCommodities: Commodity[] = [
     description: 'Fresh mussels for soups and garlic butter dishes.',
     category: 'Seafood',
     unit: 'kg',
-    standardPrice: 120,
+    priceMin: 102,
+    priceMax: 138,
     imageUrl: 'https://images.pexels.com/photos/30910201/pexels-photo-30910201.jpeg?auto=compress&cs=tinysrgb&w=800',
     effectiveFrom: '2026-01-01T00:00:00.000Z',
     isActive: true
@@ -173,7 +188,8 @@ export const seedCommodities: Commodity[] = [
     description: 'Pork belly cuts for inihaw, sinigang, and crispy servings.',
     category: 'Meat',
     unit: 'kg',
-    standardPrice: 320,
+    priceMin: 272,
+    priceMax: 368,
     imageUrl: 'https://images.pexels.com/photos/13533543/pexels-photo-13533543.jpeg?auto=compress&cs=tinysrgb&w=800',
     effectiveFrom: '2026-01-01T00:00:00.000Z',
     isActive: true
@@ -184,7 +200,8 @@ export const seedCommodities: Commodity[] = [
     description: 'Pork shoulder ideal for adobo and stews.',
     category: 'Meat',
     unit: 'kg',
-    standardPrice: 290,
+    priceMin: 247,
+    priceMax: 334,
     imageUrl: 'https://images.pexels.com/photos/14427760/pexels-photo-14427760.jpeg?auto=compress&cs=tinysrgb&w=800',
     effectiveFrom: '2026-01-01T00:00:00.000Z',
     isActive: true
@@ -195,7 +212,8 @@ export const seedCommodities: Commodity[] = [
     description: 'Bone-in pork chops ready for frying or grilling.',
     category: 'Meat',
     unit: 'kg',
-    standardPrice: 310,
+    priceMin: 264,
+    priceMax: 357,
     imageUrl: 'https://images.pexels.com/photos/7333266/pexels-photo-7333266.jpeg?auto=compress&cs=tinysrgb&w=800',
     effectiveFrom: '2026-01-01T00:00:00.000Z',
     isActive: true
@@ -206,7 +224,8 @@ export const seedCommodities: Commodity[] = [
     description: 'Ground pork for embutido, lumpia, and saute dishes.',
     category: 'Meat',
     unit: 'kg',
-    standardPrice: 280,
+    priceMin: 238,
+    priceMax: 322,
     imageUrl: 'https://images.pexels.com/photos/7225724/pexels-photo-7225724.jpeg?auto=compress&cs=tinysrgb&w=800',
     effectiveFrom: '2026-01-01T00:00:00.000Z',
     isActive: true
@@ -217,7 +236,8 @@ export const seedCommodities: Commodity[] = [
     description: 'Beef shank perfect for bulalo and nilaga.',
     category: 'Meat',
     unit: 'kg',
-    standardPrice: 420,
+    priceMin: 357,
+    priceMax: 483,
     imageUrl: 'https://images.pexels.com/photos/618775/pexels-photo-618775.jpeg?auto=compress&cs=tinysrgb&w=800',
     effectiveFrom: '2026-01-01T00:00:00.000Z',
     isActive: true
@@ -228,7 +248,8 @@ export const seedCommodities: Commodity[] = [
     description: 'Sweet lakatan bananas for merienda and desserts.',
     category: 'Fruits',
     unit: 'kg',
-    standardPrice: 80,
+    priceMin: 68,
+    priceMax: 92,
     imageUrl: 'https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?auto=format&fit=crop&w=800&q=80',
     effectiveFrom: '2026-01-01T00:00:00.000Z',
     isActive: true
@@ -239,7 +260,8 @@ export const seedCommodities: Commodity[] = [
     description: 'Ripe Philippine mangoes — demo seasonal selection.',
     category: 'Fruits',
     unit: 'kg',
-    standardPrice: 160,
+    priceMin: 136,
+    priceMax: 184,
     imageUrl: 'https://images.unsplash.com/photo-1553279768-865429fa0078?auto=format&fit=crop&w=800&q=80',
     effectiveFrom: '2026-01-01T00:00:00.000Z',
     isActive: true
@@ -250,7 +272,8 @@ export const seedCommodities: Commodity[] = [
     description: 'Tart calamansi for juice, marinades, and dipping sauces.',
     category: 'Fruits',
     unit: 'kg',
-    standardPrice: 60,
+    priceMin: 51,
+    priceMax: 69,
     imageUrl: 'https://images.pexels.com/photos/2363347/pexels-photo-2363347.jpeg?auto=compress&cs=tinysrgb&w=800',
     effectiveFrom: '2026-01-01T00:00:00.000Z',
     isActive: true
@@ -261,7 +284,8 @@ export const seedCommodities: Commodity[] = [
     description: 'Whole pineapple with sweet tropical aroma.',
     category: 'Fruits',
     unit: 'piece',
-    standardPrice: 70,
+    priceMin: 60,
+    priceMax: 81,
     imageUrl: 'https://images.unsplash.com/photo-1550258987-190a2d41a8ba?auto=format&fit=crop&w=800&q=80',
     effectiveFrom: '2026-01-01T00:00:00.000Z',
     isActive: true
@@ -272,7 +296,8 @@ export const seedCommodities: Commodity[] = [
     description: 'Ripe papaya for breakfast bowls and desserts.',
     category: 'Fruits',
     unit: 'kg',
-    standardPrice: 55,
+    priceMin: 47,
+    priceMax: 63,
     imageUrl: 'https://images.unsplash.com/photo-1526318472351-c75fcf070305?auto=format&fit=crop&w=800&q=80',
     effectiveFrom: '2026-01-01T00:00:00.000Z',
     isActive: true
@@ -283,7 +308,8 @@ export const seedCommodities: Commodity[] = [
     description: 'Creamy avocados for shakes and snacks.',
     category: 'Fruits',
     unit: 'kg',
-    standardPrice: 150,
+    priceMin: 128,
+    priceMax: 173,
     imageUrl: 'https://images.pexels.com/photos/557659/pexels-photo-557659.jpeg?auto=compress&cs=tinysrgb&w=800',
     effectiveFrom: '2026-01-01T00:00:00.000Z',
     isActive: true
@@ -294,7 +320,8 @@ export const seedCommodities: Commodity[] = [
     description: 'Whole dressed chicken for tinola, adobo, and roasting.',
     category: 'Poultry',
     unit: 'kg',
-    standardPrice: 190,
+    priceMin: 162,
+    priceMax: 218,
     imageUrl: 'https://images.unsplash.com/photo-1587593810167-a84920ea0781?auto=format&fit=crop&w=800&q=80',
     effectiveFrom: '2026-01-01T00:00:00.000Z',
     isActive: true
@@ -305,7 +332,8 @@ export const seedCommodities: Commodity[] = [
     description: 'Boneless chicken thighs for grilling and stews.',
     category: 'Poultry',
     unit: 'kg',
-    standardPrice: 230,
+    priceMin: 196,
+    priceMax: 265,
     imageUrl: 'https://images.pexels.com/photos/5769377/pexels-photo-5769377.jpeg?auto=compress&cs=tinysrgb&w=800',
     effectiveFrom: '2026-01-01T00:00:00.000Z',
     isActive: true
@@ -316,7 +344,8 @@ export const seedCommodities: Commodity[] = [
     description: 'Fresh chicken eggs packed by the tray.',
     category: 'Eggs and Dairy',
     unit: 'tray',
-    standardPrice: 220,
+    priceMin: 187,
+    priceMax: 253,
     imageUrl: 'https://images.pexels.com/photos/6294169/pexels-photo-6294169.jpeg?auto=compress&cs=tinysrgb&w=800',
     effectiveFrom: '2026-01-01T00:00:00.000Z',
     isActive: true
@@ -327,7 +356,8 @@ export const seedCommodities: Commodity[] = [
     description: 'Quail eggs for snacks and street-food style dishes.',
     category: 'Eggs and Dairy',
     unit: 'pack',
-    standardPrice: 90,
+    priceMin: 77,
+    priceMax: 103,
     imageUrl: 'https://images.pexels.com/photos/6294236/pexels-photo-6294236.jpeg?auto=compress&cs=tinysrgb&w=800',
     effectiveFrom: '2026-01-01T00:00:00.000Z',
     isActive: true
@@ -338,7 +368,8 @@ export const seedCommodities: Commodity[] = [
     description: 'Everyday table rice — demo packaging and pricing.',
     category: 'Rice and Grains',
     unit: 'kg',
-    standardPrice: 58,
+    priceMin: 49,
+    priceMax: 67,
     imageUrl: 'https://images.unsplash.com/photo-1586201375761-83865001e31c?auto=format&fit=crop&w=800&q=80',
     effectiveFrom: '2026-01-01T00:00:00.000Z',
     isActive: true
@@ -349,7 +380,8 @@ export const seedCommodities: Commodity[] = [
     description: 'Glutinous rice for suman, biko, and kakanin.',
     category: 'Rice and Grains',
     unit: 'kg',
-    standardPrice: 75,
+    priceMin: 64,
+    priceMax: 86,
     imageUrl: 'https://images.pexels.com/photos/4110255/pexels-photo-4110255.jpeg?auto=compress&cs=tinysrgb&w=800',
     effectiveFrom: '2026-01-01T00:00:00.000Z',
     isActive: true
@@ -360,7 +392,8 @@ export const seedCommodities: Commodity[] = [
     description: 'Mung beans for classic ginisang monggo.',
     category: 'Rice and Grains',
     unit: 'kg',
-    standardPrice: 95,
+    priceMin: 81,
+    priceMax: 109,
     imageUrl: 'https://images.pexels.com/photos/7420815/pexels-photo-7420815.jpeg?auto=compress&cs=tinysrgb&w=800',
     effectiveFrom: '2026-01-01T00:00:00.000Z',
     isActive: true
@@ -371,7 +404,8 @@ export const seedCommodities: Commodity[] = [
     description: 'White sugar pack for household cooking and drinks.',
     category: 'Spices and Condiments',
     unit: 'kg',
-    standardPrice: 65,
+    priceMin: 55,
+    priceMax: 75,
     imageUrl: 'https://images.pexels.com/photos/37105582/pexels-photo-37105582.jpeg?auto=compress&cs=tinysrgb&w=800',
     effectiveFrom: '2026-01-01T00:00:00.000Z',
     isActive: true
@@ -382,7 +416,8 @@ export const seedCommodities: Commodity[] = [
     description: 'Iodized table salt for everyday seasoning.',
     category: 'Spices and Condiments',
     unit: 'pack',
-    standardPrice: 25,
+    priceMin: 21,
+    priceMax: 29,
     imageUrl: 'https://images.pexels.com/photos/3693292/pexels-photo-3693292.jpeg?auto=compress&cs=tinysrgb&w=800',
     effectiveFrom: '2026-01-01T00:00:00.000Z',
     isActive: true
@@ -393,7 +428,8 @@ export const seedCommodities: Commodity[] = [
     description: 'Soy sauce bottle pack for marinades and dipping.',
     category: 'Spices and Condiments',
     unit: 'pack',
-    standardPrice: 45,
+    priceMin: 38,
+    priceMax: 52,
     imageUrl: 'https://images.pexels.com/photos/19730266/pexels-photo-19730266.jpeg?auto=compress&cs=tinysrgb&w=800',
     effectiveFrom: '2026-01-01T00:00:00.000Z',
     isActive: true

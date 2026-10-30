@@ -14,7 +14,6 @@ import {
 import { ProductCard } from '@/components/shared/ProductCard'
 import { ProductImage } from '@/components/shared/ProductImage'
 import { EmptyState } from '@/components/shared/EmptyState'
-import { VendorConflictDialog } from '@/components/shared/VendorConflictDialog'
 import { useProductStore } from '@/stores/product-store'
 import { useVendorStore } from '@/stores/vendor-store'
 import { useAddToCart } from '@/hooks/useAddToCart'
@@ -27,8 +26,7 @@ export default function VendorStorePage() {
   const { vendorId } = useParams<{ vendorId: string }>()
   const vendors = useVendorStore((s) => s.vendors)
   const products = useProductStore((s) => s.products)
-  const { addToCart, conflictOpen, currentVendorName, newVendorName, keepCurrentCart, replaceCart } =
-    useAddToCart()
+  const { addToCart } = useAddToCart()
 
   const [search, setSearch] = useState('')
   const [category, setCategory] = useState('')
@@ -172,13 +170,6 @@ export default function VendorStorePage() {
         )}
       </div>
 
-      <VendorConflictDialog
-        open={conflictOpen}
-        currentVendorName={currentVendorName}
-        newVendorName={newVendorName}
-        onKeep={keepCurrentCart}
-        onReplace={replaceCart}
-      />
     </div>
   )
 }

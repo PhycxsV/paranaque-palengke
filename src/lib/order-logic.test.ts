@@ -17,7 +17,8 @@ const commodities: Commodity[] = [
     description: 'Tomatoes',
     category: 'Vegetables',
     unit: 'kg',
-    standardPrice: 80,
+    priceMin: 70,
+    priceMax: 90,
     imageUrl: 'https://example.com/kamatis.jpg',
     effectiveFrom: '2026-01-01T00:00:00.000Z',
     isActive: true,
@@ -33,6 +34,7 @@ const products: Product[] = [
     description: 'Tomatoes',
     category: 'Vegetables',
     unit: 'kg',
+    vendorPrice: 80,
     stock: 10,
     imageUrl: 'https://example.com/kamatis.jpg',
     isAvailable: true,
@@ -57,6 +59,7 @@ const acceptedOffer: Offer = {
 
 const baseOrder: Order = {
   id: 'ORD-1',
+  checkoutGroupId: 'GRP-1',
   vendorId: 'v1',
   vendorName: 'Demo Vendor',
   customerName: 'Ana',
@@ -71,7 +74,7 @@ const baseOrder: Order = {
 }
 
 describe('pricing and offers', () => {
-  it('uses LGU standard price by default', () => {
+  it('uses vendor price by default', () => {
     const priced = resolveCartUnitPrice({
       product: products[0],
       quantity: 1,
@@ -107,7 +110,12 @@ describe('pricing and offers', () => {
 describe('order and cart logic', () => {
   it('calculates cart totals with negotiated pricing', () => {
     const items: CartItem[] = [
-      { productId: 'p1', quantity: 2, acceptedOfferId: 'offer-1' },
+      {
+        productId: 'p1',
+        vendorId: 'v1',
+        quantity: 2,
+        acceptedOfferId: 'offer-1',
+      },
     ]
     expect(calculateCartTotal(items, products, commodities, [acceptedOffer])).toBe(
       140,
@@ -116,7 +124,14 @@ describe('order and cart logic', () => {
 
   it('builds order snapshots with pricing source', () => {
     const snapshots = buildOrderSnapshots(
-      [{ productId: 'p1', quantity: 2, acceptedOfferId: 'offer-1' }],
+      [
+        {
+          productId: 'p1',
+          vendorId: 'v1',
+          quantity: 2,
+          acceptedOfferId: 'offer-1',
+        },
+      ],
       products,
       commodities,
       [acceptedOffer],
@@ -131,7 +146,14 @@ describe('order and cart logic', () => {
 
   it('rejects invalid offer-linked quantities', () => {
     const result = validateCartAgainstStock(
-      [{ productId: 'p1', quantity: 5, acceptedOfferId: 'offer-1' }],
+      [
+        {
+          productId: 'p1',
+          vendorId: 'v1',
+          quantity: 5,
+          acceptedOfferId: 'offer-1',
+        },
+      ],
       products,
       [acceptedOffer],
     )

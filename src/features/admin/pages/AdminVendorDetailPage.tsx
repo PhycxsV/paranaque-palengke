@@ -54,8 +54,11 @@ export default function AdminVendorDetailPage() {
     (o) => o.vendorId === vendor.id,
   ).length
 
-  const getCommodityPrice = (commodityId: string) =>
-    commodities.find((c) => c.id === commodityId)?.standardPrice
+  const getCommodityRange = (commodityId: string) => {
+    const commodity = commodities.find((c) => c.id === commodityId)
+    if (!commodity) return null
+    return { min: commodity.priceMin, max: commodity.priceMax }
+  }
 
   return (
     <div className="space-y-6">
@@ -137,7 +140,10 @@ export default function AdminVendorDetailPage() {
                     Category
                   </th>
                   <th className="whitespace-nowrap px-4 py-3 text-right font-semibold text-primary-deep">
-                    LGU Price
+                    Vendor Price
+                  </th>
+                  <th className="whitespace-nowrap px-4 py-3 text-right font-semibold text-primary-deep">
+                    LGU Range
                   </th>
                   <th className="whitespace-nowrap px-4 py-3 text-right font-semibold text-primary-deep">
                     Stock
@@ -149,7 +155,7 @@ export default function AdminVendorDetailPage() {
               </thead>
               <tbody>
                 {vendorProducts.map((p) => {
-                  const lguPrice = getCommodityPrice(p.commodityId)
+                  const range = getCommodityRange(p.commodityId)
                   return (
                     <tr
                       key={p.id}
@@ -160,7 +166,12 @@ export default function AdminVendorDetailPage() {
                         <Badge variant="secondary">{p.category}</Badge>
                       </td>
                       <td className="whitespace-nowrap px-4 py-3 text-right font-bold text-primary-deep">
-                        {lguPrice != null ? formatPeso(lguPrice) : '—'}
+                        {formatPeso(p.vendorPrice)}
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-3 text-right text-muted">
+                        {range
+                          ? `${formatPeso(range.min)}–${formatPeso(range.max)}`
+                          : '—'}
                       </td>
                       <td className="whitespace-nowrap px-4 py-3 text-right">
                         {p.stock}

@@ -11,6 +11,7 @@ import VendorStorePage from '@/features/customer/pages/VendorStorePage'
 import CartPage from '@/features/customer/pages/CartPage'
 import CheckoutPage from '@/features/customer/pages/CheckoutPage'
 import PaymentPage from '@/features/customer/pages/PaymentPage'
+import PaymentGroupPage from '@/features/customer/pages/PaymentGroupPage'
 import OrdersPage from '@/features/customer/pages/OrdersPage'
 import OrderDetailPage from '@/features/customer/pages/OrderDetailPage'
 import CustomerOffersPage from '@/features/customer/pages/CustomerOffersPage'
@@ -42,6 +43,7 @@ export default function App() {
           <Route path="stores/:vendorId" element={<VendorStorePage />} />
           <Route path="cart" element={<CartPage />} />
           <Route path="checkout" element={<CheckoutPage />} />
+          <Route path="payment/group/:groupId" element={<PaymentGroupPage />} />
           <Route path="payment/:orderId" element={<PaymentPage />} />
           <Route path="orders" element={<OrdersPage />} />
           <Route path="orders/:orderId" element={<OrderDetailPage />} />

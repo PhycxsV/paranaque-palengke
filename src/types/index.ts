@@ -33,9 +33,12 @@ export interface Commodity {
   name: string
   description: string
   category: ProductCategory
+  /** Suggested default unit — vendors may override with kg or piece. */
   unit: ProductUnit
-  /** Illustrative LGU demo standard price — not an official market rate. */
-  standardPrice: number
+  /** LGU guidance — lowest allowed vendor-declared price. */
+  priceMin: number
+  /** LGU guidance — highest allowed vendor-declared price. */
+  priceMax: number
   imageUrl: string
   effectiveFrom: string
   isActive: boolean
@@ -44,8 +47,10 @@ export interface Commodity {
 export interface PriceHistoryEntry {
   id: string
   commodityId: string
-  previousPrice: number
-  newPrice: number
+  previousPriceMin: number
+  previousPriceMax: number
+  newPriceMin: number
+  newPriceMax: number
   effectiveFrom: string
   changedAt: string
   note?: string
@@ -67,7 +72,7 @@ export interface Vendor {
   demoQrLabel: string
 }
 
-/** Vendor listing of an LGU commodity. Base price comes from the commodity. */
+/** Vendor listing of an LGU commodity. Selling price is vendor-declared within range. */
 export interface Product {
   id: string
   vendorId: string
@@ -76,6 +81,8 @@ export interface Product {
   description: string
   category: ProductCategory
   unit: ProductUnit
+  /** Vendor-declared unit price (must sit inside commodity priceMin–priceMax). */
+  vendorPrice: number
   stock: number
   imageUrl: string
   isAvailable: boolean
@@ -86,6 +93,7 @@ export interface Product {
 
 export interface CartItem {
   productId: string
+  vendorId: string
   quantity: number
   /** When set, checkout uses the negotiated unit price from this accepted offer. */
   acceptedOfferId?: string
@@ -99,7 +107,7 @@ export interface Offer {
   productName: string
   quantity: number
   unit: ProductUnit
-  /** LGU standard unit price when the offer was created. */
+  /** Midpoint / reference LGU range snapshot when the offer was created. */
   standardUnitPriceSnapshot: number
   proposedUnitPrice: number
   counterUnitPrice?: number
@@ -126,6 +134,8 @@ export interface OrderItemSnapshot {
 
 export interface Order {
   id: string
+  /** Shared id for all vendor orders created in one checkout. */
+  checkoutGroupId: string
   vendorId: string
   vendorName: string
   customerName: string
@@ -149,7 +159,8 @@ export interface CommodityFormInput {
   description: string
   category: ProductCategory
   unit: ProductUnit
-  standardPrice: number
+  priceMin: number
+  priceMax: number
   imageUrl: string
   isActive: boolean
 }
@@ -160,6 +171,7 @@ export interface ProductFormInput {
   description: string
   category: ProductCategory
   unit: ProductUnit
+  vendorPrice: number
   stock: number
   imageUrl: string
   isAvailable: boolean
@@ -172,6 +184,18 @@ export interface VendorProfileInput {
   isAvailable: boolean
   opensAt: string
   cutoffTime: string
+}
+
+export interface VendorCreateInput {
+  name: string
+  description: string
+  location: string
+  categories: ProductCategory[]
+  imageUrl: string
+  isAvailable: boolean
+  opensAt: string
+  cutoffTime: string
+  demoQrLabel: string
 }
 
 export interface CheckoutFormInput {

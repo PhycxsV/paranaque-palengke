@@ -6,7 +6,6 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { EmptyState } from '@/components/shared/EmptyState'
 import { ProductImage } from '@/components/shared/ProductImage'
-import { VendorConflictDialog } from '@/components/shared/VendorConflictDialog'
 import { useOfferStore } from '@/stores/offer-store'
 import { useProductStore } from '@/stores/product-store'
 import { useVendorStore } from '@/stores/vendor-store'
@@ -34,8 +33,7 @@ export default function CustomerOffersPage() {
   const declineCounter = useOfferStore((s) => s.declineCounter)
   const products = useProductStore((s) => s.products)
   const vendors = useVendorStore((s) => s.vendors)
-  const { addToCart, conflictOpen, currentVendorName, newVendorName, keepCurrentCart, replaceCart } =
-    useAddToCart()
+  const { addToCart } = useAddToCart()
 
   const [activeTab, setActiveTab] = useState<FilterTab>('all')
 
@@ -235,13 +233,6 @@ export default function CustomerOffersPage() {
         </div>
       )}
 
-      <VendorConflictDialog
-        open={conflictOpen}
-        currentVendorName={currentVendorName}
-        newVendorName={newVendorName}
-        onKeep={keepCurrentCart}
-        onReplace={replaceCart}
-      />
     </div>
   )
 }

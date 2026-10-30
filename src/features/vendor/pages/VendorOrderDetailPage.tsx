@@ -276,7 +276,12 @@ export default function VendorOrderDetailPage() {
       {/* Action buttons */}
       {canProcess ? (
         <Card>
-          <CardContent className="flex flex-wrap gap-3 p-5">
+          <CardContent className="space-y-4 p-5">
+            <p className="text-xs text-muted">
+              All vendors in this multi-vendor checkout must receive payment
+              before any vendor can confirm.
+            </p>
+            <div className="flex flex-wrap gap-3">
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button disabled={processing}>
@@ -288,8 +293,8 @@ export default function VendorOrderDetailPage() {
                 <AlertDialogHeader>
                   <AlertDialogTitle>Confirm payment?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    This will mark the order as confirmed and start Keri delivery
-                    tracking. The customer will see delivery milestones.
+                    This will mark the order as confirmed. Keri delivery starts
+                    only after every vendor in the same checkout has confirmed.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
@@ -327,6 +332,7 @@ export default function VendorOrderDetailPage() {
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
+            </div>
           </CardContent>
         </Card>
       ) : order.status !== 'confirmed' ? (

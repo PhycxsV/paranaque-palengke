@@ -11,9 +11,10 @@ interface CommodityState {
   addCommodity: (
     input: CommodityFormInput,
   ) => { ok: true; commodity: Commodity } | { ok: false; message: string }
-  updateStandardPrice: (input: {
+  updatePriceRange: (input: {
     commodityId: string
-    standardPrice: number
+    priceMin: number
+    priceMax: number
     effectiveFrom: string
     note?: string
   }) => { ok: true } | { ok: false; message: string }
@@ -33,8 +34,16 @@ export const useCommodityStore = create<CommodityState>()(
         if (!description) {
           return { ok: false, message: 'Description is required.' }
         }
-        if (!Number.isFinite(input.standardPrice) || input.standardPrice <= 0) {
-          return { ok: false, message: 'Enter a valid standard price.' }
+        if (
+          !Number.isFinite(input.priceMin) ||
+          !Number.isFinite(input.priceMax) ||
+          input.priceMin <= 0 ||
+          input.priceMax <= 0
+        ) {
+          return { ok: false, message: 'Enter a valid price range.' }
+        }
+        if (input.priceMin > input.priceMax) {
+          return { ok: false, message: 'Min price cannot exceed max price.' }
         }
         if (!imageUrl) {
           return { ok: false, message: 'Image URL is required.' }
@@ -54,7 +63,8 @@ export const useCommodityStore = create<CommodityState>()(
           description,
           category: input.category,
           unit: input.unit,
-          standardPrice: Number(input.standardPrice.toFixed(2)),
+          priceMin: Number(input.priceMin.toFixed(2)),
+          priceMax: Number(input.priceMax.toFixed(2)),
           imageUrl,
           effectiveFrom: now,
           isActive: input.isActive,
@@ -63,9 +73,23 @@ export const useCommodityStore = create<CommodityState>()(
         set({ commodities: [commodity, ...get().commodities] })
         return { ok: true, commodity }
       },
-      updateStandardPrice: ({ commodityId, standardPrice, effectiveFrom, note }) => {
-        if (!Number.isFinite(standardPrice) || standardPrice <= 0) {
-          return { ok: false, message: 'Enter a valid standard price.' }
+      updatePriceRange: ({
+        commodityId,
+        priceMin,
+        priceMax,
+        effectiveFrom,
+        note,
+      }) => {
+        if (
+          !Number.isFinite(priceMin) ||
+          !Number.isFinite(priceMax) ||
+          priceMin <= 0 ||
+          priceMax <= 0
+        ) {
+          return { ok: false, message: 'Enter a valid price range.' }
+        }
+        if (priceMin > priceMax) {
+          return { ok: false, message: 'Min price cannot exceed max price.' }
         }
         const commodity = get().commodities.find((c) => c.id === commodityId)
         if (!commodity) return { ok: false, message: 'Commodity not found.' }
@@ -73,8 +97,10 @@ export const useCommodityStore = create<CommodityState>()(
         const entry: PriceHistoryEntry = {
           id: generateId('PRICE'),
           commodityId,
-          previousPrice: commodity.standardPrice,
-          newPrice: Number(standardPrice.toFixed(2)),
+          previousPriceMin: commodity.priceMin,
+          previousPriceMax: commodity.priceMax,
+          newPriceMin: Number(priceMin.toFixed(2)),
+          newPriceMax: Number(priceMax.toFixed(2)),
           effectiveFrom,
           changedAt: new Date().toISOString(),
           note,
@@ -85,7 +111,8 @@ export const useCommodityStore = create<CommodityState>()(
             c.id === commodityId
               ? {
                   ...c,
-                  standardPrice: entry.newPrice,
+                  priceMin: entry.newPriceMin,
+                  priceMax: entry.newPriceMax,
                   effectiveFrom,
                 }
               : c,

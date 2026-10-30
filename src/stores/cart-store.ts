@@ -4,20 +4,13 @@ import { STORAGE_PREFIX } from '@/constants'
 import type { CartItem } from '@/types'
 
 interface CartState {
-  vendorId: string | null
   items: CartItem[]
   addItem: (
     vendorId: string,
     productId: string,
     quantity?: number,
     acceptedOfferId?: string,
-  ) => { ok: true } | { ok: false; conflict: true }
-  forceAddFromVendor: (
-    vendorId: string,
-    productId: string,
-    quantity?: number,
-    acceptedOfferId?: string,
-  ) => void
+  ) => { ok: true }
   removeItem: (productId: string) => void
   setQuantity: (productId: string, quantity: number) => void
   attachOffer: (productId: string, acceptedOfferId: string) => void
@@ -27,6 +20,7 @@ interface CartState {
 
 function upsertItem(
   items: CartItem[],
+  vendorId: string,
   productId: string,
   quantity: number,
   acceptedOfferId?: string,
@@ -37,42 +31,35 @@ function upsertItem(
       item.productId === productId
         ? {
             ...item,
+            vendorId,
             quantity: item.quantity + quantity,
             acceptedOfferId: acceptedOfferId ?? item.acceptedOfferId,
           }
         : item,
     )
   }
-  return [...items, { productId, quantity, acceptedOfferId }]
+  return [...items, { productId, vendorId, quantity, acceptedOfferId }]
 }
 
 export const useCartStore = create<CartState>()(
   persist(
     (set, get) => ({
-      vendorId: null,
       items: [],
       addItem: (vendorId, productId, quantity = 1, acceptedOfferId) => {
-        const state = get()
-        if (state.vendorId && state.vendorId !== vendorId && state.items.length > 0) {
-          return { ok: false, conflict: true }
-        }
         set({
-          vendorId,
-          items: upsertItem(state.items, productId, quantity, acceptedOfferId),
+          items: upsertItem(
+            get().items,
+            vendorId,
+            productId,
+            quantity,
+            acceptedOfferId,
+          ),
         })
         return { ok: true }
       },
-      forceAddFromVendor: (vendorId, productId, quantity = 1, acceptedOfferId) => {
-        set({
-          vendorId,
-          items: [{ productId, quantity, acceptedOfferId }],
-        })
-      },
       removeItem: (productId) => {
-        const items = get().items.filter((item) => item.productId !== productId)
         set({
-          items,
-          vendorId: items.length === 0 ? null : get().vendorId,
+          items: get().items.filter((item) => item.productId !== productId),
         })
       },
       setQuantity: (productId, quantity) => {
@@ -93,11 +80,19 @@ export const useCartStore = create<CartState>()(
           ),
         })
       },
-      clearCart: () => set({ vendorId: null, items: [] }),
-      resetCart: () => set({ vendorId: null, items: [] }),
+      clearCart: () => set({ items: [] }),
+      resetCart: () => set({ items: [] }),
     }),
     {
       name: `${STORAGE_PREFIX}-cart`,
+      merge: (persisted, current) => {
+        const p = persisted as Partial<CartState> & { vendorId?: string } | undefined
+        const items = (p?.items ?? current.items).map((item) => ({
+          ...item,
+          vendorId: item.vendorId ?? '',
+        }))
+        return { ...current, ...p, items }
+      },
     },
   ),
 )

@@ -6,13 +6,15 @@ import type {
   ProductUnit,
 } from '@/types'
 
-export const BRAND_NAME = 'Parañaque Palengke'
+export const BRAND_NAME = 'Palengke mo, Keri ko'
 export const BRAND_TAGLINE = 'Preskong Pamalengke, Mas Madaling Mamili.'
-export const STORAGE_PREFIX = 'paranaque-palengke-v6'
+export const STORAGE_PREFIX = 'paranaque-palengke-v7'
 export const PRICE_DISCLAIMER =
-  'Illustrative demo prices — not official Parañaque LGU market rates.'
+  'Illustrative LGU price ranges — vendors set their own price within the range.'
 /** Flat delivery fee (Keri) included in QRPH / demo QR payment total. */
 export const DELIVERY_FEE = 100
+/** Units vendors may choose when marking stock. */
+export const VENDOR_STOCK_UNITS: Array<'kg' | 'piece'> = ['kg', 'piece']
 /**
  * Tumawad / offer negotiation. Hidden for now — LGU feedback that
  * negotiated prices may destabilize controlled standard pricing.

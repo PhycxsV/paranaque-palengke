@@ -41,9 +41,14 @@ const DEFAULT_FORM: CommodityFormInput = {
   description: '',
   category: 'Vegetables',
   unit: 'kg',
-  standardPrice: 0,
+  priceMin: 0,
+  priceMax: 0,
   imageUrl: '',
   isActive: true,
+}
+
+function formatRange(min: number, max: number): string {
+  return `${formatPeso(min)}–${formatPeso(max)}`
 }
 
 function AddCommodityDialog() {
@@ -59,7 +64,8 @@ function AddCommodityDialog() {
   const handleSave = () => {
     const result = addCommodity({
       ...form,
-      standardPrice: Number(form.standardPrice),
+      priceMin: Number(form.priceMin),
+      priceMax: Number(form.priceMax),
     })
     if (result.ok) {
       toast.success(`Added commodity ${result.commodity.name}`)
@@ -81,8 +87,8 @@ function AddCommodityDialog() {
         <DialogHeader>
           <DialogTitle>Add commodity</DialogTitle>
           <DialogDescription>
-            Create an LGU-controlled commodity with a standard price. Vendors can
-            then list products against it.
+            Create an LGU-controlled commodity with a price range. Vendors set
+            their own price within that range.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-2">
@@ -149,21 +155,39 @@ function AddCommodityDialog() {
               </Select>
             </div>
           </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="add-price">Standard price (₱)</Label>
-            <Input
-              id="add-price"
-              type="number"
-              step="0.01"
-              min="0.01"
-              value={form.standardPrice || ''}
-              onChange={(e) =>
-                setForm((f) => ({
-                  ...f,
-                  standardPrice: parseFloat(e.target.value) || 0,
-                }))
-              }
-            />
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="add-price-min">Price min (₱)</Label>
+              <Input
+                id="add-price-min"
+                type="number"
+                step="0.01"
+                min="0.01"
+                value={form.priceMin || ''}
+                onChange={(e) =>
+                  setForm((f) => ({
+                    ...f,
+                    priceMin: parseFloat(e.target.value) || 0,
+                  }))
+                }
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="add-price-max">Price max (₱)</Label>
+              <Input
+                id="add-price-max"
+                type="number"
+                step="0.01"
+                min="0.01"
+                value={form.priceMax || ''}
+                onChange={(e) =>
+                  setForm((f) => ({
+                    ...f,
+                    priceMax: parseFloat(e.target.value) || 0,
+                  }))
+                }
+              />
+            </div>
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="add-image">Image URL</Label>
@@ -199,15 +223,17 @@ function AddCommodityDialog() {
 }
 
 function EditPriceDialog({ commodity }: { commodity: Commodity }) {
-  const updateStandardPrice = useCommodityStore((s) => s.updateStandardPrice)
+  const updatePriceRange = useCommodityStore((s) => s.updatePriceRange)
   const [open, setOpen] = useState(false)
-  const [price, setPrice] = useState('')
+  const [priceMin, setPriceMin] = useState('')
+  const [priceMax, setPriceMax] = useState('')
   const [effectiveFrom, setEffectiveFrom] = useState('')
   const [note, setNote] = useState('')
 
   const handleOpen = (isOpen: boolean) => {
     if (isOpen) {
-      setPrice(String(commodity.standardPrice))
+      setPriceMin(String(commodity.priceMin))
+      setPriceMax(String(commodity.priceMax))
       setEffectiveFrom(new Date().toISOString().slice(0, 10))
       setNote('')
     }
@@ -215,15 +241,19 @@ function EditPriceDialog({ commodity }: { commodity: Commodity }) {
   }
 
   const handleSave = () => {
-    const parsed = parseFloat(price)
-    const result = updateStandardPrice({
+    const parsedMin = parseFloat(priceMin)
+    const parsedMax = parseFloat(priceMax)
+    const result = updatePriceRange({
       commodityId: commodity.id,
-      standardPrice: parsed,
+      priceMin: parsedMin,
+      priceMax: parsedMax,
       effectiveFrom: new Date(effectiveFrom).toISOString(),
       note: note.trim() || undefined,
     })
     if (result.ok) {
-      toast.success(`Updated ${commodity.name} to ${formatPeso(parsed)}`)
+      toast.success(
+        `Updated ${commodity.name} to ${formatRange(parsedMin, parsedMax)}`,
+      )
       setOpen(false)
     } else {
       toast.error(result.message)
@@ -240,22 +270,35 @@ function EditPriceDialog({ commodity }: { commodity: Commodity }) {
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Update Standard Price</DialogTitle>
+          <DialogTitle>Update Price Range</DialogTitle>
           <DialogDescription>
-            Set a new LGU standard price for {commodity.name} (/{commodity.unit}).
+            Set a new LGU price range for {commodity.name} (/{commodity.unit}).
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-2">
-          <div className="space-y-1.5">
-            <Label htmlFor="price">New Price (₱)</Label>
-            <Input
-              id="price"
-              type="number"
-              step="0.01"
-              min="0.01"
-              value={price}
-              onChange={(e) => setPrice(e.target.value)}
-            />
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="price-min">Price min (₱)</Label>
+              <Input
+                id="price-min"
+                type="number"
+                step="0.01"
+                min="0.01"
+                value={priceMin}
+                onChange={(e) => setPriceMin(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="price-max">Price max (₱)</Label>
+              <Input
+                id="price-max"
+                type="number"
+                step="0.01"
+                min="0.01"
+                value={priceMax}
+                onChange={(e) => setPriceMax(e.target.value)}
+              />
+            </div>
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="effective">Effective Date</Label>
@@ -280,7 +323,7 @@ function EditPriceDialog({ commodity }: { commodity: Commodity }) {
           <DialogClose asChild>
             <Button variant="outline">Cancel</Button>
           </DialogClose>
-          <Button onClick={handleSave}>Save Price</Button>
+          <Button onClick={handleSave}>Save range</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -316,7 +359,7 @@ export default function AdminCommoditiesPage() {
                 Unit
               </th>
               <th className="whitespace-nowrap px-4 py-3 text-right font-semibold text-primary-deep">
-                Standard Price
+                LGU Range
               </th>
               <th className="whitespace-nowrap px-4 py-3 font-semibold text-primary-deep">
                 Effective From
@@ -351,7 +394,7 @@ export default function AdminCommoditiesPage() {
                   per {c.unit}
                 </td>
                 <td className="whitespace-nowrap px-4 py-3 text-right font-bold text-primary-deep">
-                  {formatPeso(c.standardPrice)}
+                  {formatRange(c.priceMin, c.priceMax)}
                 </td>
                 <td className="whitespace-nowrap px-4 py-3 text-xs text-muted">
                   {formatDateTime(c.effectiveFrom)}
@@ -387,7 +430,7 @@ export default function AdminCommoditiesPage() {
             <CardContent className="flex items-center justify-between">
               <div>
                 <p className="text-lg font-bold text-primary-deep">
-                  {formatPeso(c.standardPrice)}
+                  {formatRange(c.priceMin, c.priceMax)}
                 </p>
                 <p className="text-xs text-muted">per {c.unit}</p>
               </div>

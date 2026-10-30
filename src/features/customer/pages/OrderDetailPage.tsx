@@ -13,6 +13,7 @@ export default function OrderDetailPage() {
   const { orderId } = useParams<{ orderId: string }>()
   const navigate = useNavigate()
   const orders = useOrderStore((s) => s.orders)
+  const getOrdersByCheckoutGroup = useOrderStore((s) => s.getOrdersByCheckoutGroup)
 
   const order = orders.find((o) => o.id === orderId)
 
@@ -31,6 +32,11 @@ export default function OrderDetailPage() {
   }
 
   const canPay = order.status === 'pending_payment' || order.status === 'payment_rejected'
+  const groupOrders = getOrdersByCheckoutGroup(order.checkoutGroupId)
+  const allGroupConfirmed =
+    groupOrders.length > 0 && groupOrders.every((o) => o.status === 'confirmed')
+  const waitingOnOtherVendors =
+    order.status === 'confirmed' && !allGroupConfirmed
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6">
@@ -56,12 +62,19 @@ export default function OrderDetailPage() {
         </p>
       </div>
 
-      {order.status === 'confirmed' && (
+      {allGroupConfirmed ? (
         <DeliveryMilestoneTracker
           className="mb-6"
           deliveryStatus={order.deliveryStatus ?? 'awaiting_pickup'}
         />
-      )}
+      ) : waitingOnOtherVendors ? (
+        <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-4">
+          <p className="text-sm font-medium text-amber-900">
+            Payment confirmed for this vendor. Keri delivery milestones appear
+            once all vendors in this checkout have confirmed payment.
+          </p>
+        </div>
+      ) : null}
 
       {/* Payment action */}
       {canPay && (

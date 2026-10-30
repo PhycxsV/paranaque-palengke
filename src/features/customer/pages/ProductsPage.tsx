@@ -14,12 +14,11 @@ import {
 } from '@/components/ui/select'
 import { ProductCard } from '@/components/shared/ProductCard'
 import { EmptyState } from '@/components/shared/EmptyState'
-import { VendorConflictDialog } from '@/components/shared/VendorConflictDialog'
 import { useProductStore } from '@/stores/product-store'
 import { useVendorStore } from '@/stores/vendor-store'
 import { useCommodityStore } from '@/stores/commodity-store'
 import { useAddToCart } from '@/hooks/useAddToCart'
-import { getStandardPrice } from '@/lib/pricing'
+import { getVendorPrice } from '@/lib/pricing'
 import { isVendorAcceptingOrders } from '@/lib/vendor-hours'
 
 type SortOption = 'name-asc' | 'price-asc' | 'price-desc'
@@ -29,8 +28,7 @@ export default function ProductsPage() {
   const products = useProductStore((s) => s.products)
   const vendors = useVendorStore((s) => s.vendors)
   const commodities = useCommodityStore((s) => s.commodities)
-  const { addToCart, conflictOpen, currentVendorName, newVendorName, keepCurrentCart, replaceCart } =
-    useAddToCart()
+  const { addToCart } = useAddToCart()
 
   const qParam = searchParams.get('q') ?? ''
   const categoryParam = searchParams.get('category') ?? ''
@@ -79,9 +77,9 @@ export default function ProductsPage() {
     result = [...result].sort((a, b) => {
       switch (sort) {
         case 'price-asc':
-          return getStandardPrice(a, commodities) - getStandardPrice(b, commodities)
+          return getVendorPrice(a, commodities) - getVendorPrice(b, commodities)
         case 'price-desc':
-          return getStandardPrice(b, commodities) - getStandardPrice(a, commodities)
+          return getVendorPrice(b, commodities) - getVendorPrice(a, commodities)
         case 'name-asc':
         default:
           return a.name.localeCompare(b.name)
@@ -304,13 +302,6 @@ export default function ProductsPage() {
         </div>
       </div>
 
-      <VendorConflictDialog
-        open={conflictOpen}
-        currentVendorName={currentVendorName}
-        newVendorName={newVendorName}
-        onKeep={keepCurrentCart}
-        onReplace={replaceCart}
-      />
     </div>
   )
 }

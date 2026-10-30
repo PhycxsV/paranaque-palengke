@@ -117,10 +117,12 @@ export default function AdminDashboardPage() {
                       {commodity?.name ?? entry.commodityId}
                     </span>
                     <span className="text-muted line-through">
-                      {formatPeso(entry.previousPrice)}
+                      {formatPeso(entry.previousPriceMin)}–
+                      {formatPeso(entry.previousPriceMax)}
                     </span>
                     <span className="font-bold text-primary">
-                      {formatPeso(entry.newPrice)}
+                      {formatPeso(entry.newPriceMin)}–
+                      {formatPeso(entry.newPriceMax)}
                     </span>
                     <span className="ml-auto text-xs text-muted">
                       {formatDateTime(entry.changedAt)}
