@@ -68,6 +68,12 @@ export interface Vendor {
   opensAt: string
   /** Order cut-off in 24h `HH:mm` (local). Past this, vendor is closed for new orders. */
   cutoffTime: string
+  /** Demo / curated store rating (1–5). Used for home “top rated”. */
+  rating: number
+  /** Store pickup latitude for Keri rider. */
+  lat: number
+  /** Store pickup longitude for Keri rider. */
+  lng: number
   isDemo: true
   demoQrLabel: string
 }
@@ -148,6 +154,9 @@ export interface Order {
   status: OrderStatus
   /** Set when payment is confirmed — tracks Keri delivery progress. */
   deliveryStatus?: DeliveryStatus
+  /** Snapshot of store pickup coords for Keri at checkout time. */
+  pickupLat: number
+  pickupLng: number
   createdAt: string
   updatedAt: string
   transactionReference?: string
@@ -196,6 +205,16 @@ export interface VendorCreateInput {
   opensAt: string
   cutoffTime: string
   demoQrLabel: string
+  rating: number
+  lat: number
+  lng: number
+}
+
+/** Admin may also update store rating and Keri pickup coordinates. */
+export type VendorUpdateInput = VendorProfileInput & {
+  rating?: number
+  lat?: number
+  lng?: number
 }
 
 export interface CheckoutFormInput {

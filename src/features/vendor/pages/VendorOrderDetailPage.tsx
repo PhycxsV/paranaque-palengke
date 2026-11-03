@@ -176,6 +176,14 @@ export default function VendorOrderDetailPage() {
                 <p className="text-sm text-ink">{order.notes}</p>
               </div>
             ) : null}
+            <div>
+              <p className="text-xs font-medium text-muted">
+                Keri pickup pin (this store)
+              </p>
+              <p className="font-mono text-sm text-ink">
+                {order.pickupLat.toFixed(5)}, {order.pickupLng.toFixed(5)}
+              </p>
+            </div>
           </CardContent>
         </Card>
 

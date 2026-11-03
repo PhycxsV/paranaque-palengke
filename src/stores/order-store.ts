@@ -143,6 +143,8 @@ export const useOrderStore = create<OrderState>()(
             deliveryFee: fee,
             total: Number((subtotal + fee).toFixed(2)),
             status: 'pending_payment',
+            pickupLat: vendor.lat,
+            pickupLng: vendor.lng,
             createdAt: now,
             updatedAt: now,
           })

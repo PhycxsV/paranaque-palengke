@@ -8,7 +8,9 @@ import type {
 
 export const BRAND_NAME = 'Palengke mo, Keri ko'
 export const BRAND_TAGLINE = 'Preskong Pamalengke, Mas Madaling Mamili.'
-export const STORAGE_PREFIX = 'paranaque-palengke-v7'
+export const STORAGE_PREFIX = 'paranaque-palengke-v8'
+/** How many top-rated vendors to feature on the customer home page. */
+export const HOME_TOP_RATED_VENDOR_COUNT = 3
 export const PRICE_DISCLAIMER =
   'Illustrative LGU price ranges — vendors set their own price within the range.'
 /** Flat delivery fee (Keri) included in QRPH / demo QR payment total. */

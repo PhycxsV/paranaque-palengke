@@ -69,6 +69,8 @@ const baseOrder: Order = {
   deliveryFee: 100,
   total: 260,
   status: 'pending_payment',
+  pickupLat: 14.4793,
+  pickupLng: 121.0198,
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString(),
 }
