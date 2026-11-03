@@ -40,6 +40,9 @@ const DEFAULT_VENDOR_FORM: VendorCreateInput = {
   cutoffTime: '17:00',
   demoQrLabel: '',
   isAvailable: true,
+  rating: 4.5,
+  lat: 14.4793,
+  lng: 121.0198,
 }
 
 function CreateVendorDialog() {
@@ -122,6 +125,55 @@ function CreateVendorDialog() {
               placeholder="e.g. Baclaran Public Market, Row B"
             />
           </div>
+          <div className="grid gap-4 sm:grid-cols-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="vendor-rating">Rating (1–5)</Label>
+              <Input
+                id="vendor-rating"
+                type="number"
+                min={1}
+                max={5}
+                step={0.1}
+                value={form.rating}
+                onChange={(e) =>
+                  setForm((f) => ({
+                    ...f,
+                    rating: Number(e.target.value),
+                  }))
+                }
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="vendor-lat">Pickup latitude</Label>
+              <Input
+                id="vendor-lat"
+                type="number"
+                step="any"
+                value={form.lat}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, lat: Number(e.target.value) }))
+                }
+                placeholder="14.4793"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="vendor-lng">Pickup longitude</Label>
+              <Input
+                id="vendor-lng"
+                type="number"
+                step="any"
+                value={form.lng}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, lng: Number(e.target.value) }))
+                }
+                placeholder="121.0198"
+              />
+            </div>
+          </div>
+          <p className="text-[11px] text-muted">
+            Lat/lng are this store’s Keri pickup pin — sent to the rider when a
+            customer orders from this stall.
+          </p>
           <div className="space-y-1.5">
             <Label>Categories</Label>
             <div className="flex flex-wrap gap-1.5">
@@ -255,6 +307,10 @@ export default function AdminVendorsPage() {
                           <MapPin className="h-3 w-3" />
                           {vendor.location}
                         </CardDescription>
+                        <p className="mt-0.5 text-xs text-muted">
+                          ★ {vendor.rating.toFixed(1)} · {vendor.lat.toFixed(4)},{' '}
+                          {vendor.lng.toFixed(4)}
+                        </p>
                       </div>
                     </div>
                     <ChevronRight className="h-4 w-4 shrink-0 text-muted transition group-hover:translate-x-0.5" />

@@ -110,6 +110,12 @@ export default function OrderDetailPage() {
               </dd>
             </div>
             <div>
+              <dt className="text-muted">Keri pickup pin</dt>
+              <dd className="font-mono text-sm font-medium text-ink">
+                {order.pickupLat.toFixed(5)}, {order.pickupLng.toFixed(5)}
+              </dd>
+            </div>
+            <div>
               <dt className="text-muted">Placed</dt>
               <dd className="font-medium text-ink">{formatDateTime(order.createdAt)}</dd>
             </div>

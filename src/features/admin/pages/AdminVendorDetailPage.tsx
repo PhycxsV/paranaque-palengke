@@ -1,5 +1,7 @@
+import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { ArrowLeft, MapPin, Package, Store } from 'lucide-react'
+import { ArrowLeft, MapPin, Package, Save, Store } from 'lucide-react'
+import { toast } from 'sonner'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -9,6 +11,8 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { EmptyState } from '@/components/shared/EmptyState'
 import { useCommodityStore } from '@/stores/commodity-store'
 import { useOfferStore } from '@/stores/offer-store'
@@ -20,12 +24,25 @@ import { formatPeso } from '@/lib/utils'
 export default function AdminVendorDetailPage() {
   const { vendorId } = useParams<{ vendorId: string }>()
   const vendors = useVendorStore((s) => s.vendors)
+  const updateVendor = useVendorStore((s) => s.updateVendor)
   const products = useProductStore((s) => s.products)
   const commodities = useCommodityStore((s) => s.commodities)
   const offers = useOfferStore((s) => s.offers)
   const orders = useOrderStore((s) => s.orders)
 
   const vendor = vendors.find((v) => v.id === vendorId)
+
+  const [rating, setRating] = useState(4.5)
+  const [lat, setLat] = useState(14.4793)
+  const [lng, setLng] = useState(121.0198)
+
+  useEffect(() => {
+    if (vendor) {
+      setRating(vendor.rating)
+      setLat(vendor.lat)
+      setLng(vendor.lng)
+    }
+  }, [vendor])
 
   if (!vendor) {
     return (
@@ -60,6 +77,33 @@ export default function AdminVendorDetailPage() {
     return { min: commodity.priceMin, max: commodity.priceMax }
   }
 
+  const handleSavePickup = () => {
+    if (!Number.isFinite(rating) || rating < 1 || rating > 5) {
+      toast.error('Rating must be between 1 and 5.')
+      return
+    }
+    if (!Number.isFinite(lat) || lat < -90 || lat > 90) {
+      toast.error('Latitude must be between -90 and 90.')
+      return
+    }
+    if (!Number.isFinite(lng) || lng < -180 || lng > 180) {
+      toast.error('Longitude must be between -180 and 180.')
+      return
+    }
+    updateVendor(vendor.id, {
+      name: vendor.name,
+      description: vendor.description,
+      location: vendor.location,
+      isAvailable: vendor.isAvailable,
+      opensAt: vendor.opensAt,
+      cutoffTime: vendor.cutoffTime,
+      rating,
+      lat,
+      lng,
+    })
+    toast.success('Store rating and Keri pickup pin saved')
+  }
+
   return (
     <div className="space-y-6">
       <Link to="/admin/vendors">
@@ -80,6 +124,7 @@ export default function AdminVendorDetailPage() {
                 <Badge variant={vendor.isAvailable ? 'success' : 'muted'}>
                   {vendor.isAvailable ? 'Available' : 'Unavailable'}
                 </Badge>
+                <Badge variant="secondary">★ {vendor.rating.toFixed(1)}</Badge>
               </div>
               <CardDescription className="mt-1 flex items-center gap-1">
                 <MapPin className="h-3 w-3" />
@@ -117,6 +162,56 @@ export default function AdminVendorDetailPage() {
               <span className="text-muted">Orders</span>
             </div>
           </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Keri pickup pin</CardTitle>
+          <CardDescription>
+            Admin sets this store’s lat/lng. When a customer orders here, these
+            coordinates are what Keri receives for pickup.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid gap-4 sm:grid-cols-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="admin-rating">Rating (1–5)</Label>
+              <Input
+                id="admin-rating"
+                type="number"
+                min={1}
+                max={5}
+                step={0.1}
+                value={rating}
+                onChange={(e) => setRating(Number(e.target.value))}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="admin-lat">Latitude</Label>
+              <Input
+                id="admin-lat"
+                type="number"
+                step="any"
+                value={lat}
+                onChange={(e) => setLat(Number(e.target.value))}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="admin-lng">Longitude</Label>
+              <Input
+                id="admin-lng"
+                type="number"
+                step="any"
+                value={lng}
+                onChange={(e) => setLng(Number(e.target.value))}
+              />
+            </div>
+          </div>
+          <Button onClick={handleSavePickup} className="gap-1.5">
+            <Save className="h-4 w-4" />
+            Save pickup pin
+          </Button>
         </CardContent>
       </Card>
 

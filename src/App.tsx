@@ -7,6 +7,7 @@ import AdminLayout from '@/features/admin/layouts/AdminLayout'
 import HomePage from '@/features/customer/pages/HomePage'
 import ProductsPage from '@/features/customer/pages/ProductsPage'
 import ProductDetailPage from '@/features/customer/pages/ProductDetailPage'
+import VendorsPage from '@/features/customer/pages/VendorsPage'
 import VendorStorePage from '@/features/customer/pages/VendorStorePage'
 import CartPage from '@/features/customer/pages/CartPage'
 import CheckoutPage from '@/features/customer/pages/CheckoutPage'
@@ -40,6 +41,7 @@ export default function App() {
           <Route index element={<HomePage />} />
           <Route path="products" element={<ProductsPage />} />
           <Route path="products/:productId" element={<ProductDetailPage />} />
+          <Route path="vendors" element={<VendorsPage />} />
           <Route path="stores/:vendorId" element={<VendorStorePage />} />
           <Route path="cart" element={<CartPage />} />
           <Route path="checkout" element={<CheckoutPage />} />

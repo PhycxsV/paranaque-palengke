@@ -16,7 +16,7 @@ import {
   isVendorAcceptingOrders,
   parseTimeToMinutes,
 } from '@/lib/vendor-hours'
-import type { VendorProfileInput } from '@/types'
+import type { VendorUpdateInput } from '@/types'
 
 interface FormErrors {
   name?: string
@@ -33,7 +33,7 @@ export default function VendorStorePage() {
   )
   const updateVendor = useVendorStore((s) => s.updateVendor)
 
-  const [form, setForm] = useState<VendorProfileInput>({
+  const [form, setForm] = useState<VendorUpdateInput>({
     name: '',
     description: '',
     location: '',
@@ -103,9 +103,9 @@ export default function VendorStorePage() {
     toast.success('Store profile updated')
   }
 
-  const updateField = <K extends keyof VendorProfileInput>(
+  const updateField = <K extends keyof VendorUpdateInput>(
     key: K,
-    value: VendorProfileInput[K],
+    value: VendorUpdateInput[K],
   ) => {
     setForm((prev) => ({ ...prev, [key]: value }))
     setErrors((prev) => ({ ...prev, [key]: undefined }))
