@@ -10,6 +10,7 @@ import {
 import { groupCartItemsByVendor } from '@/lib/pricing'
 import { generateId } from '@/lib/utils'
 import { isVendorAcceptingOrders } from '@/lib/vendor-hours'
+import { useBranchStore } from '@/stores/branch-store'
 import type {
   CartItem,
   CheckoutFormInput,
@@ -44,7 +45,7 @@ interface OrderState {
     offers: Offer[]
     vendors: Vendor[]
     customer: CheckoutFormInput
-  }) => { ok: true; orders: Order[]; checkoutGroupId: string } | { ok: false; message: string }
+  }) => { ok: true; orders: Order[]; bookingGroupId: string } | { ok: false; message: string }
   submitDemoPayment: (
     orderId: string,
     transactionReference?: string,
@@ -63,7 +64,7 @@ interface OrderState {
   ) => { ok: true; order: Order } | { ok: false; message: string }
   getOrderById: (orderId: string) => Order | undefined
   getOrdersByVendor: (vendorId: string) => Order[]
-  getOrdersByCheckoutGroup: (checkoutGroupId: string) => Order[]
+  getOrdersByBookingGroup: (bookingGroupId: string) => Order[]
   resetOrders: () => void
 }
 
@@ -109,12 +110,22 @@ export const useOrderStore = create<OrderState>()(
           (DELIVERY_FEE - deliveryShare * vendorCount).toFixed(2),
         )
 
-        const checkoutGroupId = generateId('GRP')
+        /** One booking group for this checkout — forwarded to Keri as a unit. */
+        const bookingGroupId = generateId('BOOK')
         const now = new Date().toISOString()
         const created: Order[] = []
 
+        const branches = useBranchStore.getState().branches
+
         for (const [vendorId, vendorItems] of groups) {
           const vendor = vendors.find((v) => v.id === vendorId)!
+          const branch = branches.find((b) => b.id === vendor.branchId)
+          if (!branch || !branch.isActive) {
+            return {
+              ok: false,
+              message: `${vendor.name} has no active palengke / pickup branch.`,
+            }
+          }
           const snapshots = buildOrderSnapshots(
             vendorItems,
             products,
@@ -132,7 +143,7 @@ export const useOrderStore = create<OrderState>()(
 
           created.push({
             id: generateId('ORD'),
-            checkoutGroupId,
+            bookingGroupId,
             vendorId,
             vendorName: vendor.name,
             customerName: customer.customerName.trim(),
@@ -143,15 +154,17 @@ export const useOrderStore = create<OrderState>()(
             deliveryFee: fee,
             total: Number((subtotal + fee).toFixed(2)),
             status: 'pending_payment',
-            pickupLat: vendor.lat,
-            pickupLng: vendor.lng,
+            branchId: branch.id,
+            branchName: branch.name,
+            pickupLat: branch.lat,
+            pickupLng: branch.lng,
             createdAt: now,
             updatedAt: now,
           })
         }
 
         set({ orders: [...created, ...get().orders] })
-        return { ok: true, orders: created, checkoutGroupId }
+        return { ok: true, orders: created, bookingGroupId }
       },
       submitDemoPayment: (orderId, transactionReference) => {
         const order = get().orders.find((o) => o.id === orderId)
@@ -182,14 +195,14 @@ export const useOrderStore = create<OrderState>()(
         }
 
         const siblings = get().orders.filter(
-          (o) => o.checkoutGroupId === order.checkoutGroupId,
+          (o) => o.bookingGroupId === order.bookingGroupId,
         )
         const allPaid = siblings.every((o) => paidEnoughForConfirm(o.status))
         if (!allPaid) {
           return {
             ok: false,
             message:
-              'Cannot confirm yet — customer must finalize payment for all vendors in this checkout.',
+              'Cannot confirm yet — customer must finalize payment for all vendors in this booking group.',
           }
         }
 
@@ -223,14 +236,14 @@ export const useOrderStore = create<OrderState>()(
         }
 
         const siblings = get().orders.filter(
-          (o) => o.checkoutGroupId === order.checkoutGroupId,
+          (o) => o.bookingGroupId === order.bookingGroupId,
         )
         const allConfirmed = siblings.every((o) => o.status === 'confirmed')
         if (!allConfirmed) {
           return {
             ok: false,
             message:
-              'Keri delivery starts only after all vendor payments in this checkout are confirmed.',
+              'Keri delivery starts only after all vendor payments in this booking group are confirmed.',
           }
         }
 
@@ -241,14 +254,41 @@ export const useOrderStore = create<OrderState>()(
         }
 
         const next = DELIVERY_FLOW[idx + 1]
-        const updated: Order = {
-          ...order,
-          deliveryStatus: next,
-          updatedAt: new Date().toISOString(),
+        const nowIso = new Date().toISOString()
+        /** First dispatch in the booking group stamps one shared Keri tracking id. */
+        let keriTrackingId = order.keriTrackingId
+        if (next === 'out_for_delivery') {
+          keriTrackingId =
+            siblings.find((s) => s.keriTrackingId)?.keriTrackingId ??
+            generateId('KERI')
         }
+
         set({
-          orders: get().orders.map((o) => (o.id === orderId ? updated : o)),
+          orders: get().orders.map((o) => {
+            if (o.bookingGroupId !== order.bookingGroupId) return o
+            if (o.id === orderId) {
+              return {
+                ...o,
+                deliveryStatus: next,
+                keriTrackingId:
+                  next === 'out_for_delivery' || o.keriTrackingId
+                    ? keriTrackingId ?? o.keriTrackingId
+                    : o.keriTrackingId,
+                updatedAt: nowIso,
+              }
+            }
+            if (next === 'out_for_delivery' && keriTrackingId) {
+              return {
+                ...o,
+                keriTrackingId,
+                updatedAt: nowIso,
+              }
+            }
+            return o
+          }),
         })
+
+        const updated = get().orders.find((o) => o.id === orderId)!
         return { ok: true, order: updated }
       },
       rejectPayment: (orderId, vendorId) => {
@@ -275,18 +315,21 @@ export const useOrderStore = create<OrderState>()(
       getOrderById: (orderId) => get().orders.find((o) => o.id === orderId),
       getOrdersByVendor: (vendorId) =>
         get().orders.filter((o) => o.vendorId === vendorId),
-      getOrdersByCheckoutGroup: (checkoutGroupId) =>
-        get().orders.filter((o) => o.checkoutGroupId === checkoutGroupId),
+      getOrdersByBookingGroup: (bookingGroupId) =>
+        get().orders.filter((o) => o.bookingGroupId === bookingGroupId),
       resetOrders: () => set({ orders: [] }),
     }),
     {
       name: `${STORAGE_PREFIX}-orders`,
       merge: (persisted, current) => {
         const p = persisted as Partial<OrderState> | undefined
-        const orders = (p?.orders ?? current.orders).map((o) => ({
-          ...o,
-          checkoutGroupId: o.checkoutGroupId || o.id,
-        }))
+        const orders = (p?.orders ?? current.orders).map((o) => {
+          const legacy = o as Order & { checkoutGroupId?: string }
+          return {
+            ...o,
+            bookingGroupId: legacy.bookingGroupId || legacy.checkoutGroupId || o.id,
+          }
+        })
         return { ...current, ...p, orders }
       },
     },

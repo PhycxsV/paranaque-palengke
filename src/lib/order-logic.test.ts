@@ -59,7 +59,7 @@ const acceptedOffer: Offer = {
 
 const baseOrder: Order = {
   id: 'ORD-1',
-  checkoutGroupId: 'GRP-1',
+  bookingGroupId: 'BOOK-1',
   vendorId: 'v1',
   vendorName: 'Demo Vendor',
   customerName: 'Ana',
@@ -69,6 +69,8 @@ const baseOrder: Order = {
   deliveryFee: 100,
   total: 260,
   status: 'pending_payment',
+  branchId: 'branch-baclaran',
+  branchName: 'Baclaran Public Market',
   pickupLat: 14.4793,
   pickupLng: 121.0198,
   createdAt: new Date().toISOString(),

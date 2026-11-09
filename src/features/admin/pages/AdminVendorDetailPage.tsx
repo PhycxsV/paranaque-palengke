@@ -14,6 +14,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { EmptyState } from '@/components/shared/EmptyState'
+import { useBranchStore } from '@/stores/branch-store'
 import { useCommodityStore } from '@/stores/commodity-store'
 import { useOfferStore } from '@/stores/offer-store'
 import { useOrderStore } from '@/stores/order-store'
@@ -25,22 +26,22 @@ export default function AdminVendorDetailPage() {
   const { vendorId } = useParams<{ vendorId: string }>()
   const vendors = useVendorStore((s) => s.vendors)
   const updateVendor = useVendorStore((s) => s.updateVendor)
+  const branches = useBranchStore((s) => s.branches)
   const products = useProductStore((s) => s.products)
   const commodities = useCommodityStore((s) => s.commodities)
   const offers = useOfferStore((s) => s.offers)
   const orders = useOrderStore((s) => s.orders)
 
   const vendor = vendors.find((v) => v.id === vendorId)
+  const branch = branches.find((b) => b.id === vendor?.branchId)
 
   const [rating, setRating] = useState(4.5)
-  const [lat, setLat] = useState(14.4793)
-  const [lng, setLng] = useState(121.0198)
+  const [branchId, setBranchId] = useState('')
 
   useEffect(() => {
     if (vendor) {
       setRating(vendor.rating)
-      setLat(vendor.lat)
-      setLng(vendor.lng)
+      setBranchId(vendor.branchId)
     }
   }, [vendor])
 
@@ -77,17 +78,13 @@ export default function AdminVendorDetailPage() {
     return { min: commodity.priceMin, max: commodity.priceMax }
   }
 
-  const handleSavePickup = () => {
+  const handleSaveAssignment = () => {
     if (!Number.isFinite(rating) || rating < 1 || rating > 5) {
       toast.error('Rating must be between 1 and 5.')
       return
     }
-    if (!Number.isFinite(lat) || lat < -90 || lat > 90) {
-      toast.error('Latitude must be between -90 and 90.')
-      return
-    }
-    if (!Number.isFinite(lng) || lng < -180 || lng > 180) {
-      toast.error('Longitude must be between -180 and 180.')
+    if (!branchId) {
+      toast.error('Select a palengke / market.')
       return
     }
     updateVendor(vendor.id, {
@@ -98,11 +95,12 @@ export default function AdminVendorDetailPage() {
       opensAt: vendor.opensAt,
       cutoffTime: vendor.cutoffTime,
       rating,
-      lat,
-      lng,
+      branchId,
     })
-    toast.success('Store rating and Keri pickup pin saved')
+    toast.success('Vendor rating and palengke assignment saved')
   }
+
+  const selectedBranch = branches.find((b) => b.id === branchId) ?? branch
 
   return (
     <div className="space-y-6">
@@ -128,7 +126,7 @@ export default function AdminVendorDetailPage() {
               </div>
               <CardDescription className="mt-1 flex items-center gap-1">
                 <MapPin className="h-3 w-3" />
-                {vendor.location}
+                {branch?.name ?? 'No palengke'} · {vendor.location}
               </CardDescription>
               <p className="mt-2 text-sm text-muted">{vendor.description}</p>
             </div>
@@ -167,14 +165,31 @@ export default function AdminVendorDetailPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Keri pickup pin</CardTitle>
+          <CardTitle className="text-lg">Palengke assignment</CardTitle>
           <CardDescription>
-            Admin sets this store’s lat/lng. When a customer orders here, these
-            coordinates are what Keri receives for pickup.
+            Stall belongs to a market. Keri pickup lon/lat comes from that
+            palengke — not from the vendor.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid gap-4 sm:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="admin-branch">Palengke / market</Label>
+              <select
+                id="admin-branch"
+                className="flex h-10 w-full rounded-md border border-border bg-surface px-3 text-sm"
+                value={branchId}
+                onChange={(e) => setBranchId(e.target.value)}
+              >
+                <option value="">Select palengke…</option>
+                {branches.map((b) => (
+                  <option key={b.id} value={b.id}>
+                    {b.name}
+                    {!b.isActive ? ' (inactive)' : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
             <div className="space-y-1.5">
               <Label htmlFor="admin-rating">Rating (1–5)</Label>
               <Input
@@ -187,30 +202,19 @@ export default function AdminVendorDetailPage() {
                 onChange={(e) => setRating(Number(e.target.value))}
               />
             </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="admin-lat">Latitude</Label>
-              <Input
-                id="admin-lat"
-                type="number"
-                step="any"
-                value={lat}
-                onChange={(e) => setLat(Number(e.target.value))}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="admin-lng">Longitude</Label>
-              <Input
-                id="admin-lng"
-                type="number"
-                step="any"
-                value={lng}
-                onChange={(e) => setLng(Number(e.target.value))}
-              />
-            </div>
           </div>
-          <Button onClick={handleSavePickup} className="gap-1.5">
+          {selectedBranch ? (
+            <p className="text-sm text-muted">
+              Pickup pin:{' '}
+              <span className="font-mono text-ink">
+                {selectedBranch.lat.toFixed(5)}, {selectedBranch.lng.toFixed(5)}
+              </span>{' '}
+              · {selectedBranch.address}
+            </p>
+          ) : null}
+          <Button onClick={handleSaveAssignment} className="gap-1.5">
             <Save className="h-4 w-4" />
-            Save pickup pin
+            Save assignment
           </Button>
         </CardContent>
       </Card>

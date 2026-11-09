@@ -1,6 +1,14 @@
-import { useMemo, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
-import { ArrowLeft, CheckCircle2, Truck, XCircle } from 'lucide-react'
+import { useMemo, useState, type ReactNode } from 'react'
+import { useParams } from 'react-router-dom'
+import {
+  CheckCircle2,
+  CreditCard,
+  MapPin,
+  Package,
+  Truck,
+  User,
+  XCircle,
+} from 'lucide-react'
 import { toast } from 'sonner'
 import { DELIVERY_STATUS_LABELS } from '@/constants'
 import {
@@ -15,15 +23,44 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { DeliveryMilestoneTracker } from '@/components/shared/DeliveryMilestoneTracker'
-import { StatusBadge } from '@/components/shared/StatusBadge'
 import { EmptyState } from '@/components/shared/EmptyState'
+import { Notice } from '@/components/shared/Notice'
+import { PortalHeader } from '@/components/shared/PortalHeader'
 import { ProductImage } from '@/components/shared/ProductImage'
+import { SectionCard } from '@/components/shared/SectionCard'
+import { StatusBadge } from '@/components/shared/StatusBadge'
 import { useDemoSessionStore } from '@/stores/demo-session-store'
 import { useOrderStore } from '@/stores/order-store'
 import { formatPeso, formatDateTime } from '@/lib/utils'
 import type { Order } from '@/types'
+
+function Field({
+  label,
+  children,
+  mono,
+}: {
+  label: string
+  children: ReactNode
+  mono?: boolean
+}) {
+  return (
+    <div className="min-w-0">
+      <dt className="text-[11px] font-bold uppercase tracking-wider text-muted">
+        {label}
+      </dt>
+      <dd
+        className={
+          mono
+            ? 'mt-0.5 break-all font-mono text-xs text-ink'
+            : 'mt-0.5 text-sm font-semibold text-primary-deep'
+        }
+      >
+        {children}
+      </dd>
+    </div>
+  )
+}
 
 export default function VendorOrderDetailPage() {
   const { orderId } = useParams<{ orderId: string }>()
@@ -40,37 +77,22 @@ export default function VendorOrderDetailPage() {
     [orders, orderId],
   )
 
-  if (!order) {
+  if (!order || order.vendorId !== activeVendorId) {
+    const denied = Boolean(order)
     return (
-      <div className="space-y-4">
-        <Button variant="ghost" size="sm" asChild>
-          <Link to="/vendor/orders">
-            <ArrowLeft className="h-4 w-4" />
-            Back to orders
-          </Link>
-        </Button>
-        <EmptyState
-          icon={XCircle}
-          title="Order not found"
-          description={`No order with ID "${orderId ?? ''}" was found.`}
+      <div className="space-y-6">
+        <PortalHeader
+          title={denied ? 'Access denied' : 'Order not found'}
+          back={{ to: '/vendor/orders', label: 'Back to orders' }}
         />
-      </div>
-    )
-  }
-
-  if (order.vendorId !== activeVendorId) {
-    return (
-      <div className="space-y-4">
-        <Button variant="ghost" size="sm" asChild>
-          <Link to="/vendor/orders">
-            <ArrowLeft className="h-4 w-4" />
-            Back to orders
-          </Link>
-        </Button>
         <EmptyState
           icon={XCircle}
-          title="Access denied"
-          description="This order belongs to a different vendor."
+          title={denied ? 'Access denied' : 'Order not found'}
+          description={
+            denied
+              ? 'This order belongs to a different vendor.'
+              : `No order with ID "${orderId ?? ''}" was found.`
+          }
         />
       </div>
     )
@@ -120,236 +142,227 @@ export default function VendorOrderDetailPage() {
   const canAdvanceDelivery =
     order.status === 'confirmed' && deliveryStatus !== 'delivered'
 
+  const statusNotice = (() => {
+    switch (order.status) {
+      case 'awaiting_vendor_confirmation':
+        return (
+          <Notice tone="pending" title="Customer submitted payment">
+            Check the transaction reference, then confirm or reject below.
+          </Notice>
+        )
+      case 'confirmed':
+        return (
+          <Notice tone="success" title="Payment confirmed">
+            {deliveryStatus === 'delivered'
+              ? 'Keri delivery is complete.'
+              : 'Prepare the order for Keri pickup and update the delivery status as it moves.'}
+          </Notice>
+        )
+      case 'payment_rejected':
+        return (
+          <Notice tone="danger" title="Payment rejected">
+            The customer may resubmit their payment details.
+          </Notice>
+        )
+      default:
+        return (
+          <Notice tone="info" title="Waiting for the customer">
+            This order is not yet ready for vendor confirmation.
+          </Notice>
+        )
+    }
+  })()
+
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center gap-3">
-        <Button variant="ghost" size="sm" asChild>
-          <Link to="/vendor/orders">
-            <ArrowLeft className="h-4 w-4" />
-            Back
-          </Link>
-        </Button>
-        <div className="min-w-0 flex-1">
-          <h1 className="text-xl font-extrabold text-primary-deep">
-            {order.id}
-          </h1>
+      <PortalHeader
+        eyebrow="Order"
+        title={order.id}
+        description={`${order.customerName} · placed ${formatDateTime(order.createdAt)}`}
+        back={{ to: '/vendor/orders', label: 'Back to orders' }}
+        actions={<StatusBadge status={order.status} />}
+      />
+
+      {statusNotice}
+
+      <div className="grid gap-6 lg:grid-cols-[1fr_340px]">
+        <div className="space-y-6">
+          {/* Items */}
+          <SectionCard
+            title={`Items (${order.items.length})`}
+            icon={Package}
+            bodyClassName="p-0 sm:p-0"
+          >
+            <ul className="divide-y divide-border">
+              {order.items.map((item) => (
+                <li
+                  key={item.productId}
+                  className="flex items-center gap-4 px-5 py-4 sm:px-6"
+                >
+                  <ProductImage
+                    src={item.imageUrl}
+                    alt={item.name}
+                    className="h-14 w-14 shrink-0 rounded-xl"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-bold text-primary-deep">
+                      {item.name}
+                    </p>
+                    <p className="text-xs text-muted">
+                      {formatPeso(item.unitPrice)} / {item.unit} × {item.quantity}
+                    </p>
+                  </div>
+                  <p className="text-sm font-extrabold text-primary-deep">
+                    {formatPeso(item.lineTotal)}
+                  </p>
+                </li>
+              ))}
+            </ul>
+            <dl className="space-y-1.5 border-t border-border bg-primary-50/40 px-5 py-4 text-sm sm:px-6">
+              <div className="flex justify-between text-muted">
+                <dt>Subtotal</dt>
+                <dd>{formatPeso(order.subtotal)}</dd>
+              </div>
+              <div className="flex justify-between text-muted">
+                <dt>Delivery (Keri)</dt>
+                <dd>{formatPeso(order.deliveryFee ?? 0)}</dd>
+              </div>
+              <div className="flex items-baseline justify-between border-t border-border pt-2">
+                <dt className="font-bold text-primary-deep">Order total</dt>
+                <dd className="font-display text-2xl font-extrabold text-primary">
+                  {formatPeso(order.total)}
+                </dd>
+              </div>
+            </dl>
+          </SectionCard>
+
+          {order.status === 'confirmed' ? (
+            <SectionCard title="Keri delivery" icon={Truck}>
+              <div className="space-y-5">
+                <DeliveryMilestoneTracker deliveryStatus={deliveryStatus} />
+                {canAdvanceDelivery ? (
+                  <Button onClick={handleAdvanceDelivery} disabled={processing}>
+                    <Truck className="h-4 w-4" />
+                    {deliveryStatus === 'awaiting_pickup'
+                      ? 'Mark out for delivery (Keri)'
+                      : 'Mark delivered'}
+                  </Button>
+                ) : null}
+              </div>
+            </SectionCard>
+          ) : null}
         </div>
-        <StatusBadge status={order.status} />
-      </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        {/* Order info */}
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle>Order details</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div>
-                <p className="text-xs font-medium text-muted">Customer</p>
-                <p className="text-sm font-semibold text-primary-deep">
-                  {order.customerName}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs font-medium text-muted">Contact</p>
-                <p className="text-sm font-semibold text-primary-deep">
-                  {order.contactNumber}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs font-medium text-muted">Placed</p>
-                <p className="text-sm text-ink">
-                  {formatDateTime(order.createdAt)}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs font-medium text-muted">Last updated</p>
-                <p className="text-sm text-ink">
-                  {formatDateTime(order.updatedAt)}
-                </p>
+        <aside className="space-y-6">
+          {canProcess ? (
+            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary-deep to-primary p-5 text-white shadow-[var(--shadow-lift)]">
+              <span
+                className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full bg-lime/25 blur-2xl"
+                aria-hidden
+              />
+              <p className="relative text-lg font-extrabold">Review payment</p>
+              <p className="relative mt-1 text-xs leading-relaxed text-white/75">
+                All vendors in this booking group must receive payment before any
+                vendor can confirm. Sibling orders share one Keri tracking ID once
+                dispatched.
+              </p>
+              <div className="relative mt-4 grid gap-2.5">
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="lime" size="lg" disabled={processing}>
+                      <CheckCircle2 className="h-4 w-4" />
+                      Confirm payment
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Confirm payment?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This will mark the order as confirmed. Keri delivery
+                        starts only after every vendor in the same checkout has
+                        confirmed.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction onClick={handleConfirm}>
+                        Yes, confirm payment
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      disabled={processing}
+                      className="border border-white/25 bg-white/10 text-white shadow-none hover:bg-red-600 hover:text-white"
+                    >
+                      <XCircle className="h-4 w-4" />
+                      Reject payment
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Reject payment?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This will mark the payment as rejected. The customer can
+                        resubmit their demo payment details afterwards.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={handleReject}
+                        className="bg-red-600 text-white hover:bg-red-700"
+                      >
+                        Yes, reject payment
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </div>
             </div>
-            {order.notes ? (
-              <div>
-                <p className="text-xs font-medium text-muted">Notes</p>
-                <p className="text-sm text-ink">{order.notes}</p>
-              </div>
-            ) : null}
-            <div>
-              <p className="text-xs font-medium text-muted">
-                Keri pickup pin (this store)
-              </p>
-              <p className="font-mono text-sm text-ink">
-                {order.pickupLat.toFixed(5)}, {order.pickupLng.toFixed(5)}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+          ) : null}
 
-        {/* Payment info */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Payment</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div>
-              <p className="text-xs font-medium text-muted">
-                Transaction reference
-              </p>
-              <p className="text-sm font-mono text-ink">
+          <SectionCard title="Customer" icon={User}>
+            <dl className="grid gap-4">
+              <Field label="Name">{order.customerName}</Field>
+              <Field label="Contact">{order.contactNumber}</Field>
+              {order.notes ? <Field label="Notes">{order.notes}</Field> : null}
+              <Field label="Last updated">{formatDateTime(order.updatedAt)}</Field>
+            </dl>
+          </SectionCard>
+
+          <SectionCard title="Payment" icon={CreditCard}>
+            <dl className="grid gap-4">
+              <Field label="Transaction reference" mono>
                 {order.transactionReference ?? '—'}
-              </p>
-            </div>
-            {order.paymentSubmittedAt ? (
-              <div>
-                <p className="text-xs font-medium text-muted">
-                  Payment submitted
-                </p>
-                <p className="text-sm text-ink">
+              </Field>
+              {order.paymentSubmittedAt ? (
+                <Field label="Submitted">
                   {formatDateTime(order.paymentSubmittedAt)}
-                </p>
-              </div>
-            ) : null}
-            <div>
-              <p className="text-xs font-medium text-muted">Total</p>
-              <p className="text-lg font-extrabold text-primary-deep">
-                {formatPeso(order.total)}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+                </Field>
+              ) : null}
+              <Field label="Booking group" mono>
+                {order.bookingGroupId}
+              </Field>
+            </dl>
+          </SectionCard>
+
+          <SectionCard title="Keri pickup" icon={MapPin}>
+            <dl className="grid gap-4">
+              <Field label="Palengke">{order.branchName}</Field>
+              <Field label="Coordinates" mono>
+                {order.pickupLat.toFixed(5)}, {order.pickupLng.toFixed(5)}
+              </Field>
+              <Field label="Tracking ID" mono>
+                {order.keriTrackingId ?? 'Assigned when dispatched'}
+              </Field>
+            </dl>
+          </SectionCard>
+        </aside>
       </div>
-
-      {/* Line items */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Items ({order.items.length})</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="divide-y divide-border">
-            {order.items.map((item) => (
-              <div
-                key={item.productId}
-                className="flex items-center gap-3 py-3"
-              >
-                <ProductImage
-                  src={item.imageUrl}
-                  alt={item.name}
-                  className="h-12 w-12 shrink-0 rounded-lg"
-                />
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold text-primary-deep">
-                    {item.name}
-                  </p>
-                  <p className="text-xs text-muted">
-                    {formatPeso(item.unitPrice)} / {item.unit} × {item.quantity}
-                  </p>
-                </div>
-                <p className="text-sm font-bold text-primary-deep">
-                  {formatPeso(item.lineTotal)}
-                </p>
-              </div>
-            ))}
-          </div>
-          <div className="mt-4 space-y-1 border-t border-border pt-4 text-right">
-            <p className="text-xs text-muted">
-              Subtotal {formatPeso(order.subtotal)} · Delivery{' '}
-              {formatPeso(order.deliveryFee ?? 0)}
-            </p>
-            <p className="text-xs text-muted">Order total</p>
-            <p className="text-xl font-extrabold text-primary-deep">
-              {formatPeso(order.total)}
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-
-      {order.status === 'confirmed' && (
-        <div className="space-y-4">
-          <DeliveryMilestoneTracker deliveryStatus={deliveryStatus} />
-          {canAdvanceDelivery ? (
-            <Button onClick={handleAdvanceDelivery} disabled={processing}>
-              <Truck className="h-4 w-4" />
-              {deliveryStatus === 'awaiting_pickup'
-                ? 'Mark out for delivery (Keri)'
-                : 'Mark delivered'}
-            </Button>
-          ) : (
-            <p className="text-sm text-muted">Keri delivery is complete.</p>
-          )}
-        </div>
-      )}
-
-      {/* Action buttons */}
-      {canProcess ? (
-        <Card>
-          <CardContent className="space-y-4 p-5">
-            <p className="text-xs text-muted">
-              All vendors in this multi-vendor checkout must receive payment
-              before any vendor can confirm.
-            </p>
-            <div className="flex flex-wrap gap-3">
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button disabled={processing}>
-                  <CheckCircle2 className="h-4 w-4" />
-                  Confirm payment
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Confirm payment?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    This will mark the order as confirmed. Keri delivery starts
-                    only after every vendor in the same checkout has confirmed.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleConfirm}>
-                    Yes, confirm payment
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="destructive" disabled={processing}>
-                  <XCircle className="h-4 w-4" />
-                  Reject payment
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Reject payment?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    This will mark the payment as rejected. The customer can
-                    resubmit their demo payment details afterwards.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={handleReject}
-                    className="bg-red-600 text-white hover:bg-red-700"
-                  >
-                    Yes, reject payment
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-            </div>
-          </CardContent>
-        </Card>
-      ) : order.status !== 'confirmed' ? (
-        <p className="text-sm text-muted">
-          {order.status === 'payment_rejected'
-            ? 'This payment was rejected. The customer may resubmit.'
-            : 'This order is not yet ready for vendor confirmation.'}
-        </p>
-      ) : null}
     </div>
   )
 }

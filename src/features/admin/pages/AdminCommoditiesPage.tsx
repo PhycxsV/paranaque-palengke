@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/card'
 import {
   Dialog,
+  DialogBody,
   DialogClose,
   DialogContent,
   DialogDescription,
@@ -83,7 +84,7 @@ function AddCommodityDialog() {
           Add commodity
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+      <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Add commodity</DialogTitle>
           <DialogDescription>
@@ -91,7 +92,8 @@ function AddCommodityDialog() {
             their own price within that range.
           </DialogDescription>
         </DialogHeader>
-        <div className="space-y-4 py-2">
+        <DialogBody>
+        <div className="space-y-4">
           <div className="space-y-1.5">
             <Label htmlFor="add-name">Name</Label>
             <Input
@@ -211,6 +213,7 @@ function AddCommodityDialog() {
             <Label htmlFor="add-active">Active (vendors can list this)</Label>
           </div>
         </div>
+        </DialogBody>
         <DialogFooter>
           <DialogClose asChild>
             <Button variant="outline">Cancel</Button>
@@ -275,7 +278,8 @@ function EditPriceDialog({ commodity }: { commodity: Commodity }) {
             Set a new LGU price range for {commodity.name} (/{commodity.unit}).
           </DialogDescription>
         </DialogHeader>
-        <div className="space-y-4 py-2">
+        <DialogBody>
+        <div className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1.5">
               <Label htmlFor="price-min">Price min (₱)</Label>
@@ -319,6 +323,7 @@ function EditPriceDialog({ commodity }: { commodity: Commodity }) {
             />
           </div>
         </div>
+        </DialogBody>
         <DialogFooter>
           <DialogClose asChild>
             <Button variant="outline">Cancel</Button>

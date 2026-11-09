@@ -23,7 +23,7 @@
 |--------|-------------|------|
 | Customer (User) | `/customer` | Browse vendors/products, cart, checkout, pay, track orders, chat |
 | Vendor | `/vendor` | Manage store profile & listings, confirm/reject payments, advance Keri delivery, chat |
-| LGU Admin | `/admin` | Commodities & price ranges, price history, vendor directory (rating + pickup lat/lng), orders overview |
+| LGU Admin | `/admin` | Commodities & price ranges, price history, **palengke branches** (address + pickup lat/lng), vendor directory (rating + branch assignment), orders overview |
 
 Demo vendor selection uses an in-portal session switcher (not real login).
 
@@ -49,19 +49,21 @@ Demo vendor selection uses an in-portal session switcher (not real login).
 ### Happy-path steps
 1. Land on home (hero only in first viewport); scroll to Meet Our Vendors (top-rated) or browse by category.
 2. Open a vendor store and/or product; add items to cart (multi-vendor cart allowed).
-3. Cart shows line prices (vendor-declared), subtotal, and flat **₱100** Keri delivery fee (shown split per vendor when multiple vendors).
+3. Cart shows line prices (vendor-declared), subtotal, and a **placeholder** Keri delivery fee (demo uses ₱100; production fee is **dynamic**). Fee is split per vendor when multiple vendors.
 4. Checkout collects customer name, contact, optional notes.
-5. System creates **one Order per vendor** in the cart, all sharing one `checkoutGroupId`.
-6. Each order starts as `pending_payment`, with `pickupLat` / `pickupLng` snapshotted from that vendor’s store coordinates.
+5. System creates **one Order per vendor** in the cart. **All** of them (even a single-vendor checkout) share one **`bookingGroupId`** — the booking group forwarded to Keri.
+6. Each order starts as `pending_payment`, with `branchId` / `branchName` and `pickupLat` / `pickupLng` snapshotted from the **palengke (Branch)** the vendor belongs to — not from the stall.
 7. Customer pays each vendor order via demo QR (group page if multiple). Submit → `awaiting_vendor_confirmation`.
-8. After vendor(s) confirm, customer sees Keri delivery milestones on order detail (only when **all** orders in the group are `confirmed`).
-9. Optional: chat with a vendor about stock / cut-off / pickup.
+8. After vendor(s) confirm, customer sees Keri delivery milestones on order detail (only when **all** orders in the booking group are `confirmed`).
+9. When the booking is **dispatched** (first sibling moves to `out_for_delivery`), all sibling orders receive the **same `keriTrackingId`**.
+10. Optional: chat with a vendor about stock / cut-off / pickup.
 
 ### Customer rules & gates
 - Vendor past daily cut-off (`cutoffTime`) or unavailable → cannot accept new orders (store/product add blocked; checkout fails if vendor closed).
 - Pricing display: vendor price + LGU range disclaimer.
 - Quantity is a unit count for the product’s unit (`kg` or `piece` / pcs); there is **no separate kilos field** and **no 25 kg cart cap** in the current build.
-- Multi-vendor: N orders, fee split across vendors (remainder cents applied to first vendor).
+- Multi-vendor: N orders in one booking group; placeholder fee split across vendors (remainder cents applied to first vendor).
+- Single-vendor checkout still gets a `bookingGroupId` (group of one).
 - Payment rejected → customer may resubmit demo payment (`payment_rejected` → `awaiting_vendor_confirmation`).
 
 ### Customer mermaid
@@ -76,7 +78,7 @@ flowchart TD
   products --> product
   product --> cart[Cart_multiVendor]
   cart --> checkout[Checkout_form]
-  checkout --> ordersCreated[Create_N_orders_same_groupId]
+  checkout --> ordersCreated[Create_N_orders_same_bookingGroup]
   ordersCreated --> pay[Demo_QR_per_vendor]
   pay --> awaiting[awaiting_vendor_confirmation]
   awaiting --> confirmed[Vendor_confirmed]
@@ -102,17 +104,18 @@ flowchart TD
 1. Select active demo vendor in portal.
 2. List products from LGU commodities; set `vendorPrice` **inside** commodity `priceMin`–`priceMax`; choose unit `kg` or `piece`; set stock.
 3. Receive orders in `awaiting_vendor_confirmation` after customer submits demo payment.
-4. Confirm payment **only if every sibling order in the same `checkoutGroupId` has reached a “paid enough” state** (`awaiting_vendor_confirmation`, `confirmed`, or `payment_rejected` — i.e. customer has finalized payment attempt for all vendors). On confirm → order `confirmed` + `deliveryStatus = awaiting_pickup`.
+4. Confirm payment **only if every sibling order in the same `bookingGroupId` has reached a “paid enough” state** (`awaiting_vendor_confirmation`, `confirmed`, or `payment_rejected` — i.e. customer has finalized payment attempt for all vendors). On confirm → order `confirmed` + `deliveryStatus = awaiting_pickup`.
 5. Or reject payment → `payment_rejected` (customer can retry).
-6. Advance Keri delivery **only if** this order is `confirmed` **and** all siblings in the group are `confirmed`:  
+6. Advance Keri delivery **only if** this order is `confirmed` **and** all siblings in the booking group are `confirmed`:  
    `awaiting_pickup` → `out_for_delivery` → `delivered`.
-7. Order detail shows Keri pickup pin snapshot (`pickupLat`, `pickupLng`) for this store.
-8. Chat with customers.
+7. On first dispatch to `out_for_delivery`, the booking group gets one shared **`keriTrackingId`** stamped on all sibling orders.
+8. Order detail shows booking group id, shared tracking id (when dispatched), and Keri pickup for the **palengke**.
+9. Chat with customers.
 
 ### Vendor rules & gates
 - Cannot confirm own order until all vendors in the checkout group have customer payment finalized (gate message: customer must finalize payment for all vendors).
 - Cannot advance delivery until all vendors in the group have confirmed.
-- Store profile does not edit rating or lat/lng (LGU admin responsibility).
+- Store profile does not edit rating, branch assignment, or lon/lat (LGU admin responsibility).
 - Cut-off / opensAt control whether the stall accepts new customer orders.
 
 ### Vendor mermaid
@@ -140,31 +143,37 @@ flowchart TD
 - Dashboard `/admin`
 - Commodities `/admin/commodities` — create/edit LGU commodities (category, unit hint, `priceMin`/`priceMax`, image, active flag)
 - Price history `/admin/price-history` — audit of range changes
-- Vendors `/admin/vendors` — directory + **Create vendor**
-- Vendor detail `/admin/vendors/:vendorId` — products snapshot; **Keri pickup pin** (rating, lat, lng)
+- Palengkes `/admin/branches` — **Branch / market CRUD** (name, address, **lat**, **lng**, active)
+- Vendors `/admin/vendors` — directory + **Create vendor** (assign `branchId`)
+- Vendor detail `/admin/vendors/:vendorId` — products snapshot; rating + **palengke assignment**
 - Orders `/admin/orders` — overview of marketplace orders
 - Offers `/admin/offers` — hidden while tawad disabled
 
 ### Happy-path steps
 1. Define / update commodities and allowed price ranges (guidance for vendors).
-2. Register vendors (name, description, location text, categories, image, hours, QR label, availability, **rating**, **lat**, **lng**).
-3. On vendor detail, adjust rating and store pickup coordinates used for Keri.
-4. Monitor orders across vendors (read-oriented overview in demo).
+2. Register **palengke branches** with address and Keri pickup lon/lat.
+3. Register vendors under a palengke (`branchId`), with stall label, rating, hours, etc.
+4. On vendor detail, adjust rating and which palengke the stall belongs to.
+5. Monitor orders across vendors (read-oriented overview in demo).
 
 ### Admin rules
 - Vendor-declared prices must stay within LGU range (enforced on vendor product forms).
-- Pickup coordinates are **per store (vendor)**, not per market/branch entity.
-- Rating (1–5) drives customer home “top rated” sort.
-- When an order is placed, pickup lat/lng are **copied onto the order** (snapshot at checkout).
+- Pickup coordinates are **per palengke / market (Branch)**. Vendors **belong to** a Branch.
+- Rating (1–5) stays on Vendor and drives customer home “top rated” sort.
+- When an order is placed, branch id/name and pickup lat/lng are **copied onto the order** from the vendor’s Branch (snapshot at checkout).
 
 ### LGU mermaid
 
 ```mermaid
 flowchart TD
   commodities[Manage_commodities_price_ranges] --> vendorsSell[Vendors_list_within_range]
-  createVendor[Create_vendor_with_rating_lat_lng] --> directory[Vendor_directory]
-  directory --> detail[Vendor_detail_edit_pickup_pin]
-  detail --> ordersSnap[Orders_carry_pickup_snapshot]
+  branches[Manage_palengke_branches_lat_lng] --> assign[Assign_vendor_branchId]
+  createVendor[Create_vendor_under_palengke] --> directory[Vendor_directory]
+  assign --> directory
+  directory --> detail[Vendor_detail_rating_and_branch]
+  branches --> pickup[Keri_uses_branch_coords]
+  detail --> ordersSnap[Orders_snapshot_branch_pickup]
+  pickup --> ordersSnap
   commodities --> priceHist[Price_history]
   directory --> ordersAdmin[Orders_overview]
 ```
@@ -195,10 +204,11 @@ flowchart TD
 
 Set to `awaiting_pickup` when payment is confirmed. Advanced by vendor under group-all-confirmed gate.
 
-### Checkout economics
-- Flat delivery fee: **₱100** (`DELIVERY_FEE`) included in payment totals.
-- Multi-vendor: fee split evenly; rounding remainder on first vendor order.
-- One `checkoutGroupId` ties sibling orders from a single checkout.
+### Checkout / Keri booking
+- Delivery fee is **dynamic in production**. Demo uses **₱100** (`DELIVERY_FEE_PLACEHOLDER`) only as a placeholder in cart/checkout totals.
+- Multi-vendor: placeholder fee split evenly; rounding remainder on first vendor order.
+- One **`bookingGroupId`** per checkout (single or multi-vendor) — this is the booking unit forwarded to Keri.
+- One shared **`keriTrackingId`** for all sibling orders once the booking is dispatched (`out_for_delivery`).
 
 ### End-to-end mermaid
 
@@ -206,15 +216,17 @@ Set to `awaiting_pickup` when payment is confirmed. Advanced by vendor under gro
 flowchart TD
   browse[Customer_browses] --> cart[Multi_vendor_cart]
   cart --> checkout[Checkout]
-  checkout --> split[N_orders_one_groupId_fee_split_pickup_snapshotted]
+  checkout --> split[N_orders_one_bookingGroup_fee_placeholder_pickup_snapshotted]
   split --> payEach[Customer_pays_each_vendor_QR]
   payEach --> waitVendor[awaiting_vendor_confirmation]
   waitVendor --> confGate{Every_sibling_payment_finalized}
   confGate -->|yes| vendorConf[Each_vendor_confirms]
   confGate -->|no| blockConf[Confirm_blocked]
   vendorConf --> allConf{All_siblings_confirmed}
-  allConf -->|yes| keriFlow[Keri_awaiting_pickup_to_delivered]
+  allConf -->|yes| keriFlow[Keri_awaiting_pickup]
   allConf -->|no| blockKeri[Delivery_advance_blocked]
+  keriFlow --> dispatch[First_dispatch_shared_keriTrackingId]
+  dispatch --> delivered[out_for_delivery_to_delivered]
 ```
 
 ---
@@ -225,7 +237,7 @@ flowchart TD
 |---------|---------------|------------|
 | Catalog prices | Vendor | LGU commodity ranges |
 | Top-rated home list | Customer | Admin-set vendor `rating` |
-| Keri pickup pin on order | Customer / Vendor / Rider-facing UI | Admin-set vendor `lat`/`lng` at checkout time |
+| Keri pickup pin on order | Customer / Vendor / Rider-facing UI | Admin-set **Branch** `lat`/`lng`; vendor’s `branchId` at checkout |
 | Confirm payment | Vendor | Customer finished payment flow for **all** vendors in group |
 | Show / advance Keri milestones | Customer & Vendor | **All** group orders `confirmed` |
 | Resubmit payment | Customer | Vendor chose `payment_rejected` |
@@ -238,9 +250,9 @@ flowchart TD
 - No real authentication, KYC, or role permissions server-side
 - No real QRPH / bank settlement; payment is simulated
 - No live Keri rider app integration (coords are shown as pickup pin on orders)
-- No separate “Branches / palengke market” entity — location is per vendor store
+- Branch / palengke entity exists; lon/lat is on Branch (not Vendor)
 - No weight / 25 kg order limit implemented
-- Tumawad (offers) UI disabled via feature flag (code retained)
+- Tumawad (offers) UI **hidden** via `FEATURE_TAWAD_ENABLED = false` (code retained; not shown to users)
 - No production backend; data is browser `localStorage`
 - Prices and vendors are illustrative / demo only (disclaimer in UI)
 
@@ -248,10 +260,10 @@ flowchart TD
 
 ## 8. Key constants (as implemented)
 
-- `DELIVERY_FEE = 100` (PHP)
+- `DELIVERY_FEE_PLACEHOLDER = 100` (PHP) — demo only; fee is dynamic in production
 - `HOME_TOP_RATED_VENDOR_COUNT = 3`
 - `FEATURE_TAWAD_ENABLED = false`
-- `STORAGE_PREFIX = paranaque-palengke-v8`
+- `STORAGE_PREFIX = paranaque-palengke-v10`
 - Vendor stock units allowed in UI: `kg` | `piece`
 
 ---

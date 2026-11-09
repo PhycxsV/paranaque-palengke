@@ -5,9 +5,9 @@ import { CustomerHeader } from './CustomerHeader'
 
 export function CustomerLayout() {
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex min-h-screen flex-col max-md:pb-24">
       <CustomerHeader />
-      <main className="flex-1 pb-20 md:pb-0">
+      <main className="flex-1">
         <Outlet />
       </main>
       <CustomerFooter />

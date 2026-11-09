@@ -1,26 +1,31 @@
-import { useState } from 'react'
+﻿import { useState } from 'react'
 import { Link, NavLink, Outlet } from 'react-router-dom'
 import {
-  BarChart3,
   ClipboardList,
   HandCoins,
   History,
   LayoutDashboard,
+  MapPinned,
   Menu,
   ShoppingBag,
   Store,
   X,
   Wheat,
 } from 'lucide-react'
-import { BRAND_NAME, FEATURE_TAWAD_ENABLED, PRICE_DISCLAIMER } from '@/constants'
+import { FEATURE_TAWAD_ENABLED, PRICE_DISCLAIMER } from '@/constants'
+import { BrandMark } from '@/components/shared/BrandLogo'
+import {
+  SidebarBackdrop,
+  SidebarBrand,
+} from '@/components/shared/PortalSidebarParts'
+import { SIDEBAR_SURFACE, sidebarLinkClass } from '@/components/shared/sidebar-styles'
 import { PortalSwitcher } from '@/components/shared/PortalSwitcher'
 import { Button } from '@/components/ui/button'
-import { cn } from '@/lib/utils'
-
 const links = [
   { to: '/admin', label: 'Dashboard', icon: LayoutDashboard, end: true },
   { to: '/admin/commodities', label: 'Commodities', icon: Wheat },
   { to: '/admin/price-history', label: 'Price History', icon: History },
+  { to: '/admin/branches', label: 'Palengkes', icon: MapPinned },
   { to: '/admin/vendors', label: 'Vendors', icon: Store },
   { to: '/admin/offers', label: 'Offers', icon: HandCoins },
   { to: '/admin/orders', label: 'Orders', icon: ClipboardList },
@@ -28,32 +33,18 @@ const links = [
 
 function AdminSidebar({ onNavigate }: { onNavigate?: () => void }) {
   return (
-    <aside className="flex h-full flex-col bg-primary-deep text-white">
-      <div className="border-b border-white/10 px-5 py-5">
-        <div className="flex items-center gap-2">
-          <BarChart3 className="h-5 w-5 text-gold" />
-          <p className="text-xs uppercase tracking-wider text-gold">
-            LGU Admin
-          </p>
-        </div>
-        <p className="mt-1 text-lg font-extrabold">{BRAND_NAME}</p>
-      </div>
+    <aside className={SIDEBAR_SURFACE}>
+      <SidebarBackdrop />
+      <SidebarBrand portalLabel="LGU Admin" />
 
-      <nav className="flex-1 space-y-1 px-3 py-4">
+      <nav className="relative flex-1 space-y-1 px-3 py-4">
         {links.map(({ to, label, icon: Icon, end }) => (
           <NavLink
             key={to}
             to={to}
             end={end}
             onClick={onNavigate}
-            className={({ isActive }) =>
-              cn(
-                'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition',
-                isActive
-                  ? 'bg-white/15 text-white'
-                  : 'text-white/75 hover:bg-white/10 hover:text-white',
-              )
-            }
+            className={({ isActive }) => sidebarLinkClass(isActive)}
           >
             <Icon className="h-4 w-4" />
             {label}
@@ -61,12 +52,12 @@ function AdminSidebar({ onNavigate }: { onNavigate?: () => void }) {
         ))}
       </nav>
 
-      <div className="space-y-3 border-t border-white/10 p-3">
-        <PortalSwitcher className="w-full border-white/20 bg-white/10 text-white [&_svg]:text-white" />
+      <div className="relative space-y-3 border-t border-white/10 p-3">
+        <PortalSwitcher className="w-full border-white/20 bg-white/10 text-white hover:bg-white/15 [&_svg]:text-white" />
         <Link
           to="/customer"
           onClick={onNavigate}
-          className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-white/75 transition hover:bg-white/10 hover:text-white"
+          className="flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-semibold text-white/70 transition hover:bg-white/10 hover:text-white"
         >
           <ShoppingBag className="h-4 w-4" />
           Back to storefront
@@ -94,7 +85,7 @@ export default function AdminLayout() {
       {open && (
         <div className="fixed inset-0 z-50 lg:hidden">
           <button
-            className="absolute inset-0 bg-black/40"
+            className="absolute inset-0 bg-primary-deep/50 backdrop-blur-sm"
             aria-label="Close menu overlay"
             onClick={() => setOpen(false)}
           />
@@ -105,7 +96,7 @@ export default function AdminLayout() {
       )}
 
       <div className="min-w-0">
-        <div className="sticky top-0 z-30 flex items-center gap-3 border-b border-border bg-surface px-4 py-3 lg:hidden">
+        <div className="sticky top-0 z-30 flex items-center gap-3 border-b border-border bg-surface/95 px-4 py-3 backdrop-blur lg:hidden">
           <Button
             variant="ghost"
             size="icon"
@@ -114,7 +105,7 @@ export default function AdminLayout() {
           >
             {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </Button>
-          <p className="font-bold text-primary-deep">LGU Admin</p>
+          <BrandMark sealClassName="h-9 w-9" subtitle="LGU Admin" className="[&_p:first-child]:text-base" />
         </div>
         <main className="px-4 py-6 sm:px-6 lg:px-8">
           <Outlet />

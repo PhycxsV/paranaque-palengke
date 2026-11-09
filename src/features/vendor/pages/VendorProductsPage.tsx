@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react'
-import { Archive, Package, Pencil, Plus } from 'lucide-react'
+import { useMemo, useState, type ReactNode } from 'react'
+import { Archive, Package, Pencil, Plus, Search, Tag } from 'lucide-react'
 import { toast } from 'sonner'
 import {
   AlertDialog,
@@ -13,11 +13,12 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
 import {
   Dialog,
+  DialogBody,
   DialogClose,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -33,9 +34,10 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
-import { Badge } from '@/components/ui/badge'
-import { ProductImage } from '@/components/shared/ProductImage'
 import { EmptyState } from '@/components/shared/EmptyState'
+import { FilterTabs, type FilterTabItem } from '@/components/shared/FilterTabs'
+import { PortalHeader } from '@/components/shared/PortalHeader'
+import { ProductImage } from '@/components/shared/ProductImage'
 import { useDemoSessionStore } from '@/stores/demo-session-store'
 import { useProductStore } from '@/stores/product-store'
 import { useCommodityStore } from '@/stores/commodity-store'
@@ -44,8 +46,12 @@ import {
   getPriceRangeMessage,
   getVendorPrice,
 } from '@/lib/pricing'
-import { PRICE_DISCLAIMER, VENDOR_STOCK_UNITS } from '@/constants'
-import { formatPeso } from '@/lib/utils'
+import {
+  LOW_STOCK_THRESHOLD,
+  PRICE_DISCLAIMER,
+  VENDOR_STOCK_UNITS,
+} from '@/constants'
+import { cn, formatPeso } from '@/lib/utils'
 import type { Product, ProductFormInput, ProductUnit } from '@/types'
 
 const EMPTY_FORM: ProductFormInput = {
@@ -103,6 +109,55 @@ function formatLguRange(
   return `${formatPeso(min)}–${formatPeso(max)}/${formatUnitLabel(unit)}`
 }
 
+type ListFilter = 'all' | 'available' | 'unavailable' | 'low'
+
+/** Shows where the vendor's price sits inside the LGU range. */
+function PriceRangeBar({
+  price,
+  min,
+  max,
+}: {
+  price: number
+  min: number
+  max: number
+}) {
+  const span = max - min
+  const pct = span > 0 ? Math.min(100, Math.max(0, ((price - min) / span) * 100)) : 50
+  return (
+    <div>
+      <div className="relative h-1.5 rounded-full bg-gradient-to-r from-lime/60 via-bay/50 to-primary/60">
+        <span
+          className="absolute top-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-primary-deep shadow"
+          style={{ left: `${pct}%` }}
+          aria-hidden
+        />
+      </div>
+      <div className="mt-1.5 flex justify-between text-[10px] font-semibold text-muted">
+        <span>{formatPeso(min)}</span>
+        <span>LGU range</span>
+        <span>{formatPeso(max)}</span>
+      </div>
+    </div>
+  )
+}
+
+function FormSection({
+  title,
+  children,
+}: {
+  title: string
+  children: ReactNode
+}) {
+  return (
+    <fieldset className="grid gap-4 rounded-xl border border-border bg-warm-white/60 p-4">
+      <legend className="-ml-1 px-1 text-[11px] font-bold uppercase tracking-wider text-primary">
+        {title}
+      </legend>
+      {children}
+    </fieldset>
+  )
+}
+
 export default function VendorProductsPage() {
   const activeVendorId = useDemoSessionStore((s) => s.activeVendorId)
   const products = useProductStore((s) => s.products)
@@ -126,6 +181,43 @@ export default function VendorProductsPage() {
   const [editProduct, setEditProduct] = useState<Product | null>(null)
   const [form, setForm] = useState<ProductFormInput>(EMPTY_FORM)
   const [errors, setErrors] = useState<FormErrors>({})
+  const [filter, setFilter] = useState<ListFilter>('all')
+  const [query, setQuery] = useState('')
+
+  const tabs = useMemo<FilterTabItem<ListFilter>[]>(
+    () => [
+      { value: 'all', label: 'All', count: vendorProducts.length },
+      {
+        value: 'available',
+        label: 'Available',
+        count: vendorProducts.filter((p) => p.isAvailable).length,
+      },
+      {
+        value: 'unavailable',
+        label: 'Unavailable',
+        count: vendorProducts.filter((p) => !p.isAvailable).length,
+      },
+      {
+        value: 'low',
+        label: 'Low stock',
+        count: vendorProducts.filter((p) => p.stock <= LOW_STOCK_THRESHOLD).length,
+      },
+    ],
+    [vendorProducts],
+  )
+
+  const visibleProducts = useMemo(() => {
+    const q = query.trim().toLowerCase()
+    return vendorProducts.filter((p) => {
+      if (filter === 'available' && !p.isAvailable) return false
+      if (filter === 'unavailable' && p.isAvailable) return false
+      if (filter === 'low' && p.stock > LOW_STOCK_THRESHOLD) return false
+      if (!q) return true
+      return (
+        p.name.toLowerCase().includes(q) || p.category.toLowerCase().includes(q)
+      )
+    })
+  }, [vendorProducts, filter, query])
 
   const openAdd = () => {
     setForm(EMPTY_FORM)
@@ -247,29 +339,39 @@ export default function VendorProductsPage() {
 
   const formFields = (
     <div className="grid gap-4">
-      {/* Commodity selector — only in add mode */}
-      {!isEditing && (
-        <div className="grid gap-1.5">
-          <Label>Commodity *</Label>
-          <Select value={form.commodityId} onValueChange={selectCommodity}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select an LGU commodity..." />
-            </SelectTrigger>
-            <SelectContent>
-              {activeCommodities.map((c) => (
-                <SelectItem key={c.id} value={c.id}>
-                  {c.name} — {formatLguRange(c.priceMin, c.priceMax, c.unit)}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {errors.commodityId ? (
-            <p className="text-xs text-red-600">{errors.commodityId}</p>
-          ) : null}
-          {selectedCommodity && (
-            <div className="mt-1 rounded-lg border border-primary/20 bg-primary-50/50 p-3">
-              <p className="text-sm font-semibold text-primary-deep">
+      <FormSection title="Commodity">
+        {!isEditing ? (
+          <div className="grid gap-1.5">
+            <Label>Commodity *</Label>
+            <Select value={form.commodityId} onValueChange={selectCommodity}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select an LGU commodity..." />
+              </SelectTrigger>
+              <SelectContent>
+                {activeCommodities.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.name} — {formatLguRange(c.priceMin, c.priceMax, c.unit)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {errors.commodityId ? (
+              <p className="text-xs text-red-600">{errors.commodityId}</p>
+            ) : null}
+          </div>
+        ) : null}
+
+        {selectedCommodity ? (
+          <div className="flex items-center gap-3 rounded-xl border border-primary/15 bg-white p-3">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary-50 text-primary">
+              <Tag className="h-4 w-4" />
+            </span>
+            <div className="min-w-0">
+              <p className="truncate text-sm font-bold text-primary-deep">
                 {selectedCommodity.name}
+                <span className="ml-2 text-xs font-medium text-muted">
+                  {selectedCommodity.category}
+                </span>
               </p>
               <p className="text-xs text-muted">
                 LGU range:{' '}
@@ -281,158 +383,153 @@ export default function VendorProductsPage() {
                   )}
                 </span>
               </p>
-              <p className="mt-1 text-[11px] italic text-muted">
-                {PRICE_DISCLAIMER}
-              </p>
             </div>
-          )}
-        </div>
-      )}
-
-      {/* Read-only commodity info in edit mode */}
-      {isEditing && selectedCommodity && (
-        <div className="rounded-lg border border-primary/20 bg-primary-50/50 p-3">
-          <p className="text-xs font-medium text-muted">Commodity</p>
-          <p className="text-sm font-semibold text-primary-deep">
-            {selectedCommodity.name}
-          </p>
+          </div>
+        ) : (
           <p className="text-xs text-muted">
-            LGU range:{' '}
-            <span className="font-bold text-primary">
-              {formatLguRange(
-                selectedCommodity.priceMin,
-                selectedCommodity.priceMax,
-                selectedCommodity.unit,
-              )}
-            </span>
+            Pick a commodity to see its LGU price range and fill in the details.
           </p>
-          <p className="mt-1 text-[10px] italic text-muted">{PRICE_DISCLAIMER}</p>
+        )}
+        {selectedCommodity ? (
+          <p className="text-[11px] italic text-muted">{PRICE_DISCLAIMER}</p>
+        ) : null}
+      </FormSection>
+
+      <FormSection title="Price & stock">
+        <div className="grid gap-4 sm:grid-cols-3">
+          <div className="grid gap-1.5 sm:col-span-1">
+            <Label htmlFor="pf-price">Your price</Label>
+            <div className="relative">
+              <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-bold text-muted">
+                ₱
+              </span>
+              <Input
+                id="pf-price"
+                type="number"
+                step="0.01"
+                min="0.01"
+                className="pl-8"
+                value={form.vendorPrice || ''}
+                onChange={(e) =>
+                  updateField('vendorPrice', parseFloat(e.target.value) || 0)
+                }
+              />
+            </div>
+          </div>
+          <div className="grid gap-1.5">
+            <Label>Unit</Label>
+            <Select
+              value={form.unit}
+              onValueChange={(v) => updateField('unit', v as ProductUnit)}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {VENDOR_STOCK_UNITS.map((unit) => (
+                  <SelectItem key={unit} value={unit}>
+                    {formatUnitLabel(unit)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="grid gap-1.5">
+            <Label htmlFor="pf-stock">Stock</Label>
+            <div className="relative">
+              <Input
+                id="pf-stock"
+                type="number"
+                min={0}
+                className="pr-12"
+                value={form.stock || ''}
+                onChange={(e) => updateField('stock', Number(e.target.value))}
+              />
+              <span className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-muted">
+                {formatUnitLabel(form.unit)}
+              </span>
+            </div>
+          </div>
         </div>
-      )}
+        {errors.unit ? <p className="text-xs text-red-600">{errors.unit}</p> : null}
+        {errors.stock ? <p className="text-xs text-red-600">{errors.stock}</p> : null}
+        {livePriceMessage ? (
+          <p className="rounded-lg bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800">
+            {livePriceMessage}
+          </p>
+        ) : selectedCommodity && form.vendorPrice > 0 ? (
+          <p className="rounded-lg bg-emerald-50 px-3 py-2 text-xs font-medium text-emerald-800">
+            Within the LGU range.
+          </p>
+        ) : null}
+        {errors.vendorPrice && !livePriceMessage ? (
+          <p className="text-xs text-red-600">{errors.vendorPrice}</p>
+        ) : null}
+      </FormSection>
 
-      {/* Name (read-only, derived from commodity) */}
-      <div className="grid gap-1.5">
-        <Label htmlFor="pf-name">Name</Label>
-        <Input
-          id="pf-name"
-          value={form.name}
-          readOnly
-          className="bg-muted/20"
-        />
-      </div>
-
-      <div className="grid gap-1.5">
-        <Label htmlFor="pf-desc">Description (override)</Label>
-        <Textarea
-          id="pf-desc"
-          value={form.description}
-          onChange={(e) => updateField('description', e.target.value)}
-          placeholder="Brief description override"
-        />
-      </div>
-
-      <div className="grid gap-4 sm:grid-cols-2">
+      <FormSection title="Listing">
         <div className="grid gap-1.5">
-          <Label>Category</Label>
-          <Input value={form.category} readOnly className="bg-muted/20" />
-        </div>
-        <div className="grid gap-1.5">
-          <Label>Unit</Label>
-          <Select
-            value={form.unit}
-            onValueChange={(v) => updateField('unit', v as ProductUnit)}
-          >
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {VENDOR_STOCK_UNITS.map((unit) => (
-                <SelectItem key={unit} value={unit}>
-                  {formatUnitLabel(unit)}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {errors.unit ? (
-            <p className="text-xs text-red-600">{errors.unit}</p>
-          ) : null}
-        </div>
-      </div>
-
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="grid gap-1.5">
-          <Label htmlFor="pf-price">Your price (₱)</Label>
-          <Input
-            id="pf-price"
-            type="number"
-            step="0.01"
-            min="0.01"
-            value={form.vendorPrice || ''}
-            onChange={(e) =>
-              updateField('vendorPrice', parseFloat(e.target.value) || 0)
-            }
+          <Label htmlFor="pf-desc">Description</Label>
+          <Textarea
+            id="pf-desc"
+            value={form.description}
+            onChange={(e) => updateField('description', e.target.value)}
+            placeholder="Short description shown to customers"
           />
-          {livePriceMessage ? (
-            <p className="text-xs text-amber-700">{livePriceMessage}</p>
-          ) : selectedCommodity && form.vendorPrice > 0 ? (
-            <p className="text-xs text-emerald-700">Within the LGU range.</p>
-          ) : null}
-          {errors.vendorPrice ? (
-            <p className="text-xs text-red-600">{errors.vendorPrice}</p>
-          ) : null}
         </div>
         <div className="grid gap-1.5">
-          <Label htmlFor="pf-stock">Stock</Label>
-          <Input
-            id="pf-stock"
-            type="number"
-            min={0}
-            value={form.stock || ''}
-            onChange={(e) => updateField('stock', Number(e.target.value))}
-          />
-          {errors.stock ? (
-            <p className="text-xs text-red-600">{errors.stock}</p>
-          ) : null}
+          <Label htmlFor="pf-img">Image URL</Label>
+          <div className="flex items-center gap-3">
+            {form.imageUrl ? (
+              <ProductImage
+                src={form.imageUrl}
+                alt="Preview"
+                className="h-11 w-11 shrink-0 rounded-lg ring-1 ring-border"
+              />
+            ) : null}
+            <Input
+              id="pf-img"
+              value={form.imageUrl}
+              onChange={(e) => updateField('imageUrl', e.target.value)}
+              placeholder="https://..."
+            />
+          </div>
         </div>
-      </div>
-
-      <div className="grid gap-1.5">
-        <Label htmlFor="pf-img">Image URL</Label>
-        <Input
-          id="pf-img"
-          value={form.imageUrl}
-          onChange={(e) => updateField('imageUrl', e.target.value)}
-          placeholder="https://..."
-        />
-      </div>
-      <div className="flex items-center gap-3">
-        <Switch
-          id="pf-avail"
-          checked={form.isAvailable}
-          onCheckedChange={(checked) => updateField('isAvailable', checked)}
-        />
-        <Label htmlFor="pf-avail">Available for purchase</Label>
-      </div>
+        <label
+          htmlFor="pf-avail"
+          className="flex cursor-pointer items-center justify-between gap-4 rounded-xl border border-border bg-white px-4 py-3"
+        >
+          <span>
+            <span className="block text-sm font-bold text-primary-deep">
+              Available for purchase
+            </span>
+            <span className="block text-xs text-muted">
+              Customers can add this to their cart.
+            </span>
+          </span>
+          <Switch
+            id="pf-avail"
+            checked={form.isAvailable}
+            onCheckedChange={(checked) => updateField('isAvailable', checked)}
+          />
+        </label>
+      </FormSection>
     </div>
   )
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-extrabold text-primary-deep">
-            Products
-          </h1>
-          <p className="mt-1 text-sm text-muted">
-            {vendorProducts.length} active product
-            {vendorProducts.length !== 1 ? 's' : ''}
-          </p>
-        </div>
-        <Button onClick={openAdd}>
-          <Plus className="h-4 w-4" />
-          Add product
-        </Button>
-      </div>
+      <PortalHeader
+        eyebrow="Vendor portal"
+        title="Products"
+        description={`${vendorProducts.length} active listing${vendorProducts.length !== 1 ? 's' : ''}. Set your price within the LGU range and keep stock up to date.`}
+        actions={
+          <Button onClick={openAdd} size="lg">
+            <Plus className="h-4 w-4" />
+            Add product
+          </Button>
+        }
+      />
 
       {vendorProducts.length === 0 ? (
         <EmptyState
@@ -443,111 +540,186 @@ export default function VendorProductsPage() {
           onAction={openAdd}
         />
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {vendorProducts.map((product) => {
-            const vendorPrice = getVendorPrice(product, commodities)
-            const range = getCommodityRange(product, commodities)
-            return (
-              <Card key={product.id} className="flex flex-col overflow-hidden">
-                <ProductImage
-                  src={product.imageUrl}
-                  alt={product.name}
-                  className="h-40 w-full"
-                />
-                <div className="flex flex-1 flex-col gap-2 p-4">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-bold text-primary-deep">
-                        {product.name}
-                      </p>
-                      <p className="mt-0.5 text-xs text-muted">
-                        {product.category}
-                      </p>
-                    </div>
-                    <Badge
-                      variant={product.isAvailable ? 'success' : 'muted'}
-                    >
-                      {product.isAvailable ? 'Available' : 'Unavailable'}
-                    </Badge>
-                  </div>
-                  <p className="line-clamp-2 text-xs text-muted">
-                    {product.description}
-                  </p>
-                  <div className="mt-auto flex items-center justify-between pt-2 text-sm">
-                    <div>
-                      <span className="font-bold text-primary-deep">
-                        {formatPeso(vendorPrice)}/
-                        {formatUnitLabel(product.unit)}
+        <>
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <FilterTabs items={tabs} value={filter} onChange={setFilter} />
+            <div className="relative w-full lg:w-72">
+              <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
+              <Input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search your products…"
+                className="pl-10"
+                aria-label="Search your products"
+              />
+            </div>
+          </div>
+
+          {visibleProducts.length === 0 ? (
+            <EmptyState
+              icon={Search}
+              title="No matching products"
+              description="Try a different filter or search term."
+            />
+          ) : (
+            <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+              {visibleProducts.map((product) => {
+                const vendorPrice = getVendorPrice(product, commodities)
+                const range = getCommodityRange(product, commodities)
+                const out = product.stock <= 0
+                const low = !out && product.stock <= LOW_STOCK_THRESHOLD
+                return (
+                  <article
+                    key={product.id}
+                    className={cn(
+                      'hover-lift group flex flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow-[var(--shadow-soft)]',
+                      !product.isAvailable && 'bg-gray-50/60',
+                    )}
+                  >
+                    <div className="relative">
+                      <ProductImage
+                        src={product.imageUrl}
+                        alt={product.name}
+                        className={cn(
+                          'h-44 w-full',
+                          !product.isAvailable && 'grayscale',
+                        )}
+                        imgClassName="transition duration-500 group-hover:scale-105"
+                      />
+                      <span className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-primary-deep/50 to-transparent" />
+                      <span
+                        className={cn(
+                          'absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold shadow-sm backdrop-blur',
+                          product.isAvailable
+                            ? 'bg-white/95 text-emerald-800'
+                            : 'bg-gray-900/70 text-white',
+                        )}
+                      >
+                        <span
+                          className={cn(
+                            'h-1.5 w-1.5 rounded-full',
+                            product.isAvailable ? 'bg-emerald-500' : 'bg-gray-300',
+                          )}
+                        />
+                        {product.isAvailable ? 'Available' : 'Unavailable'}
                       </span>
-                      {range ? (
-                        <p className="text-[10px] text-muted">
-                          LGU {formatPeso(range.min)}–{formatPeso(range.max)}
-                        </p>
-                      ) : null}
+                      <span
+                        className={cn(
+                          'absolute bottom-3 right-3 rounded-full px-2.5 py-1 text-[11px] font-bold shadow-sm',
+                          out
+                            ? 'bg-red-500 text-white'
+                            : low
+                              ? 'bg-gold text-primary-deep'
+                              : 'bg-white/95 text-primary-deep',
+                        )}
+                      >
+                        {out
+                          ? 'Out of stock'
+                          : `${product.stock} ${formatUnitLabel(product.unit)} left`}
+                      </span>
                     </div>
-                    <span className="text-muted">
-                      Stock: {product.stock}
-                    </span>
-                  </div>
-                  <div className="flex flex-wrap gap-2 border-t border-border pt-3">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => openEdit(product)}
-                    >
-                      <Pencil className="h-3.5 w-3.5" />
-                      Edit
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleToggle(product)}
-                    >
-                      {product.isAvailable ? 'Mark unavailable' : 'Mark available'}
-                    </Button>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="ghost" size="sm" className="text-red-600">
-                          <Archive className="h-3.5 w-3.5" />
-                          Archive
+
+                    <div className="flex flex-1 flex-col gap-3 p-5">
+                      <div>
+                        <p className="text-[11px] font-bold uppercase tracking-wider text-primary">
+                          {product.category}
+                        </p>
+                        <h3 className="mt-0.5 truncate text-lg font-extrabold text-primary-deep">
+                          {product.name}
+                        </h3>
+                        <p className="mt-1 line-clamp-2 min-h-[2.5rem] text-xs leading-relaxed text-muted">
+                          {product.description}
+                        </p>
+                      </div>
+
+                      <div className="rounded-xl bg-primary-50/70 p-3.5">
+                        <p className="font-display text-2xl font-extrabold leading-none text-primary-deep">
+                          {formatPeso(vendorPrice)}
+                          <span className="ml-1 text-sm font-semibold text-muted">
+                            /{formatUnitLabel(product.unit)}
+                          </span>
+                        </p>
+                        {range ? (
+                          <div className="mt-3">
+                            <PriceRangeBar
+                              price={vendorPrice}
+                              min={range.min}
+                              max={range.max}
+                            />
+                          </div>
+                        ) : null}
+                      </div>
+
+                      <div className="mt-auto flex items-center gap-2 border-t border-border pt-4">
+                        <label className="flex flex-1 cursor-pointer items-center gap-2.5 text-xs font-semibold text-ink">
+                          <Switch
+                            checked={product.isAvailable}
+                            onCheckedChange={() => handleToggle(product)}
+                            aria-label={`Toggle availability for ${product.name}`}
+                          />
+                          {product.isAvailable ? 'On sale' : 'Hidden'}
+                        </label>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => openEdit(product)}
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                          Edit
                         </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>
-                            Archive "{product.name}"?
-                          </AlertDialogTitle>
-                          <AlertDialogDescription>
-                            This will remove the product from your active listings.
-                            Archived products cannot be restored in this demo.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction
-                            onClick={() => handleArchive(product)}
-                            className="bg-red-600 text-white hover:bg-red-700"
-                          >
-                            Archive
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </div>
-                </div>
-              </Card>
-            )
-          })}
-        </div>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="w-9 px-0 text-red-600 hover:bg-red-50"
+                              aria-label={`Archive ${product.name}`}
+                            >
+                              <Archive className="h-4 w-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>
+                                Archive "{product.name}"?
+                              </AlertDialogTitle>
+                              <AlertDialogDescription>
+                                This will remove the product from your active
+                                listings. Archived products cannot be restored in
+                                this demo.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => handleArchive(product)}
+                                className="bg-red-600 text-white hover:bg-red-700"
+                              >
+                                Archive
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                    </div>
+                  </article>
+                )
+              })}
+            </div>
+          )}
+        </>
       )}
 
       {/* Add product dialog */}
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-xl">
           <DialogHeader>
             <DialogTitle>Add product</DialogTitle>
+            <DialogDescription>
+              Choose an LGU commodity, then set your own price and stock.
+            </DialogDescription>
           </DialogHeader>
-          {formFields}
+          <DialogBody>{formFields}</DialogBody>
           <DialogFooter>
             <DialogClose asChild>
               <Button variant="outline">Cancel</Button>
@@ -564,11 +736,14 @@ export default function VendorProductsPage() {
           if (!open) setEditProduct(null)
         }}
       >
-        <DialogContent className="max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-xl">
           <DialogHeader>
-            <DialogTitle>Edit product</DialogTitle>
+            <DialogTitle>Edit {editProduct?.name ?? 'product'}</DialogTitle>
+            <DialogDescription>
+              Update your price, stock and availability.
+            </DialogDescription>
           </DialogHeader>
-          {formFields}
+          <DialogBody>{formFields}</DialogBody>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditProduct(null)}>
               Cancel

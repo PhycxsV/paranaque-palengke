@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react'
+﻿import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { Check, CheckCheck, Send } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
@@ -48,8 +48,8 @@ export function ChatThreadView({
   }
 
   return (
-    <div className="flex h-[min(70vh,560px)] flex-col overflow-hidden rounded-xl border border-border bg-surface shadow-[var(--shadow-soft)]">
-      <div className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
+    <div className="flex h-[min(70vh,560px)] flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow-[var(--shadow-soft)]">
+      <div className="flex-1 space-y-3 overflow-y-auto bg-gradient-to-b from-primary-50/60 to-warm-white px-4 py-5">
         {messages.length === 0 ? (
           <p className="py-12 text-center text-sm text-muted">
             No messages yet. Say hello to start the conversation.
@@ -70,8 +70,8 @@ export function ChatThreadView({
                   className={cn(
                     'max-w-[85%] rounded-2xl px-3.5 py-2 text-sm leading-relaxed',
                     mine
-                      ? 'rounded-br-md bg-primary text-white'
-                      : 'rounded-bl-md bg-primary-50 text-primary-deep',
+                      ? 'rounded-br-md bg-primary text-white shadow-sm shadow-primary/20'
+                      : 'rounded-bl-md border border-border bg-white text-ink shadow-sm',
                   )}
                 >
                   {msg.body}
@@ -106,7 +106,7 @@ export function ChatThreadView({
 
       <form
         onSubmit={handleSubmit}
-        className="border-t border-border bg-warm-white/60 p-3"
+        className="border-t border-border bg-surface p-3"
       >
         {disabled ? (
           <p className="mb-2 text-xs text-muted">

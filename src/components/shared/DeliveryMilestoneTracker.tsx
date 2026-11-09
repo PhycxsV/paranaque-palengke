@@ -33,15 +33,18 @@ export function DeliveryMilestoneTracker({
   return (
     <section
       className={cn(
-        'rounded-xl border border-border bg-surface p-5 shadow-[var(--shadow-soft)]',
+        'relative overflow-hidden rounded-2xl border border-border bg-surface p-5 shadow-[var(--shadow-soft)] sm:p-6',
         className,
       )}
     >
-      <div className="mb-1 flex items-center gap-2">
-        <Truck className="h-5 w-5 text-primary" />
+      <span className="brand-ribbon absolute inset-x-0 top-0 h-1" aria-hidden />
+      <div className="mb-1 flex items-center gap-2.5">
+        <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-lime-50 text-primary ring-1 ring-lime/50">
+          <Truck className="h-5 w-5" />
+        </span>
         <h2 className="text-lg font-bold text-primary-deep">Keri delivery</h2>
       </div>
-      <p className="mb-5 text-xs text-muted">
+      <p className="mb-6 text-xs text-muted">
         Track your order after payment confirmation.
       </p>
 
@@ -53,27 +56,28 @@ export function DeliveryMilestoneTracker({
           const upcoming = index > current
 
           return (
-            <li key={milestone.id} className="relative flex gap-3 pb-6 last:pb-0">
+            <li key={milestone.id} className="relative flex gap-4 pb-7 last:pb-0">
               {index < DELIVERY_MILESTONES.length - 1 ? (
                 <span
                   className={cn(
-                    'absolute left-[15px] top-8 h-[calc(100%-1.25rem)] w-0.5',
-                    done || active ? 'bg-primary' : 'bg-border',
+                    'absolute left-[17px] top-9 h-[calc(100%-1.5rem)] w-0.5 rounded-full',
+                    done ? 'bg-primary' : 'bg-border',
                   )}
                   aria-hidden
                 />
               ) : null}
               <div
                 className={cn(
-                  'relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2',
+                  'relative z-10 flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 transition-colors',
                   done && 'border-primary bg-primary text-white',
-                  active && 'border-primary bg-primary-50 text-primary',
+                  active &&
+                    'border-primary bg-lime text-primary-deep ring-4 ring-lime/30',
                   upcoming && 'border-border bg-surface text-muted',
                 )}
               >
                 <Icon className="h-4 w-4" />
               </div>
-              <div className="min-w-0 pt-0.5">
+              <div className="min-w-0 pt-1">
                 <p
                   className={cn(
                     'text-sm',
@@ -84,7 +88,7 @@ export function DeliveryMilestoneTracker({
                 >
                   {milestone.label}
                   {active ? (
-                    <span className="ml-2 text-[10px] font-semibold uppercase tracking-wide text-primary">
+                    <span className="ml-2 rounded-full bg-primary px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
                       Current
                     </span>
                   ) : null}

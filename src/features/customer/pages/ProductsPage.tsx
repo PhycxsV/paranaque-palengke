@@ -14,12 +14,14 @@ import {
 } from '@/components/ui/select'
 import { ProductCard } from '@/components/shared/ProductCard'
 import { EmptyState } from '@/components/shared/EmptyState'
+import { PageHeader } from '@/components/shared/PageHeader'
 import { useProductStore } from '@/stores/product-store'
 import { useVendorStore } from '@/stores/vendor-store'
 import { useCommodityStore } from '@/stores/commodity-store'
 import { useAddToCart } from '@/hooks/useAddToCart'
 import { getVendorPrice } from '@/lib/pricing'
 import { isVendorAcceptingOrders } from '@/lib/vendor-hours'
+import { cn } from '@/lib/utils'
 
 type SortOption = 'name-asc' | 'price-asc' | 'price-desc'
 
@@ -108,12 +110,13 @@ export default function ProductsPage() {
 
   const hasActiveFilters = search || category || vendor || availability !== 'available'
 
+  const labelClass =
+    'mb-1.5 block text-[11px] font-bold uppercase tracking-[0.14em] text-muted'
+
   const filterContent = (
     <div className="space-y-5">
       <div>
-        <Label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-muted">
-          Category
-        </Label>
+        <Label className={labelClass}>Category</Label>
         <Select value={category} onValueChange={(v) => setCategory(v === 'all' ? '' : v)}>
           <SelectTrigger>
             <SelectValue placeholder="All categories" />
@@ -130,9 +133,7 @@ export default function ProductsPage() {
       </div>
 
       <div>
-        <Label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-muted">
-          Vendor
-        </Label>
+        <Label className={labelClass}>Vendor</Label>
         <Select value={vendor} onValueChange={(v) => setVendor(v === 'all' ? '' : v)}>
           <SelectTrigger>
             <SelectValue placeholder="All vendors" />
@@ -149,9 +150,7 @@ export default function ProductsPage() {
       </div>
 
       <div>
-        <Label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-muted">
-          Availability
-        </Label>
+        <Label className={labelClass}>Availability</Label>
         <Select
           value={availability}
           onValueChange={(v) => setAvailability(v as 'all' | 'available')}
@@ -167,9 +166,7 @@ export default function ProductsPage() {
       </div>
 
       <div>
-        <Label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-muted">
-          Sort by
-        </Label>
+        <Label className={labelClass}>Sort by</Label>
         <Select value={sort} onValueChange={(v) => setSort(v as SortOption)}>
           <SelectTrigger>
             <SelectValue />
@@ -191,117 +188,149 @@ export default function ProductsPage() {
     </div>
   )
 
+  const chipClass = (active: boolean) =>
+    cn(
+      'shrink-0 rounded-full border px-4 py-1.5 text-sm font-semibold transition-all duration-200',
+      active
+        ? 'border-primary bg-primary text-white shadow-sm shadow-primary/25'
+        : 'border-border bg-surface text-primary-deep hover:border-primary/40 hover:bg-primary-50',
+    )
+
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
-      {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-extrabold text-primary-deep">Products</h1>
-        <p className="mt-1 text-sm text-muted">
-          {filtered.length} {filtered.length === 1 ? 'item' : 'items'} found
-        </p>
-      </div>
-
-      {/* Search bar */}
-      <form
-        className="mb-6 flex gap-2"
-        onSubmit={(e) => {
-          e.preventDefault()
-          applySearch()
-        }}
+    <>
+      <PageHeader
+        width="wide"
+        eyebrow="Palengke"
+        title="Products"
+        description={`${filtered.length} ${filtered.length === 1 ? 'item' : 'items'} found`}
       >
-        <div className="relative flex-1">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
-          <Input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search gulay, isda, karne..."
-            className="pl-9"
-          />
-        </div>
-        <Button type="submit" variant="secondary">
-          Search
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          size="icon"
-          className="lg:hidden"
-          onClick={() => setMobileFiltersOpen((v) => !v)}
-          aria-label="Toggle filters"
+        <form
+          className="flex max-w-2xl gap-2"
+          onSubmit={(e) => {
+            e.preventDefault()
+            applySearch()
+          }}
         >
-          <SlidersHorizontal className="h-4 w-4" />
-        </Button>
-      </form>
-
-      <div className="flex gap-8">
-        {/* Desktop sidebar */}
-        <aside className="hidden w-60 shrink-0 lg:block">
-          <div className="sticky top-36 rounded-xl border border-border bg-surface p-5 shadow-[var(--shadow-soft)]">
-            <h2 className="mb-4 flex items-center gap-2 font-bold text-primary-deep">
-              <Filter className="h-4 w-4" />
-              Filters
-            </h2>
-            {filterContent}
-          </div>
-        </aside>
-
-        {/* Mobile filters */}
-        {mobileFiltersOpen && (
-          <div className="fixed inset-0 z-50 lg:hidden">
-            <div
-              className="absolute inset-0 bg-black/40"
-              onClick={() => setMobileFiltersOpen(false)}
+          <div className="relative flex-1">
+            <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search gulay, isda, karne..."
+              className="h-12 rounded-xl border-transparent pl-10 shadow-md"
             />
-            <div className="absolute bottom-0 left-0 right-0 max-h-[80vh] overflow-y-auto rounded-t-2xl bg-surface p-6 shadow-xl">
-              <div className="mb-4 flex items-center justify-between">
-                <h2 className="flex items-center gap-2 font-bold text-primary-deep">
+          </div>
+          <Button type="submit" variant="lime" size="lg">
+            Search
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="h-12 w-12 rounded-xl border border-white/25 bg-white/10 text-white hover:bg-white/20 hover:text-white lg:hidden"
+            onClick={() => setMobileFiltersOpen((v) => !v)}
+            aria-label="Toggle filters"
+          >
+            <SlidersHorizontal className="h-4 w-4" />
+          </Button>
+        </form>
+      </PageHeader>
+
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
+        {/* Category chips */}
+        <div className="-mx-4 mb-8 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0">
+          <button
+            type="button"
+            className={chipClass(!category)}
+            onClick={() => setCategory('')}
+          >
+            All
+          </button>
+          {CATEGORIES.map((cat) => (
+            <button
+              key={cat}
+              type="button"
+              className={chipClass(category === cat)}
+              onClick={() => setCategory(category === cat ? '' : cat)}
+            >
+              {cat}
+            </button>
+          ))}
+        </div>
+
+        <div className="flex gap-8">
+          {/* Desktop sidebar */}
+          <aside className="hidden w-64 shrink-0 lg:block">
+            <div className="sticky top-24 overflow-hidden rounded-2xl border border-border bg-surface shadow-[var(--shadow-soft)]">
+              <h2 className="flex items-center gap-2.5 border-b border-border bg-gradient-to-r from-primary-50/70 to-transparent px-5 py-3.5 font-bold text-primary-deep">
+                <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-white text-primary shadow-sm ring-1 ring-primary/10">
                   <Filter className="h-4 w-4" />
-                  Filters
-                </h2>
+                </span>
+                Filters
+              </h2>
+              <div className="p-5">{filterContent}</div>
+            </div>
+          </aside>
+
+          {/* Mobile filters */}
+          {mobileFiltersOpen && (
+            <div className="fixed inset-0 z-50 lg:hidden">
+              <div
+                className="absolute inset-0 bg-primary-deep/50 backdrop-blur-sm"
+                onClick={() => setMobileFiltersOpen(false)}
+              />
+              <div className="absolute bottom-0 left-0 right-0 max-h-[80vh] overflow-y-auto rounded-t-3xl bg-surface p-6 shadow-[var(--shadow-lift)]">
+                <span className="mx-auto mb-4 block h-1.5 w-12 rounded-full bg-border" />
+                <div className="mb-4 flex items-center justify-between">
+                  <h2 className="flex items-center gap-2 font-bold text-primary-deep">
+                    <Filter className="h-4 w-4" />
+                    Filters
+                  </h2>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setMobileFiltersOpen(false)}
+                  >
+                    <X className="h-5 w-5" />
+                  </Button>
+                </div>
+                {filterContent}
                 <Button
-                  variant="ghost"
-                  size="icon"
+                  className="mt-5 w-full"
+                  size="lg"
                   onClick={() => setMobileFiltersOpen(false)}
                 >
-                  <X className="h-5 w-5" />
+                  Show results
                 </Button>
               </div>
-              {filterContent}
-              <Button
-                className="mt-5 w-full"
-                onClick={() => setMobileFiltersOpen(false)}
-              >
-                Show results
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {/* Product grid */}
-        <div className="min-w-0 flex-1">
-          {filtered.length === 0 ? (
-            <EmptyState
-              icon={Search}
-              title="No products found"
-              description="Try adjusting your search or filters to find what you're looking for."
-              actionLabel="Clear filters"
-              onAction={clearFilters}
-            />
-          ) : (
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
-              {filtered.map((product) => (
-                <ProductCard
-                  key={product.id}
-                  product={product}
-                  vendor={vendors.find((v) => v.id === product.vendorId)}
-                  onAdd={addToCart}
-                />
-              ))}
             </div>
           )}
+
+          {/* Product grid */}
+          <div className="min-w-0 flex-1">
+            {filtered.length === 0 ? (
+              <EmptyState
+                icon={Search}
+                title="No products found"
+                description="Try adjusting your search or filters to find what you're looking for."
+                actionLabel="Clear filters"
+                onAction={clearFilters}
+              />
+            ) : (
+              <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4 sm:gap-5">
+                {filtered.map((product) => (
+                  <ProductCard
+                    key={product.id}
+                    product={product}
+                    vendor={vendors.find((v) => v.id === product.vendorId)}
+                    onAdd={addToCart}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
-
-    </div>
+    </>
   )
 }

@@ -1,12 +1,12 @@
-import { useState, type FormEvent } from 'react'
-import { Link, useParams } from 'react-router-dom'
+﻿import { useState, type FormEvent } from 'react'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import {
   ArrowLeft,
+  ArrowRight,
   Check,
   MessageSquare,
-  Minus,
-  Plus,
   ShoppingCart,
+  Star,
   Store,
   X,
 } from 'lucide-react'
@@ -18,6 +18,8 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { ProductCard } from '@/components/shared/ProductCard'
 import { ProductImage } from '@/components/shared/ProductImage'
+import { QuantityStepper } from '@/components/shared/QuantityStepper'
+import { SectionHeading } from '@/components/shared/SectionHeading'
 import { EmptyState } from '@/components/shared/EmptyState'
 import { useProductStore } from '@/stores/product-store'
 import { useVendorStore } from '@/stores/vendor-store'
@@ -32,6 +34,7 @@ import {
 import { formatVendorTime, isVendorAcceptingOrders } from '@/lib/vendor-hours'
 import {
   FEATURE_TAWAD_ENABLED,
+  LOW_STOCK_THRESHOLD,
   PRICE_DISCLAIMER,
   OFFER_STATUS_LABELS,
 } from '@/constants'
@@ -39,6 +42,7 @@ import { formatPeso } from '@/lib/utils'
 import type { OfferFormInput } from '@/types'
 
 export default function ProductDetailPage() {
+  const navigate = useNavigate()
   const { productId } = useParams<{ productId: string }>()
   const products = useProductStore((s) => s.products)
   const vendors = useVendorStore((s) => s.vendors)
@@ -72,9 +76,7 @@ export default function ProductDetailPage() {
           title="Product not found"
           description="This product may have been removed or doesn't exist."
           actionLabel="Browse products"
-          onAction={() => {
-            window.location.href = '/customer/products'
-          }}
+          onAction={() => navigate('/customer/products')}
         />
       </div>
     )
@@ -147,92 +149,126 @@ export default function ProductDetailPage() {
     }
   }
 
+  let statusBadge: { label: string; variant: 'muted' | 'gold' } | null = null
+  if (vendorClosed) {
+    statusBadge = {
+      label: `Past cut-off${vendor ? ` (${formatVendorTime(vendor.cutoffTime)})` : ''}`,
+      variant: 'muted',
+    }
+  } else if (product.stock <= 0) {
+    statusBadge = { label: 'Out of stock', variant: 'muted' }
+  } else if (!product.isAvailable) {
+    statusBadge = { label: 'Unavailable', variant: 'muted' }
+  } else if (product.stock <= LOW_STOCK_THRESHOLD) {
+    statusBadge = { label: `Only ${product.stock} left`, variant: 'gold' }
+  }
+
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
-      <Button asChild variant="ghost" size="sm" className="mb-6">
-        <Link to="/customer/products">
-          <ArrowLeft className="h-4 w-4" />
-          Back to products
-        </Link>
-      </Button>
+      <Link
+        to="/customer/products"
+        className="mb-6 inline-flex items-center gap-1.5 text-sm font-semibold text-primary transition hover:text-primary-deep"
+      >
+        <ArrowLeft className="h-4 w-4" />
+        Back to products
+      </Link>
 
-      <div className="grid gap-8 lg:grid-cols-2">
+      <div className="grid gap-8 lg:grid-cols-[1.05fr_1fr] lg:gap-12">
         {/* Image */}
-        <ProductImage
-          src={product.imageUrl}
-          alt={product.name}
-          className="aspect-square w-full overflow-hidden rounded-xl"
-        />
+        <div className="relative">
+          <ProductImage
+            src={product.imageUrl}
+            alt={product.name}
+            className="aspect-[4/3] w-full overflow-hidden rounded-3xl sm:aspect-square shadow-[var(--shadow-lift)] ring-1 ring-primary/10"
+          />
+          <span
+            className="brand-ribbon absolute -bottom-1.5 left-8 right-8 h-1.5 rounded-full"
+            aria-hidden
+          />
+        </div>
 
         {/* Details */}
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-5">
           <div>
-            <div className="mb-2 flex flex-wrap items-center gap-2">
-              <Badge variant="secondary">{product.category}</Badge>
-              <Badge variant={unavailable ? 'muted' : 'success'}>
-                {vendorClosed
-                  ? `Past cut-off (${vendor ? formatVendorTime(vendor.cutoffTime) : ''})`
-                  : unavailable
-                    ? 'Unavailable'
-                    : `${product.stock} ${product.unit} in stock`}
-              </Badge>
+            <div className="mb-3 flex flex-wrap items-center gap-2">
+              <Badge variant="lime">{product.category}</Badge>
+              {statusBadge ? (
+                <Badge variant={statusBadge.variant}>{statusBadge.label}</Badge>
+              ) : null}
             </div>
-            <h1 className="text-2xl font-extrabold text-primary-deep sm:text-3xl">
+            <h1 className="text-3xl font-extrabold leading-tight text-primary-deep sm:text-4xl">
               {product.name}
             </h1>
-            <p className="mt-2 text-3xl font-bold text-primary">
-              {formatPeso(vendorPrice)}
-              <span className="ml-1 text-base font-medium text-muted">
-                /{product.unit === 'piece' ? 'pcs' : product.unit}
-              </span>
-            </p>
-            {lguRange ? (
-              <p className="mt-1 text-xs font-medium text-muted">
-                LGU range {formatPeso(lguRange.min)}–{formatPeso(lguRange.max)}
-              </p>
-            ) : null}
-            <p className="mt-1 text-[11px] italic text-muted">{PRICE_DISCLAIMER}</p>
           </div>
 
-          <p className="text-sm leading-relaxed text-ink/80">{product.description}</p>
+          <div className="rounded-2xl border border-primary/10 bg-gradient-to-br from-primary-50 via-white to-lime-50 p-5">
+            <div className="flex flex-wrap items-end gap-x-3 gap-y-2">
+              <p className="font-display text-4xl font-extrabold leading-none text-primary">
+                {formatPeso(vendorPrice)}
+                <span className="ml-1.5 font-sans text-base font-semibold text-muted">
+                  /{product.unit === 'piece' ? 'pcs' : product.unit}
+                </span>
+              </p>
+              {lguRange ? (
+                <span className="rounded-full bg-bay-50 px-2.5 py-1 text-xs font-semibold text-[#1e6b64] ring-1 ring-bay/30">
+                  LGU range {formatPeso(lguRange.min)}–{formatPeso(lguRange.max)}
+                </span>
+              ) : null}
+            </div>
+            <p className="mt-3 text-[11px] italic text-muted">{PRICE_DISCLAIMER}</p>
+          </div>
+
+          <p className="text-sm leading-relaxed text-ink/80 sm:text-base">
+            {product.description}
+          </p>
 
           {vendor && (
             <Link
               to={`/customer/stores/${vendor.id}`}
-              className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline"
+              className="group flex items-center gap-3 rounded-2xl border border-border bg-surface p-3 shadow-[var(--shadow-soft)] transition hover:border-primary/30"
             >
-              <Store className="h-4 w-4" />
-              {vendor.name}
+              <ProductImage
+                src={vendor.imageUrl}
+                alt={vendor.name}
+                className="h-12 w-12 shrink-0 rounded-xl"
+              />
+              <div className="min-w-0 flex-1">
+                <p className="truncate font-bold text-primary-deep group-hover:text-primary">
+                  {vendor.name}
+                </p>
+                <p className="flex items-center gap-1 truncate text-xs text-muted">
+                  <Store className="h-3 w-3 shrink-0" />
+                  {vendor.location}
+                  <span className="mx-1">·</span>
+                  <Star className="h-3 w-3 shrink-0 fill-gold text-gold" />
+                  {Number.isFinite(vendor.rating) ? vendor.rating.toFixed(1) : '—'}
+                </p>
+              </div>
+              <ArrowRight className="h-4 w-4 shrink-0 text-muted transition group-hover:translate-x-0.5 group-hover:text-primary" />
             </Link>
           )}
 
           {/* Quantity + Add to Cart */}
-          <div className="mt-4 flex items-center gap-4">
-            <div className="flex items-center gap-1 rounded-lg border border-border">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+          <div className="rounded-2xl border border-border bg-surface p-4 shadow-[var(--shadow-soft)] sm:p-5">
+            <div className="flex items-center justify-between gap-4">
+              <QuantityStepper
+                value={quantity}
+                onChange={setQuantity}
+                min={1}
+                max={Math.max(1, product.stock)}
                 disabled={unavailable}
-                aria-label="Decrease quantity"
-              >
-                <Minus className="h-4 w-4" />
-              </Button>
-              <span className="min-w-[2.5rem] text-center text-sm font-bold">
-                {quantity}
-              </span>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setQuantity((q) => Math.min(product.stock, q + 1))}
-                disabled={unavailable || quantity >= product.stock}
-                aria-label="Increase quantity"
-              >
-                <Plus className="h-4 w-4" />
-              </Button>
+              />
+              <p className="text-right">
+                <span className="block text-[11px] font-bold uppercase tracking-wider text-muted">
+                  Total
+                </span>
+                <span className="font-display text-2xl font-extrabold text-primary-deep">
+                  {formatPeso(vendorPrice * quantity)}
+                </span>
+              </p>
             </div>
             <Button
-              className="flex-1"
+              className="mt-4 w-full"
               size="lg"
               disabled={unavailable}
               onClick={handleAdd}
@@ -416,11 +452,13 @@ export default function ProductDetailPage() {
 
       {/* Related Products */}
       {relatedProducts.length > 0 && (
-        <section className="mt-14">
-          <h2 className="mb-6 text-xl font-extrabold text-primary-deep">
-            You might also like
-          </h2>
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
+        <section className="mt-16 border-t border-border pt-12">
+          <SectionHeading
+            className="mb-8"
+            eyebrow="More to explore"
+            title="You might also like"
+          />
+          <div className="grid grid-cols-2 gap-4 sm:gap-5 md:grid-cols-3 lg:grid-cols-4">
             {relatedProducts.map((p) => (
               <ProductCard
                 key={p.id}

@@ -14,6 +14,8 @@ const statusVariant: Record<
 
 export function StatusBadge({ status }: { status: OrderStatus }) {
   return (
-    <Badge variant={statusVariant[status]}>{ORDER_STATUS_LABELS[status]}</Badge>
+    <Badge variant={statusVariant[status]} dot>
+      {ORDER_STATUS_LABELS[status]}
+    </Badge>
   )
 }

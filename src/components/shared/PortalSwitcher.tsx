@@ -49,8 +49,8 @@ export function PortalSwitcher({
     >
       <SelectTrigger
         className={cn(
-          'h-9 border-primary/20 bg-primary-50 text-sm font-medium text-primary-deep',
-          compact ? 'w-[140px]' : 'w-[180px]',
+          'h-9 whitespace-nowrap rounded-full border-primary/20 bg-primary-50 px-3.5 text-sm font-semibold text-primary-deep hover:bg-primary-100 [&>span]:truncate',
+          compact ? 'w-[140px]' : 'w-[210px]',
           className,
         )}
         aria-label="Switch portal"

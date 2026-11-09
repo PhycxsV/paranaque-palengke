@@ -1,4 +1,4 @@
-import * as React from 'react'
+﻿import * as React from 'react'
 import * as AlertDialogPrimitive from '@radix-ui/react-alert-dialog'
 import { cn } from '@/lib/utils'
 import { buttonVariants } from './button-variants'
@@ -13,7 +13,7 @@ export function AlertDialogOverlay({
 }: React.ComponentProps<typeof AlertDialogPrimitive.Overlay>) {
   return (
     <AlertDialogPrimitive.Overlay
-      className={cn('fixed inset-0 z-50 bg-black/45', className)}
+      className={cn('dialog-overlay fixed inset-0 z-50 bg-primary-deep/55 backdrop-blur-sm', className)}
       {...props}
     />
   )
@@ -21,6 +21,7 @@ export function AlertDialogOverlay({
 
 export function AlertDialogContent({
   className,
+  children,
   ...props
 }: React.ComponentProps<typeof AlertDialogPrimitive.Content>) {
   return (
@@ -28,11 +29,17 @@ export function AlertDialogContent({
       <AlertDialogOverlay />
       <AlertDialogPrimitive.Content
         className={cn(
-          'fixed left-1/2 top-1/2 z-50 grid w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 gap-4 rounded-xl border border-border bg-surface p-6 shadow-lg',
+          'dialog-content fixed left-1/2 top-1/2 z-50 grid w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 gap-4 rounded-2xl border border-border bg-surface p-6 pt-7 shadow-[var(--shadow-lift)]',
           className,
         )}
         {...props}
-      />
+      >
+        <span
+          className="brand-ribbon absolute inset-x-0 top-0 h-1.5 rounded-t-2xl"
+          aria-hidden
+        />
+        {children}
+      </AlertDialogPrimitive.Content>
     </AlertDialogPortal>
   )
 }
@@ -65,7 +72,7 @@ export function AlertDialogTitle({
 }: React.ComponentProps<typeof AlertDialogPrimitive.Title>) {
   return (
     <AlertDialogPrimitive.Title
-      className={cn('text-lg font-bold text-primary-deep', className)}
+      className={cn('font-display text-xl font-bold tracking-tight text-primary-deep', className)}
       {...props}
     />
   )

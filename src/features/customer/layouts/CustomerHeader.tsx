@@ -5,6 +5,7 @@ import { BRAND_NAME, FEATURE_TAWAD_ENABLED } from '@/constants'
 import { PortalSwitcher } from '@/components/shared/PortalSwitcher'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { LOGOS } from '@/lib/assets'
 import { getTotalUnread } from '@/lib/chat'
 import { useCartStore } from '@/stores/cart-store'
 import { useChatStore } from '@/stores/chat-store'
@@ -24,6 +25,8 @@ export function CustomerHeader() {
 
   const isHome =
     location.pathname === '/customer' || location.pathname === '/customer/'
+  /** The products page ships its own search bar, so skip the header strip there. */
+  const hasPageSearch = location.pathname === '/customer/products'
   /** Transparent chrome over the hero until the solid layer has faded in. */
   const overlay = isHome && !scrolled
 
@@ -87,15 +90,12 @@ export function CustomerHeader() {
           {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
         </Button>
 
-        <Link to="/customer" className="flex min-w-0 items-center gap-2">
-          <span
-            className={cn(
-              'nav-ink flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-sm font-extrabold text-white',
-              overlay ? 'bg-white/20 ring-1 ring-white/40' : 'bg-primary ring-0',
-            )}
-          >
-            PP
-          </span>
+        <Link to="/customer" className="flex min-w-0 items-center gap-2.5">
+          <img
+            src={LOGOS.citySeal}
+            alt="City of Parañaque seal"
+            className="h-10 w-10 shrink-0 object-contain drop-shadow-[0_2px_6px_rgb(0_0_0/0.3)] transition-transform duration-500 hover:rotate-6 sm:h-11 sm:w-11"
+          />
           <div className="min-w-0">
             <p
               className={cn(
@@ -111,7 +111,7 @@ export function CustomerHeader() {
                 overlay ? 'text-white/65' : 'text-muted',
               )}
             >
-              Local marketplace prototype
+              Lungsod ng Parañaque
             </p>
           </div>
         </Link>
@@ -222,7 +222,7 @@ export function CustomerHeader() {
         className={cn(
           'relative overflow-hidden border-t md:hidden',
           'transition-[max-height,opacity,border-color] duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]',
-          !overlay
+          !overlay && !hasPageSearch
             ? 'max-h-24 border-border opacity-100'
             : 'pointer-events-none max-h-0 border-transparent opacity-0',
         )}

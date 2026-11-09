@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
   Dialog,
+  DialogBody,
   DialogClose,
   DialogContent,
   DialogFooter,
@@ -334,40 +335,42 @@ export default function VendorOffersPage() {
           <DialogHeader>
             <DialogTitle>Submit Counteroffer</DialogTitle>
           </DialogHeader>
-          {counterTarget && (
-            <div className="space-y-4">
-              <div className="rounded-lg border border-border bg-warm-white p-3">
-                <p className="text-sm font-semibold text-primary-deep">
-                  {counterTarget.productName}
-                </p>
-                <p className="text-xs text-muted">
-                  Customer proposed: {formatPeso(counterTarget.proposedUnitPrice)}/
-                  {counterTarget.unit} × {counterTarget.quantity}
-                </p>
-                <p className="text-xs text-muted">
-                  Standard: {formatPeso(counterTarget.standardUnitPriceSnapshot)}/
-                  {counterTarget.unit}
-                </p>
+          <DialogBody>
+            {counterTarget && (
+              <div className="space-y-4">
+                <div className="rounded-lg border border-border bg-warm-white p-3">
+                  <p className="text-sm font-semibold text-primary-deep">
+                    {counterTarget.productName}
+                  </p>
+                  <p className="text-xs text-muted">
+                    Customer proposed: {formatPeso(counterTarget.proposedUnitPrice)}/
+                    {counterTarget.unit} × {counterTarget.quantity}
+                  </p>
+                  <p className="text-xs text-muted">
+                    Standard: {formatPeso(counterTarget.standardUnitPriceSnapshot)}/
+                    {counterTarget.unit}
+                  </p>
+                </div>
+                <div className="grid gap-1.5">
+                  <Label htmlFor="counter-price">
+                    Your Counter Price (₱/{counterTarget.unit})
+                  </Label>
+                  <Input
+                    id="counter-price"
+                    type="number"
+                    min={0.01}
+                    step={0.01}
+                    value={counterPrice}
+                    onChange={(e) => setCounterPrice(e.target.value)}
+                    placeholder={`Between ${formatPeso(counterTarget.proposedUnitPrice)} and ${formatPeso(counterTarget.standardUnitPriceSnapshot)}`}
+                  />
+                  <p className="text-xs text-muted">
+                    Must be below the LGU standard price.
+                  </p>
+                </div>
               </div>
-              <div className="grid gap-1.5">
-                <Label htmlFor="counter-price">
-                  Your Counter Price (₱/{counterTarget.unit})
-                </Label>
-                <Input
-                  id="counter-price"
-                  type="number"
-                  min={0.01}
-                  step={0.01}
-                  value={counterPrice}
-                  onChange={(e) => setCounterPrice(e.target.value)}
-                  placeholder={`Between ${formatPeso(counterTarget.proposedUnitPrice)} and ${formatPeso(counterTarget.standardUnitPriceSnapshot)}`}
-                />
-                <p className="text-xs text-muted">
-                  Must be below the LGU standard price.
-                </p>
-              </div>
-            </div>
-          )}
+            )}
+          </DialogBody>
           <DialogFooter>
             <DialogClose asChild>
               <Button variant="outline">Cancel</Button>

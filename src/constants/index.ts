@@ -8,13 +8,23 @@ import type {
 
 export const BRAND_NAME = 'Palengke mo, Keri ko'
 export const BRAND_TAGLINE = 'Preskong Pamalengke, Mas Madaling Mamili.'
-export const STORAGE_PREFIX = 'paranaque-palengke-v8'
+export const STORAGE_PREFIX = 'paranaque-palengke-v10'
 /** How many top-rated vendors to feature on the customer home page. */
 export const HOME_TOP_RATED_VENDOR_COUNT = 3
+
+/** Show an "Only N left" badge at or below this stock level. */
+export const LOW_STOCK_THRESHOLD = 5
 export const PRICE_DISCLAIMER =
   'Illustrative LGU price ranges — vendors set their own price within the range.'
-/** Flat delivery fee (Keri) included in QRPH / demo QR payment total. */
-export const DELIVERY_FEE = 100
+/**
+ * Demo Keri delivery fee (PHP). Placeholder only — production fee is dynamic.
+ * Used for cart/checkout totals until a real fee engine exists.
+ */
+export const DELIVERY_FEE_PLACEHOLDER = 100
+/** @deprecated Use DELIVERY_FEE_PLACEHOLDER — kept as alias for existing imports. */
+export const DELIVERY_FEE = DELIVERY_FEE_PLACEHOLDER
+export const DELIVERY_FEE_NOTE =
+  '₱100 is a demo placeholder. Delivery fee is dynamic in production.'
 /** Units vendors may choose when marking stock. */
 export const VENDOR_STOCK_UNITS: Array<'kg' | 'piece'> = ['kg', 'piece']
 /**

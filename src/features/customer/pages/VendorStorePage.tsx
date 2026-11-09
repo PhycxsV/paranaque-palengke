@@ -1,37 +1,35 @@
 import { useMemo, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
-import { Clock, MapPin, MessageCircle, Search, Store } from 'lucide-react'
-import { Badge } from '@/components/ui/badge'
+import { Link, useNavigate, useParams } from 'react-router-dom'
+import { ArrowLeft, Clock, MapPin, MessageCircle, Search, Star, Store } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import { ProductCard } from '@/components/shared/ProductCard'
 import { ProductImage } from '@/components/shared/ProductImage'
 import { EmptyState } from '@/components/shared/EmptyState'
+import { Notice } from '@/components/shared/Notice'
 import { useProductStore } from '@/stores/product-store'
 import { useVendorStore } from '@/stores/vendor-store'
+import { useBranchStore } from '@/stores/branch-store'
 import { useAddToCart } from '@/hooks/useAddToCart'
 import {
   formatVendorTime,
   isVendorAcceptingOrders,
 } from '@/lib/vendor-hours'
+import { cn } from '@/lib/utils'
 
 export default function VendorStorePage() {
+  const navigate = useNavigate()
   const { vendorId } = useParams<{ vendorId: string }>()
   const vendors = useVendorStore((s) => s.vendors)
   const products = useProductStore((s) => s.products)
+  const branches = useBranchStore((s) => s.branches)
   const { addToCart } = useAddToCart()
 
   const [search, setSearch] = useState('')
   const [category, setCategory] = useState('')
 
   const vendor = vendors.find((v) => v.id === vendorId)
+  const branch = vendor ? branches.find((b) => b.id === vendor.branchId) : undefined
   const acceptingOrders = vendor ? isVendorAcceptingOrders(vendor) : false
 
   const vendorProducts = useMemo(() => {
@@ -60,58 +58,94 @@ export default function VendorStorePage() {
           title="Vendor not found"
           description="This vendor may have been removed or doesn't exist."
           actionLabel="Browse products"
-          onAction={() => {
-            window.location.href = '/customer/products'
-          }}
+          onAction={() => navigate('/customer/products')}
         />
       </div>
     )
   }
 
+  const chipClass = (active: boolean) =>
+    cn(
+      'shrink-0 rounded-full border px-4 py-1.5 text-sm font-semibold transition-all duration-200',
+      active
+        ? 'border-primary bg-primary text-white shadow-sm shadow-primary/25'
+        : 'border-border bg-surface text-primary-deep hover:border-primary/40 hover:bg-primary-50',
+    )
+
   return (
     <div>
-      {/* Vendor Banner */}
+      {/* Vendor banner */}
       <div className="relative">
         <ProductImage
           src={vendor.imageUrl}
           alt={vendor.name}
-          className="h-48 w-full sm:h-64"
+          className="h-64 w-full sm:h-80"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
-        <div className="absolute bottom-0 left-0 right-0 px-4 pb-6 sm:px-6">
+        <div className="absolute inset-0 bg-gradient-to-t from-primary-deep via-primary-deep/55 to-primary-deep/10" />
+        <span className="brand-ribbon absolute inset-x-0 bottom-0 h-1" aria-hidden />
+        <div className="absolute inset-x-0 bottom-0 px-4 pb-7 sm:px-6">
           <div className="mx-auto max-w-7xl">
+            <Link
+              to="/customer/vendors"
+              className="mb-4 inline-flex items-center gap-1.5 text-sm font-semibold text-white/75 transition hover:text-lime"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              All vendors
+            </Link>
             <div className="flex flex-wrap items-center gap-3">
-              <h1 className="text-2xl font-extrabold text-white sm:text-3xl">
+              <h1 className="text-3xl font-extrabold text-white sm:text-4xl">
                 {vendor.name}
               </h1>
-              <Badge variant={acceptingOrders ? 'success' : 'muted'}>
+              <span
+                className={cn(
+                  'inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold',
+                  acceptingOrders
+                    ? 'bg-lime text-primary-deep'
+                    : 'bg-white/90 text-muted',
+                )}
+              >
+                <span
+                  className={cn(
+                    'h-1.5 w-1.5 rounded-full',
+                    acceptingOrders ? 'bg-primary' : 'bg-muted',
+                  )}
+                />
                 {acceptingOrders ? 'Open' : 'Closed'}
-              </Badge>
+              </span>
             </div>
-            <p className="mt-1 flex items-center gap-1 text-sm text-white/80">
-              <MapPin className="h-3.5 w-3.5" />
-              {vendor.location}
-            </p>
-            <p className="mt-1 flex items-center gap-1 text-sm text-white/80">
-              <Clock className="h-3.5 w-3.5" />
-              {formatVendorTime(vendor.opensAt)} – cut-off{' '}
-              {formatVendorTime(vendor.cutoffTime)}
-            </p>
+            <div className="mt-3 flex flex-wrap items-center gap-2 text-xs font-semibold text-white">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1.5 backdrop-blur">
+                <Star className="h-3.5 w-3.5 fill-gold text-gold" />
+                {Number.isFinite(vendor.rating) ? vendor.rating.toFixed(1) : '—'}
+              </span>
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1.5 backdrop-blur">
+                <MapPin className="h-3.5 w-3.5 text-lime" />
+                {branch ? `${branch.name} · ` : ''}
+                {vendor.location}
+              </span>
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1.5 backdrop-blur">
+                <Clock className="h-3.5 w-3.5 text-lime" />
+                {formatVendorTime(vendor.opensAt)} – cut-off{' '}
+                {formatVendorTime(vendor.cutoffTime)}
+              </span>
+            </div>
           </div>
         </div>
       </div>
 
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
         {!acceptingOrders && (
-          <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-            This vendor is past today&apos;s order cut-off (
-            {formatVendorTime(vendor.cutoffTime)}). You can browse products, but
-            new orders are disabled.
-          </div>
+          <Notice tone="warning" className="mb-6" title="Past today's order cut-off">
+            This vendor closed orders at {formatVendorTime(vendor.cutoffTime)}. You can
+            browse products, but new orders are disabled.
+          </Notice>
         )}
-        <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
-          <p className="max-w-2xl text-sm text-ink/75">{vendor.description}</p>
-          <Button asChild variant="secondary" size="sm">
+
+        <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
+          <p className="max-w-2xl text-sm leading-relaxed text-ink/75 sm:text-base">
+            {vendor.description}
+          </p>
+          <Button asChild variant="outline">
             <Link to={`/customer/chat?vendor=${vendor.id}`}>
               <MessageCircle className="h-4 w-4" />
               Message vendor
@@ -120,29 +154,37 @@ export default function VendorStorePage() {
         </div>
 
         {/* Filters */}
-        <div className="mb-6 flex flex-col gap-3 sm:flex-row">
-          <div className="relative flex-1">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
+        <div className="mb-6 flex flex-col gap-4">
+          <div className="relative max-w-xl">
+            <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
             <Input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder={`Search in ${vendor.name}...`}
-              className="pl-9"
+              className="pl-10"
             />
           </div>
-          <Select value={category} onValueChange={(v) => setCategory(v === 'all' ? '' : v)}>
-            <SelectTrigger className="w-full sm:w-48">
-              <SelectValue placeholder="All categories" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All categories</SelectItem>
+          {vendor.categories.length > 0 ? (
+            <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0">
+              <button
+                type="button"
+                className={chipClass(!category)}
+                onClick={() => setCategory('')}
+              >
+                All
+              </button>
               {vendor.categories.map((cat) => (
-                <SelectItem key={cat} value={cat}>
+                <button
+                  key={cat}
+                  type="button"
+                  className={chipClass(category === cat)}
+                  onClick={() => setCategory(category === cat ? '' : cat)}
+                >
                   {cat}
-                </SelectItem>
+                </button>
               ))}
-            </SelectContent>
-          </Select>
+            </div>
+          ) : null}
         </div>
 
         {/* Products */}
@@ -157,7 +199,7 @@ export default function VendorStorePage() {
             }
           />
         ) : (
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-4 sm:gap-5 md:grid-cols-3 lg:grid-cols-4">
             {vendorProducts.map((product) => (
               <ProductCard
                 key={product.id}
@@ -169,7 +211,6 @@ export default function VendorStorePage() {
           </div>
         )}
       </div>
-
     </div>
   )
 }

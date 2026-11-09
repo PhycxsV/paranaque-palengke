@@ -15,7 +15,7 @@ export function DialogOverlay({
   return (
     <DialogPrimitive.Overlay
       className={cn(
-        'fixed inset-0 z-50 bg-black/45 data-[state=open]:animate-in data-[state=closed]:animate-out',
+        'dialog-overlay fixed inset-0 z-50 bg-primary-deep/55 backdrop-blur-sm',
         className,
       )}
       {...props}
@@ -33,13 +33,17 @@ export function DialogContent({
       <DialogOverlay />
       <DialogPrimitive.Content
         className={cn(
-          'fixed left-1/2 top-1/2 z-50 grid w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 gap-4 rounded-xl border border-border bg-surface p-6 shadow-lg',
+          'dialog-content fixed left-1/2 top-1/2 z-50 flex max-h-[min(92vh,880px)] w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 flex-col gap-0 overflow-hidden rounded-2xl border border-border bg-surface p-0 shadow-[var(--shadow-lift)]',
           className,
         )}
         {...props}
       >
+        <span
+          className="brand-ribbon absolute inset-x-0 top-0 z-10 h-1.5 rounded-t-2xl"
+          aria-hidden
+        />
         {children}
-        <DialogPrimitive.Close className="absolute right-4 top-4 rounded-sm opacity-70 transition-opacity hover:opacity-100">
+        <DialogPrimitive.Close className="absolute right-3.5 top-3.5 z-20 rounded-full p-1.5 text-muted transition hover:bg-primary-50 hover:text-primary-deep">
           <X className="h-4 w-4" />
           <span className="sr-only">Close</span>
         </DialogPrimitive.Close>
@@ -53,7 +57,33 @@ export function DialogHeader({
   ...props
 }: React.HTMLAttributes<HTMLDivElement>) {
   return (
-    <div className={cn('flex flex-col gap-1.5 text-left', className)} {...props} />
+    <div
+      className={cn(
+        'shrink-0 space-y-1.5 border-b border-border bg-surface px-6 pb-4 pt-7 pr-12 text-left',
+        className,
+      )}
+      {...props}
+    />
+  )
+}
+
+/** Scrollable middle section — keeps the header and footer pinned. */
+export function DialogBody({
+  className,
+  children,
+  ...props
+}: React.HTMLAttributes<HTMLDivElement>) {
+  return (
+    <div
+      className={cn(
+        'dialog-scroll min-h-0 flex-1 overflow-y-auto overscroll-contain',
+        className,
+      )}
+      {...props}
+    >
+      {/* Inner pad keeps the scrollbar flush to the modal edge */}
+      <div className="px-6 py-5">{children}</div>
+    </div>
   )
 }
 
@@ -64,6 +94,7 @@ export function DialogFooter({
   return (
     <div
       className={cn(
+        'shrink-0 border-t border-border bg-warm-white/90 px-6 py-4 backdrop-blur-sm',
         'flex flex-col-reverse gap-2 sm:flex-row sm:justify-end',
         className,
       )}
@@ -78,7 +109,10 @@ export function DialogTitle({
 }: React.ComponentProps<typeof DialogPrimitive.Title>) {
   return (
     <DialogPrimitive.Title
-      className={cn('text-lg font-bold text-primary-deep', className)}
+      className={cn(
+        'font-display text-xl font-bold tracking-tight text-primary-deep',
+        className,
+      )}
       {...props}
     />
   )

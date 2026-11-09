@@ -1,15 +1,24 @@
 import { useEffect, useMemo } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, Check, CheckCheck, MessageCircle } from 'lucide-react'
+import { Check, CheckCheck, MessageCircle } from 'lucide-react'
 import { toast } from 'sonner'
-import { Button } from '@/components/ui/button'
 import { ChatThreadView } from '@/components/shared/ChatThreadView'
 import { EmptyState } from '@/components/shared/EmptyState'
+import { PortalHeader } from '@/components/shared/PortalHeader'
 import { getUnreadCount, isMessageSeenByPeer } from '@/lib/chat'
 import { useChatStore } from '@/stores/chat-store'
 import { useDemoSessionStore } from '@/stores/demo-session-store'
 import { useVendorStore } from '@/stores/vendor-store'
 import { cn, formatDateTime } from '@/lib/utils'
+
+function initials(name: string) {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join('')
+}
 
 export default function VendorChatPage() {
   const navigate = useNavigate()
@@ -63,21 +72,13 @@ export default function VendorChatPage() {
 
   if (threadId && activeThread && activeThread.vendorId === activeVendorId) {
     return (
-      <div className="space-y-4">
-        <Button asChild variant="ghost" size="sm">
-          <Link to="/vendor/chat">
-            <ArrowLeft className="h-4 w-4" />
-            All chats
-          </Link>
-        </Button>
-        <div>
-          <h1 className="text-2xl font-extrabold text-primary-deep">
-            {activeThread.customerLabel}
-          </h1>
-          <p className="mt-1 text-sm text-muted">
-            Chat with customer · {vendor.name}
-          </p>
-        </div>
+      <div className="mx-auto max-w-3xl space-y-6">
+        <PortalHeader
+          eyebrow="Customer chat"
+          title={activeThread.customerLabel}
+          description={`Conversation with a customer of ${vendor.name}`}
+          back={{ to: '/vendor/chat', label: 'All chats' }}
+        />
         <ChatThreadView
           thread={activeThread}
           messages={messages}
@@ -115,12 +116,11 @@ export default function VendorChatPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-extrabold text-primary-deep">Chat</h1>
-        <p className="mt-1 text-sm text-muted">
-          Customer messages for {vendor.name}
-        </p>
-      </div>
+      <PortalHeader
+        eyebrow="Vendor portal"
+        title="Chat"
+        description={`Customer messages for ${vendor.name}`}
+      />
 
       {threads.length === 0 ? (
         <EmptyState
@@ -129,7 +129,7 @@ export default function VendorChatPage() {
           description="When a customer messages your store, the thread will show up here."
         />
       ) : (
-        <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-surface shadow-[var(--shadow-soft)]">
+        <ul className="divide-y divide-border overflow-hidden rounded-2xl border border-border bg-surface shadow-[var(--shadow-soft)]">
           {threads.map((thread) => {
             const unread = getUnreadCount(thread, allMessages, 'vendor')
             const lastMsg = [...allMessages]
@@ -145,30 +145,36 @@ export default function VendorChatPage() {
               <li key={thread.id}>
                 <Link
                   to={`/vendor/chat/${thread.id}`}
-                  className="flex gap-3 p-4 transition hover:bg-primary-50/50"
+                  className={cn(
+                    'flex items-center gap-4 p-4 transition hover:bg-primary-50/60 sm:p-5',
+                    unread > 0 && 'bg-lime-50/60',
+                  )}
                 >
-                  <div className="flex min-w-0 flex-1 flex-col gap-1">
+                  <div className="relative shrink-0">
+                    <span className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-primary to-bay font-display text-base font-bold text-white">
+                      {initials(thread.customerLabel) || '?'}
+                    </span>
+                    {unread > 0 ? (
+                      <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-gold px-1 text-[10px] font-bold text-primary-deep ring-2 ring-white">
+                        {unread > 9 ? '9+' : unread}
+                      </span>
+                    ) : null}
+                  </div>
+                  <div className="min-w-0 flex-1">
                     <div className="flex items-baseline justify-between gap-2">
                       <p
                         className={cn(
                           'truncate text-primary-deep',
-                          unread > 0 ? 'font-extrabold' : 'font-semibold',
+                          unread > 0 ? 'font-extrabold' : 'font-bold',
                         )}
                       >
                         {thread.customerLabel}
                       </p>
-                      <div className="flex shrink-0 items-center gap-2">
-                        {unread > 0 ? (
-                          <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-white">
-                            {unread > 9 ? '9+' : unread}
-                          </span>
-                        ) : null}
-                        <span className="text-[10px] text-muted">
-                          {formatDateTime(thread.updatedAt)}
-                        </span>
-                      </div>
+                      <span className="shrink-0 text-[11px] font-medium text-muted">
+                        {formatDateTime(thread.updatedAt)}
+                      </span>
                     </div>
-                    <div className="flex items-center gap-1.5">
+                    <div className="mt-1 flex items-center gap-1.5">
                       {lastIsMine ? (
                         lastSeen ? (
                           <CheckCheck className="h-3.5 w-3.5 shrink-0 text-primary" />

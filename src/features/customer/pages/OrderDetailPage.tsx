@@ -1,19 +1,51 @@
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, CreditCard, Package } from 'lucide-react'
+import { CreditCard, ListOrdered, Package, ReceiptText } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { DeliveryMilestoneTracker } from '@/components/shared/DeliveryMilestoneTracker'
 import { EmptyState } from '@/components/shared/EmptyState'
+import { Notice } from '@/components/shared/Notice'
+import { PageHeader } from '@/components/shared/PageHeader'
+import { SectionCard } from '@/components/shared/SectionCard'
 import { StatusBadge } from '@/components/shared/StatusBadge'
 import { ProductImage } from '@/components/shared/ProductImage'
 import { useOrderStore } from '@/stores/order-store'
 import { ORDER_STATUS_MESSAGES } from '@/constants'
 import { formatDateTime, formatPeso } from '@/lib/utils'
 
+function Field({
+  label,
+  children,
+  mono,
+  wide,
+}: {
+  label: string
+  children: React.ReactNode
+  mono?: boolean
+  wide?: boolean
+}) {
+  return (
+    <div className={wide ? 'sm:col-span-2' : undefined}>
+      <dt className="text-[11px] font-bold uppercase tracking-[0.12em] text-muted">
+        {label}
+      </dt>
+      <dd
+        className={
+          mono
+            ? 'mt-0.5 font-mono text-sm font-semibold text-ink'
+            : 'mt-0.5 text-sm font-semibold text-ink'
+        }
+      >
+        {children}
+      </dd>
+    </div>
+  )
+}
+
 export default function OrderDetailPage() {
   const { orderId } = useParams<{ orderId: string }>()
   const navigate = useNavigate()
   const orders = useOrderStore((s) => s.orders)
-  const getOrdersByCheckoutGroup = useOrderStore((s) => s.getOrdersByCheckoutGroup)
+  const getOrdersByBookingGroup = useOrderStore((s) => s.getOrdersByBookingGroup)
 
   const order = orders.find((o) => o.id === orderId)
 
@@ -32,135 +64,112 @@ export default function OrderDetailPage() {
   }
 
   const canPay = order.status === 'pending_payment' || order.status === 'payment_rejected'
-  const groupOrders = getOrdersByCheckoutGroup(order.checkoutGroupId)
+  const groupOrders = getOrdersByBookingGroup(order.bookingGroupId)
   const allGroupConfirmed =
     groupOrders.length > 0 && groupOrders.every((o) => o.status === 'confirmed')
   const waitingOnOtherVendors =
     order.status === 'confirmed' && !allGroupConfirmed
 
+  const statusTone =
+    order.status === 'confirmed'
+      ? 'success'
+      : order.status === 'payment_rejected'
+        ? 'danger'
+        : order.status === 'awaiting_vendor_confirmation'
+          ? 'pending'
+          : 'info'
+
   return (
-    <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6">
-      <Button asChild variant="ghost" size="sm" className="mb-6">
-        <Link to="/customer/orders">
-          <ArrowLeft className="h-4 w-4" />
-          All orders
-        </Link>
-      </Button>
+    <>
+      <PageHeader
+        width="default"
+        eyebrow="Order"
+        title="Order Details"
+        back={{ to: '/customer/orders', label: 'All orders' }}
+        description={<span className="font-mono">{order.id}</span>}
+        actions={<StatusBadge status={order.status} />}
+      />
 
-      <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-extrabold text-primary-deep">Order Details</h1>
-          <p className="mt-1 font-mono text-sm text-muted">{order.id}</p>
-        </div>
-        <StatusBadge status={order.status} />
-      </div>
+      <div className="mx-auto max-w-3xl space-y-6 px-4 py-8 sm:px-6">
+        <Notice tone={statusTone}>
+          <span className="font-semibold">{ORDER_STATUS_MESSAGES[order.status]}</span>
+        </Notice>
 
-      {/* Status message */}
-      <div className="mb-6 rounded-xl border border-border bg-primary-50/50 p-4">
-        <p className="text-sm font-medium text-primary-deep">
-          {ORDER_STATUS_MESSAGES[order.status]}
-        </p>
-      </div>
+        {allGroupConfirmed ? (
+          <DeliveryMilestoneTracker
+            deliveryStatus={order.deliveryStatus ?? 'awaiting_pickup'}
+          />
+        ) : waitingOnOtherVendors ? (
+          <Notice tone="warning" title="Waiting on other vendors">
+            Payment confirmed for this vendor. Keri delivery milestones appear once
+            all vendors in this booking group have confirmed payment.
+          </Notice>
+        ) : null}
 
-      {allGroupConfirmed ? (
-        <DeliveryMilestoneTracker
-          className="mb-6"
-          deliveryStatus={order.deliveryStatus ?? 'awaiting_pickup'}
-        />
-      ) : waitingOnOtherVendors ? (
-        <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-4">
-          <p className="text-sm font-medium text-amber-900">
-            Payment confirmed for this vendor. Keri delivery milestones appear
-            once all vendors in this checkout have confirmed payment.
-          </p>
-        </div>
-      ) : null}
-
-      {/* Payment action */}
-      {canPay && (
-        <div className="mb-6">
+        {canPay && (
           <Button asChild size="lg" className="w-full">
             <Link to={`/customer/payment/${order.id}`}>
               <CreditCard className="h-5 w-5" />
               {order.status === 'payment_rejected' ? 'Resubmit Payment' : 'Complete Payment'}
             </Link>
           </Button>
-        </div>
-      )}
+        )}
 
-      {/* Order info */}
-      <div className="space-y-6">
-        <section className="rounded-xl border border-border bg-surface p-5 shadow-[var(--shadow-soft)]">
-          <h2 className="mb-4 text-lg font-bold text-primary-deep">Order Information</h2>
-          <dl className="grid gap-3 text-sm sm:grid-cols-2">
-            <div>
-              <dt className="text-muted">Customer</dt>
-              <dd className="font-medium text-ink">{order.customerName}</dd>
-            </div>
-            <div>
-              <dt className="text-muted">Contact</dt>
-              <dd className="font-medium text-ink">{order.contactNumber}</dd>
-            </div>
-            <div>
-              <dt className="text-muted">Vendor</dt>
-              <dd className="font-medium text-ink">
-                <Link to={`/customer/stores/${order.vendorId}`} className="text-primary hover:underline">
-                  {order.vendorName}
-                </Link>
-              </dd>
-            </div>
-            <div>
-              <dt className="text-muted">Keri pickup pin</dt>
-              <dd className="font-mono text-sm font-medium text-ink">
+        <SectionCard title="Order information" icon={ReceiptText}>
+          <dl className="grid gap-x-6 gap-y-4 sm:grid-cols-2">
+            <Field label="Customer">{order.customerName}</Field>
+            <Field label="Contact">{order.contactNumber}</Field>
+            <Field label="Vendor">
+              <Link
+                to={`/customer/stores/${order.vendorId}`}
+                className="text-primary hover:underline"
+              >
+                {order.vendorName}
+              </Link>
+            </Field>
+            <Field label="Booking group (Keri)" mono>
+              {order.bookingGroupId}
+            </Field>
+            <Field label="Keri tracking ID" mono>
+              {order.keriTrackingId ?? 'Assigned when dispatched'}
+            </Field>
+            <Field label="Keri pickup (palengke)">
+              {order.branchName}
+              <span className="mt-0.5 block font-mono text-xs font-medium text-muted">
                 {order.pickupLat.toFixed(5)}, {order.pickupLng.toFixed(5)}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-muted">Placed</dt>
-              <dd className="font-medium text-ink">{formatDateTime(order.createdAt)}</dd>
-            </div>
-            {order.notes && (
-              <div className="sm:col-span-2">
-                <dt className="text-muted">Notes</dt>
-                <dd className="font-medium text-ink">{order.notes}</dd>
-              </div>
+              </span>
+            </Field>
+            <Field label="Placed">{formatDateTime(order.createdAt)}</Field>
+            <Field label="Last updated">{formatDateTime(order.updatedAt)}</Field>
+            {order.paymentSubmittedAt && (
+              <Field label="Payment submitted">
+                {formatDateTime(order.paymentSubmittedAt)}
+              </Field>
             )}
             {order.transactionReference && (
-              <div className="sm:col-span-2">
-                <dt className="text-muted">Transaction Reference</dt>
-                <dd className="font-mono font-medium text-ink">
-                  {order.transactionReference}
-                </dd>
-              </div>
+              <Field label="Transaction reference" mono>
+                {order.transactionReference}
+              </Field>
             )}
-            {order.paymentSubmittedAt && (
-              <div>
-                <dt className="text-muted">Payment Submitted</dt>
-                <dd className="font-medium text-ink">
-                  {formatDateTime(order.paymentSubmittedAt)}
-                </dd>
-              </div>
+            {order.notes && (
+              <Field label="Notes" wide>
+                {order.notes}
+              </Field>
             )}
-            <div>
-              <dt className="text-muted">Last Updated</dt>
-              <dd className="font-medium text-ink">{formatDateTime(order.updatedAt)}</dd>
-            </div>
           </dl>
-        </section>
+        </SectionCard>
 
-        {/* Items */}
-        <section className="rounded-xl border border-border bg-surface p-5 shadow-[var(--shadow-soft)]">
-          <h2 className="mb-4 text-lg font-bold text-primary-deep">Items</h2>
+        <SectionCard title="Items" icon={ListOrdered}>
           <div className="divide-y divide-border">
             {order.items.map((item) => (
-              <div key={item.productId} className="flex items-center gap-3 py-3">
+              <div key={item.productId} className="flex items-center gap-3 py-3 first:pt-0">
                 <ProductImage
                   src={item.imageUrl}
                   alt={item.name}
-                  className="h-12 w-12 shrink-0 rounded-md"
+                  className="h-14 w-14 shrink-0 rounded-xl"
                 />
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold text-primary-deep">
+                  <p className="truncate text-sm font-bold text-primary-deep">
                     {item.name}
                   </p>
                   <p className="text-xs text-muted">
@@ -182,7 +191,7 @@ export default function OrderDetailPage() {
               </div>
             ))}
           </div>
-          <div className="mt-4 space-y-2 border-t border-border pt-4">
+          <div className="mt-3 space-y-2 rounded-xl bg-primary-50/60 p-4">
             <div className="flex items-center justify-between text-sm text-ink/80">
               <span>Subtotal</span>
               <span>{formatPeso(order.subtotal)}</span>
@@ -191,13 +200,15 @@ export default function OrderDetailPage() {
               <span>Delivery fee</span>
               <span>{formatPeso(order.deliveryFee ?? 0)}</span>
             </div>
-            <div className="flex items-center justify-between text-lg font-bold text-primary-deep">
-              <span>Total</span>
-              <span>{formatPeso(order.total)}</span>
+            <div className="flex items-center justify-between border-t border-dashed border-primary/20 pt-2">
+              <span className="font-bold text-primary-deep">Total</span>
+              <span className="font-display text-xl font-extrabold text-primary">
+                {formatPeso(order.total)}
+              </span>
             </div>
           </div>
-        </section>
+        </SectionCard>
       </div>
-    </div>
+    </>
   )
 }

@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/card'
 import {
   Dialog,
+  DialogBody,
   DialogClose,
   DialogContent,
   DialogDescription,
@@ -27,6 +28,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
 import { EmptyState } from '@/components/shared/EmptyState'
+import { useBranchStore } from '@/stores/branch-store'
 import { useVendorStore } from '@/stores/vendor-store'
 import type { ProductCategory, VendorCreateInput } from '@/types'
 
@@ -34,6 +36,7 @@ const DEFAULT_VENDOR_FORM: VendorCreateInput = {
   name: '',
   description: '',
   location: '',
+  branchId: '',
   categories: [],
   imageUrl: '',
   opensAt: '05:00',
@@ -41,17 +44,21 @@ const DEFAULT_VENDOR_FORM: VendorCreateInput = {
   demoQrLabel: '',
   isAvailable: true,
   rating: 4.5,
-  lat: 14.4793,
-  lng: 121.0198,
 }
 
 function CreateVendorDialog() {
   const addVendor = useVendorStore((s) => s.addVendor)
+  const branches = useBranchStore((s) => s.branches.filter((b) => b.isActive))
   const [open, setOpen] = useState(false)
   const [form, setForm] = useState<VendorCreateInput>(DEFAULT_VENDOR_FORM)
 
   const handleOpen = (isOpen: boolean) => {
-    if (isOpen) setForm(DEFAULT_VENDOR_FORM)
+    if (isOpen) {
+      setForm({
+        ...DEFAULT_VENDOR_FORM,
+        branchId: branches[0]?.id ?? '',
+      })
+    }
     setOpen(isOpen)
   }
 
@@ -85,14 +92,15 @@ function CreateVendorDialog() {
           Create vendor
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+      <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Create vendor</DialogTitle>
           <DialogDescription>
             Register a new marketplace vendor for the demo.
           </DialogDescription>
         </DialogHeader>
-        <div className="space-y-4 py-2">
+        <DialogBody>
+        <div className="space-y-4">
           <div className="space-y-1.5">
             <Label htmlFor="vendor-name">Name</Label>
             <Input
@@ -115,65 +123,54 @@ function CreateVendorDialog() {
             />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="vendor-location">Location</Label>
+            <Label htmlFor="vendor-branch">Palengke / market</Label>
+            <select
+              id="vendor-branch"
+              className="flex h-10 w-full rounded-md border border-border bg-surface px-3 text-sm"
+              value={form.branchId}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, branchId: e.target.value }))
+              }
+            >
+              <option value="">Select palengke…</option>
+              {branches.map((branch) => (
+                <option key={branch.id} value={branch.id}>
+                  {branch.name}
+                </option>
+              ))}
+            </select>
+            <p className="text-[11px] text-muted">
+              Keri pickup uses this palengke’s lon/lat — not the stall.
+            </p>
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="vendor-location">Stall label</Label>
             <Input
               id="vendor-location"
               value={form.location}
               onChange={(e) =>
                 setForm((f) => ({ ...f, location: e.target.value }))
               }
-              placeholder="e.g. Baclaran Public Market, Row B"
+              placeholder="e.g. Stall A12 / Row B"
             />
           </div>
-          <div className="grid gap-4 sm:grid-cols-3">
-            <div className="space-y-1.5">
-              <Label htmlFor="vendor-rating">Rating (1–5)</Label>
-              <Input
-                id="vendor-rating"
-                type="number"
-                min={1}
-                max={5}
-                step={0.1}
-                value={form.rating}
-                onChange={(e) =>
-                  setForm((f) => ({
-                    ...f,
-                    rating: Number(e.target.value),
-                  }))
-                }
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="vendor-lat">Pickup latitude</Label>
-              <Input
-                id="vendor-lat"
-                type="number"
-                step="any"
-                value={form.lat}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, lat: Number(e.target.value) }))
-                }
-                placeholder="14.4793"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="vendor-lng">Pickup longitude</Label>
-              <Input
-                id="vendor-lng"
-                type="number"
-                step="any"
-                value={form.lng}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, lng: Number(e.target.value) }))
-                }
-                placeholder="121.0198"
-              />
-            </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="vendor-rating">Rating (1–5)</Label>
+            <Input
+              id="vendor-rating"
+              type="number"
+              min={1}
+              max={5}
+              step={0.1}
+              value={form.rating}
+              onChange={(e) =>
+                setForm((f) => ({
+                  ...f,
+                  rating: Number(e.target.value),
+                }))
+              }
+            />
           </div>
-          <p className="text-[11px] text-muted">
-            Lat/lng are this store’s Keri pickup pin — sent to the rider when a
-            customer orders from this stall.
-          </p>
           <div className="space-y-1.5">
             <Label>Categories</Label>
             <div className="flex flex-wrap gap-1.5">
@@ -254,6 +251,7 @@ function CreateVendorDialog() {
             <Label htmlFor="vendor-available">Available for orders</Label>
           </div>
         </div>
+        </DialogBody>
         <DialogFooter>
           <DialogClose asChild>
             <Button variant="outline">Cancel</Button>
@@ -267,6 +265,7 @@ function CreateVendorDialog() {
 
 export default function AdminVendorsPage() {
   const vendors = useVendorStore((s) => s.vendors)
+  const branches = useBranchStore((s) => s.branches)
 
   return (
     <div className="space-y-6">
@@ -305,11 +304,12 @@ export default function AdminVendorsPage() {
                         </CardTitle>
                         <CardDescription className="flex items-center gap-1">
                           <MapPin className="h-3 w-3" />
-                          {vendor.location}
+                          {branches.find((b) => b.id === vendor.branchId)?.name ??
+                            'Unassigned palengke'}{' '}
+                          · {vendor.location}
                         </CardDescription>
                         <p className="mt-0.5 text-xs text-muted">
-                          ★ {vendor.rating.toFixed(1)} · {vendor.lat.toFixed(4)},{' '}
-                          {vendor.lng.toFixed(4)}
+                          ★ {vendor.rating.toFixed(1)}
                         </p>
                       </div>
                     </div>

@@ -56,12 +56,27 @@ export interface PriceHistoryEntry {
   note?: string
 }
 
+/** Palengke / market branch — owns Keri pickup coordinates. */
+export interface Branch {
+  id: string
+  name: string
+  address: string
+  /** Pickup latitude for Keri (per palengke, not per stall). */
+  lat: number
+  /** Pickup longitude for Keri (per palengke, not per stall). */
+  lng: number
+  isActive: boolean
+}
+
 export interface Vendor {
   id: string
   name: string
   description: string
   categories: ProductCategory[]
+  /** Stall label / aisle text (not the Keri pickup pin). */
   location: string
+  /** Palengke this stall belongs to — pickup lon/lat comes from Branch. */
+  branchId: string
   imageUrl: string
   isAvailable: boolean
   /** Daily open time in 24h `HH:mm` (local). */
@@ -70,10 +85,6 @@ export interface Vendor {
   cutoffTime: string
   /** Demo / curated store rating (1–5). Used for home “top rated”. */
   rating: number
-  /** Store pickup latitude for Keri rider. */
-  lat: number
-  /** Store pickup longitude for Keri rider. */
-  lng: number
   isDemo: true
   demoQrLabel: string
 }
@@ -140,8 +151,11 @@ export interface OrderItemSnapshot {
 
 export interface Order {
   id: string
-  /** Shared id for all vendor orders created in one checkout. */
-  checkoutGroupId: string
+  /**
+   * Booking group forwarded to Keri.
+   * One per checkout — covers a single-vendor order or all sibling multi-vendor orders.
+   */
+  bookingGroupId: string
   vendorId: string
   vendorName: string
   customerName: string
@@ -149,12 +163,21 @@ export interface Order {
   notes?: string
   items: OrderItemSnapshot[]
   subtotal: number
+  /** Share of the (placeholder) Keri delivery fee for this vendor order. */
   deliveryFee: number
   total: number
   status: OrderStatus
   /** Set when payment is confirmed — tracks Keri delivery progress. */
   deliveryStatus?: DeliveryStatus
-  /** Snapshot of store pickup coords for Keri at checkout time. */
+  /**
+   * Shared Keri tracking id for the whole booking group once dispatched
+   * (first sibling moves to out_for_delivery).
+   */
+  keriTrackingId?: string
+  /** Palengke / branch used for Keri pickup (from vendor.branchId at checkout). */
+  branchId: string
+  branchName: string
+  /** Snapshot of palengke pickup coords for Keri at checkout time. */
   pickupLat: number
   pickupLng: number
   createdAt: string
@@ -199,6 +222,7 @@ export interface VendorCreateInput {
   name: string
   description: string
   location: string
+  branchId: string
   categories: ProductCategory[]
   imageUrl: string
   isAvailable: boolean
@@ -206,15 +230,20 @@ export interface VendorCreateInput {
   cutoffTime: string
   demoQrLabel: string
   rating: number
-  lat: number
-  lng: number
 }
 
-/** Admin may also update store rating and Keri pickup coordinates. */
+/** Admin may also update rating and which palengke the stall belongs to. */
 export type VendorUpdateInput = VendorProfileInput & {
   rating?: number
-  lat?: number
-  lng?: number
+  branchId?: string
+}
+
+export interface BranchFormInput {
+  name: string
+  address: string
+  lat: number
+  lng: number
+  isActive: boolean
 }
 
 export interface CheckoutFormInput {

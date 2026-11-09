@@ -20,14 +20,14 @@ export function ProductImage({
   return (
     <div
       className={cn(
-        'relative overflow-hidden bg-primary-50',
+        'relative overflow-hidden bg-gradient-to-br from-primary-50 via-lime-50 to-bay-50',
         className,
       )}
     >
       {failed ? (
-        <div className="flex h-full w-full flex-col items-center justify-center gap-2 text-muted">
+        <div className="flex h-full w-full flex-col items-center justify-center gap-2 text-primary/50">
           <ImageOff className="h-8 w-8" />
-          <span className="text-xs">Image unavailable</span>
+          <span className="text-xs font-medium">Image unavailable</span>
         </div>
       ) : (
         <img

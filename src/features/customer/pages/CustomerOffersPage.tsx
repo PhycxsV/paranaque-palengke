@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { Check, MessageSquare, ShoppingCart, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { Badge } from '@/components/ui/badge'
@@ -28,6 +28,7 @@ const FILTER_TABS: { value: FilterTab; label: string }[] = [
 ]
 
 export default function CustomerOffersPage() {
+  const navigate = useNavigate()
   const offers = useOfferStore((s) => s.offers)
   const acceptCounter = useOfferStore((s) => s.acceptCounter)
   const declineCounter = useOfferStore((s) => s.declineCounter)
@@ -104,9 +105,7 @@ export default function CustomerOffersPage() {
                 : `No offers with status "${FILTER_TABS.find((t) => t.value === activeTab)?.label ?? activeTab}".`
             }
             actionLabel="Browse products"
-            onAction={() => {
-              window.location.href = '/customer/products'
-            }}
+            onAction={() => navigate('/customer/products')}
           />
         </div>
       ) : (

@@ -8,7 +8,7 @@ export function Card({
   return (
     <div
       className={cn(
-        'rounded-xl border border-border bg-surface text-ink shadow-[var(--shadow-soft)]',
+        'rounded-2xl border border-border bg-surface text-ink shadow-[var(--shadow-soft)]',
         className,
       )}
       {...props}
@@ -20,7 +20,13 @@ export function CardHeader({
   className,
   ...props
 }: React.HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn('flex flex-col gap-1.5 p-5', className)} {...props} />
+  return (
+    <div
+      data-card-header
+      className={cn('flex flex-col gap-1.5 p-5 sm:p-6', className)}
+      {...props}
+    />
+  )
 }
 
 export function CardTitle({
@@ -29,7 +35,10 @@ export function CardTitle({
 }: React.HTMLAttributes<HTMLHeadingElement>) {
   return (
     <h3
-      className={cn('text-lg font-bold leading-none tracking-tight', className)}
+      className={cn(
+        'text-lg font-bold leading-tight tracking-tight text-primary-deep',
+        className,
+      )}
       {...props}
     />
   )
@@ -46,7 +55,13 @@ export function CardContent({
   className,
   ...props
 }: React.HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn('p-5 pt-0', className)} {...props} />
+  // Top padding is only dropped when a CardHeader sits directly above.
+  return (
+    <div
+      className={cn('p-5 sm:p-6 [[data-card-header]+&]:pt-0', className)}
+      {...props}
+    />
+  )
 }
 
 export function CardFooter({
@@ -54,6 +69,9 @@ export function CardFooter({
   ...props
 }: React.HTMLAttributes<HTMLDivElement>) {
   return (
-    <div className={cn('flex items-center p-5 pt-0', className)} {...props} />
+    <div
+      className={cn('flex items-center p-5 pt-0 sm:p-6 sm:pt-0', className)}
+      {...props}
+    />
   )
 }

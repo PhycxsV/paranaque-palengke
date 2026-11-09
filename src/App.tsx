@@ -27,6 +27,7 @@ import VendorChatPage from '@/features/vendor/pages/VendorChatPage'
 import AdminDashboardPage from '@/features/admin/pages/AdminDashboardPage'
 import AdminCommoditiesPage from '@/features/admin/pages/AdminCommoditiesPage'
 import AdminPriceHistoryPage from '@/features/admin/pages/AdminPriceHistoryPage'
+import AdminBranchesPage from '@/features/admin/pages/AdminBranchesPage'
 import AdminVendorsPage from '@/features/admin/pages/AdminVendorsPage'
 import AdminVendorDetailPage from '@/features/admin/pages/AdminVendorDetailPage'
 import AdminOffersPage from '@/features/admin/pages/AdminOffersPage'
@@ -87,6 +88,7 @@ export default function App() {
           <Route index element={<AdminDashboardPage />} />
           <Route path="commodities" element={<AdminCommoditiesPage />} />
           <Route path="price-history" element={<AdminPriceHistoryPage />} />
+          <Route path="branches" element={<AdminBranchesPage />} />
           <Route path="vendors" element={<AdminVendorsPage />} />
           <Route path="vendors/:vendorId" element={<AdminVendorDetailPage />} />
           <Route

@@ -1,14 +1,18 @@
 import { useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, CheckCircle, Clock, CreditCard } from 'lucide-react'
+import { useNavigate, useParams } from 'react-router-dom'
+import { Clock, CreditCard, Store } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { CheckoutSteps } from '@/components/shared/CheckoutSteps'
 import { DeliveryMilestoneTracker } from '@/components/shared/DeliveryMilestoneTracker'
 import { DemoQrPlaceholder } from '@/components/shared/DemoQrPlaceholder'
-import { StatusBadge } from '@/components/shared/StatusBadge'
 import { EmptyState } from '@/components/shared/EmptyState'
+import { Notice } from '@/components/shared/Notice'
+import { PageHeader } from '@/components/shared/PageHeader'
+import { SectionCard } from '@/components/shared/SectionCard'
+import { StatusBadge } from '@/components/shared/StatusBadge'
 import { useOrderStore } from '@/stores/order-store'
 import { useVendorStore } from '@/stores/vendor-store'
 import { formatPeso } from '@/lib/utils'
@@ -46,28 +50,23 @@ function VendorPaymentCard({
   }
 
   return (
-    <section className="rounded-xl border border-border bg-surface p-5 shadow-[var(--shadow-soft)]">
-      <div className="mb-4 flex flex-wrap items-start justify-between gap-2">
-        <div>
-          <h2 className="text-lg font-bold text-primary-deep">{order.vendorName}</h2>
-          <p className="font-mono text-xs text-muted">{order.id}</p>
-        </div>
-        <StatusBadge status={order.status} />
-      </div>
+    <SectionCard
+      title={order.vendorName}
+      icon={Store}
+      action={<StatusBadge status={order.status} />}
+    >
+      <p className="-mt-1 mb-4 font-mono text-xs text-muted">{order.id}</p>
 
-      <div className="mb-4 flex justify-between border-b border-border pb-3 text-sm">
-        <span className="text-muted">Amount (items + delivery share)</span>
-        <span className="font-bold text-primary">{formatPeso(order.total)}</span>
+      <div className="mb-5 flex items-center justify-between rounded-xl bg-primary-50/70 px-4 py-3">
+        <span className="text-sm text-muted">Amount (items + delivery share)</span>
+        <span className="font-display text-xl font-extrabold text-primary">
+          {formatPeso(order.total)}
+        </span>
       </div>
 
       {confirmed && (
         <div className="space-y-4">
-          <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-center">
-            <CheckCircle className="mx-auto mb-2 h-8 w-8 text-emerald-600" />
-            <p className="text-sm font-semibold text-emerald-800">
-              Payment confirmed by vendor
-            </p>
-          </div>
+          <Notice tone="success" layout="panel" title="Payment confirmed by vendor" />
           {order.deliveryStatus ? (
             <DeliveryMilestoneTracker deliveryStatus={order.deliveryStatus} />
           ) : null}
@@ -75,26 +74,20 @@ function VendorPaymentCard({
       )}
 
       {awaiting && (
-        <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-center">
-          <Clock className="mx-auto mb-2 h-8 w-8 text-amber-600" />
-          <p className="text-sm font-semibold text-amber-800">
-            Awaiting vendor confirmation
-          </p>
+        <Notice tone="pending" layout="panel" title="Awaiting vendor confirmation">
           {order.transactionReference ? (
-            <p className="mt-1 text-xs text-amber-700">
-              Ref: {order.transactionReference}
-            </p>
+            <span className="text-xs">Ref: {order.transactionReference}</span>
           ) : null}
-        </div>
+        </Notice>
       )}
 
       {canPay && (
-        <div className="space-y-4">
+        <div className="space-y-5">
           <DemoQrPlaceholder
             label={vendor?.demoQrLabel ?? 'Demo QR'}
             amountLabel={formatPeso(order.total)}
           />
-          <div>
+          <div className="grid gap-1.5">
             <Label htmlFor={`ref-${order.id}`}>
               Transaction reference (optional)
             </Label>
@@ -103,11 +96,11 @@ function VendorPaymentCard({
               value={ref}
               onChange={(e) => setRef(e.target.value)}
               placeholder="e.g. DEMO-REF-12345"
-              className="mt-1"
             />
           </div>
           <Button
             className="w-full"
+            size="lg"
             onClick={handlePay}
             disabled={submitting}
           >
@@ -116,7 +109,7 @@ function VendorPaymentCard({
           </Button>
         </div>
       )}
-    </section>
+    </SectionCard>
   )
 }
 
@@ -124,7 +117,7 @@ export default function PaymentGroupPage() {
   const { groupId } = useParams<{ groupId: string }>()
   const navigate = useNavigate()
   const orders = useOrderStore((s) => s.orders)
-  const groupOrders = orders.filter((o) => o.checkoutGroupId === groupId)
+  const groupOrders = orders.filter((o) => o.bookingGroupId === groupId)
   const [, setTick] = useState(0)
 
   if (!groupId || groupOrders.length === 0) {
@@ -153,32 +146,32 @@ export default function PaymentGroupPage() {
   ).length
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-8 sm:px-6">
-      <Button asChild variant="ghost" size="sm" className="mb-6">
-        <Link to="/customer/orders">
-          <ArrowLeft className="h-4 w-4" />
-          My orders
-        </Link>
-      </Button>
+    <>
+      <PageHeader
+        width="narrow"
+        eyebrow="Payment"
+        title="Pay each vendor"
+        back={{ to: '/customer/orders', label: 'My orders' }}
+        description={
+          <>
+            Group <span className="font-mono">{groupId}</span> ·{' '}
+            {groupOrders.length} QRPH payment
+            {groupOrders.length === 1 ? '' : 's'}
+          </>
+        }
+      >
+        <CheckoutSteps current={allConfirmed ? 3 : 2} />
+      </PageHeader>
 
-      <h1 className="text-2xl font-extrabold text-primary-deep">
-        Pay each vendor
-      </h1>
-      <p className="mt-1 text-sm text-muted">
-        Group <span className="font-mono">{groupId}</span> ·{' '}
-        {groupOrders.length} QRPH payment
-        {groupOrders.length === 1 ? '' : 's'}
-      </p>
+      <div className="mx-auto max-w-2xl space-y-6 px-4 py-8 sm:px-6">
+        <Notice tone={allConfirmed ? 'success' : allPaid ? 'pending' : 'info'}>
+          {allConfirmed
+            ? 'All vendor payments confirmed. Keri delivery can proceed per vendor.'
+            : allPaid
+              ? 'All payments submitted. Vendors can now confirm — delivery unlocks after every vendor confirms.'
+              : `Submit payment for ${pendingCount} remaining vendor QR${pendingCount === 1 ? '' : 's'}.`}
+        </Notice>
 
-      <div className="mt-4 rounded-xl border border-border bg-primary-50/50 p-4 text-sm text-primary-deep">
-        {allConfirmed
-          ? 'All vendor payments confirmed. Keri delivery can proceed per vendor.'
-          : allPaid
-            ? 'All payments submitted. Vendors can now confirm — delivery unlocks after every vendor confirms.'
-            : `Submit payment for ${pendingCount} remaining vendor QR${pendingCount === 1 ? '' : 's'}.`}
-      </div>
-
-      <div className="mt-6 space-y-6">
         {groupOrders.map((order) => (
           <VendorPaymentCard
             key={order.id}
@@ -187,6 +180,6 @@ export default function PaymentGroupPage() {
           />
         ))}
       </div>
-    </div>
+    </>
   )
 }

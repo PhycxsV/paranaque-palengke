@@ -1,14 +1,18 @@
 import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, CheckCircle, Clock, XCircle } from 'lucide-react'
+import { Clock, ListChecks } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { CheckoutSteps } from '@/components/shared/CheckoutSteps'
 import { DeliveryMilestoneTracker } from '@/components/shared/DeliveryMilestoneTracker'
 import { DemoQrPlaceholder } from '@/components/shared/DemoQrPlaceholder'
-import { StatusBadge } from '@/components/shared/StatusBadge'
 import { EmptyState } from '@/components/shared/EmptyState'
+import { Notice } from '@/components/shared/Notice'
+import { PageHeader } from '@/components/shared/PageHeader'
+import { SectionCard } from '@/components/shared/SectionCard'
+import { StatusBadge } from '@/components/shared/StatusBadge'
 import { useOrderStore } from '@/stores/order-store'
 import { useVendorStore } from '@/stores/vendor-store'
 import { formatPeso } from '@/lib/utils'
@@ -56,117 +60,122 @@ export default function PaymentPage() {
     navigate(`/customer/orders/${order.id}`)
   }
 
+  const viewOrder = (
+    <Button asChild variant="outline">
+      <Link to={`/customer/orders/${order.id}`}>View order details</Link>
+    </Button>
+  )
+
   return (
-    <div className="mx-auto max-w-2xl px-4 py-8 sm:px-6">
-      <Button asChild variant="ghost" size="sm" className="mb-6">
-        <Link to={`/customer/orders/${order.id}`}>
-          <ArrowLeft className="h-4 w-4" />
-          Back to order
-        </Link>
-      </Button>
+    <>
+      <PageHeader
+        width="narrow"
+        eyebrow="Payment"
+        title="Payment"
+        back={{ to: `/customer/orders/${order.id}`, label: 'Back to order' }}
+        description={
+          <>
+            Order <span className="font-mono font-semibold">{order.id}</span>
+          </>
+        }
+      >
+        <CheckoutSteps current={isConfirmed ? 3 : 2} />
+      </PageHeader>
 
-      <div className="mb-6">
-        <h1 className="text-2xl font-extrabold text-primary-deep">Payment</h1>
-        <p className="mt-1 text-sm text-muted">
-          Order <span className="font-mono font-medium">{order.id}</span>
-        </p>
-      </div>
-
-      {/* Order overview */}
-      <div className="mb-6 rounded-xl border border-border bg-surface p-5 shadow-[var(--shadow-soft)]">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm text-muted">Vendor</p>
-            <p className="font-semibold text-primary-deep">{order.vendorName}</p>
+      <div className="mx-auto max-w-2xl space-y-6 px-4 py-8 sm:px-6">
+        {/* Order overview */}
+        <SectionCard>
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-muted">
+                Vendor
+              </p>
+              <p className="font-display text-lg font-bold text-primary-deep">
+                {order.vendorName}
+              </p>
+            </div>
+            <StatusBadge status={order.status} />
           </div>
-          <StatusBadge status={order.status} />
-        </div>
-        <div className="mt-4 flex items-center justify-between border-t border-border pt-4">
-          <span className="text-sm text-muted">Amount Due</span>
-          <span className="text-xl font-bold text-primary">{formatPeso(order.total)}</span>
-        </div>
-      </div>
+          <div className="mt-4 flex items-center justify-between rounded-xl bg-primary-50/70 px-4 py-3">
+            <span className="text-sm text-muted">Amount due</span>
+            <span className="font-display text-2xl font-extrabold text-primary">
+              {formatPeso(order.total)}
+            </span>
+          </div>
+        </SectionCard>
 
-      {/* Status-specific content */}
-      {isConfirmed && (
-        <div className="space-y-6">
-          <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-6 text-center">
-            <CheckCircle className="mx-auto mb-3 h-12 w-12 text-emerald-600" />
-            <h2 className="text-lg font-bold text-emerald-800">Payment Confirmed</h2>
-            <p className="mt-2 text-sm text-emerald-700">
+        {isConfirmed && (
+          <div className="space-y-6">
+            <Notice
+              tone="success"
+              layout="panel"
+              title="Payment Confirmed"
+              action={viewOrder}
+            >
               Salamat! The vendor has confirmed your demo payment. Keri delivery
               milestones are below.
-            </p>
-            <Button asChild className="mt-4" variant="secondary">
-              <Link to={`/customer/orders/${order.id}`}>View order details</Link>
-            </Button>
+            </Notice>
+            <DeliveryMilestoneTracker
+              deliveryStatus={order.deliveryStatus ?? 'awaiting_pickup'}
+            />
           </div>
-          <DeliveryMilestoneTracker
-            deliveryStatus={order.deliveryStatus ?? 'awaiting_pickup'}
-          />
-        </div>
-      )}
+        )}
 
-      {isAwaitingConfirmation && (
-        <div className="rounded-xl border border-amber-200 bg-amber-50 p-6 text-center">
-          <Clock className="mx-auto mb-3 h-12 w-12 text-amber-600" />
-          <h2 className="text-lg font-bold text-amber-800">Awaiting Vendor Confirmation</h2>
-          <p className="mt-2 text-sm text-amber-700">
+        {isAwaitingConfirmation && (
+          <Notice
+            tone="pending"
+            layout="panel"
+            title="Awaiting Vendor Confirmation"
+            action={viewOrder}
+          >
             Your demo payment has been submitted. The vendor will verify it shortly.
-          </p>
-          {order.transactionReference && (
-            <p className="mt-2 text-xs text-amber-600">
-              Reference: <span className="font-mono">{order.transactionReference}</span>
-            </p>
-          )}
-          <Button asChild className="mt-4" variant="secondary">
-            <Link to={`/customer/orders/${order.id}`}>View order details</Link>
-          </Button>
-        </div>
-      )}
+            {order.transactionReference && (
+              <span className="mt-2 block text-xs">
+                Reference: <span className="font-mono">{order.transactionReference}</span>
+              </span>
+            )}
+          </Notice>
+        )}
 
-      {canPay && (
-        <>
-          {order.status === 'payment_rejected' && (
-            <div className="mb-6 rounded-xl border border-red-200 bg-red-50 p-4">
-              <div className="flex items-start gap-3">
-                <XCircle className="mt-0.5 h-5 w-5 shrink-0 text-red-500" />
-                <div>
-                  <p className="font-semibold text-red-800">Payment Rejected</p>
-                  <p className="mt-1 text-sm text-red-700">
-                    The vendor could not verify your previous payment. Please resubmit with
-                    correct details.
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
+        {canPay && (
+          <>
+            {order.status === 'payment_rejected' && (
+              <Notice tone="danger" title="Payment Rejected">
+                The vendor could not verify your previous payment. Please resubmit
+                with correct details.
+              </Notice>
+            )}
 
-          <div className="space-y-6">
-            {/* QR code */}
             <DemoQrPlaceholder
               label={vendor?.demoQrLabel ?? 'Demo QR Payment'}
               amountLabel={formatPeso(order.total)}
             />
 
-            <div className="rounded-xl border border-border bg-surface p-5 shadow-[var(--shadow-soft)]">
-              <h2 className="mb-3 font-bold text-primary-deep">How to pay (demo)</h2>
-              <ol className="list-inside list-decimal space-y-2 text-sm text-ink/80">
-                <li>Scan the demo QR code above (simulated — no real money involved).</li>
-                <li>Optionally enter a transaction reference below.</li>
-                <li>Click &quot;I&apos;ve Paid&quot; to submit your demo payment.</li>
-                <li>Wait for the vendor to confirm the payment in the vendor portal.</li>
+            <SectionCard title="How to pay (demo)" icon={ListChecks}>
+              <ol className="space-y-3 text-sm text-ink/80">
+                {[
+                  'Scan the demo QR code above (simulated — no real money involved).',
+                  'Optionally enter a transaction reference below.',
+                  'Click "I\'ve Paid" to submit your demo payment.',
+                  'Wait for the vendor to confirm the payment in the vendor portal.',
+                ].map((step, i) => (
+                  <li key={step} className="flex gap-3">
+                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-lime text-xs font-extrabold text-primary-deep">
+                      {i + 1}
+                    </span>
+                    <span className="pt-0.5">{step}</span>
+                  </li>
+                ))}
               </ol>
-            </div>
+            </SectionCard>
 
-            <div>
+            <div className="grid gap-1.5">
               <Label htmlFor="transactionRef">Transaction Reference (optional)</Label>
               <Input
                 id="transactionRef"
                 value={transactionRef}
                 onChange={(e) => setTransactionRef(e.target.value)}
                 placeholder="e.g. DEMO-REF-12345"
-                className="mt-1"
               />
             </div>
 
@@ -178,9 +187,9 @@ export default function PaymentPage() {
             >
               {submitting ? 'Submitting...' : "I've Paid"}
             </Button>
-          </div>
-        </>
-      )}
-    </div>
+          </>
+        )}
+      </div>
+    </>
   )
 }
