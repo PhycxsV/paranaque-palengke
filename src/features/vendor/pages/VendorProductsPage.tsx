@@ -141,6 +141,47 @@ function PriceRangeBar({
   )
 }
 
+function ArchiveProductButton({
+  product,
+  onArchive,
+}: {
+  product: Product
+  onArchive: (product: Product) => void
+}) {
+  return (
+    <AlertDialog>
+      <AlertDialogTrigger asChild>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="w-9 px-0 text-red-600 hover:bg-red-50"
+          aria-label={`Archive ${product.name}`}
+        >
+          <Archive className="h-4 w-4" />
+        </Button>
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Archive "{product.name}"?</AlertDialogTitle>
+          <AlertDialogDescription>
+            This will remove the product from your active listings. Archived
+            products cannot be restored in this demo.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={() => onArchive(product)}
+            className="bg-red-600 text-white hover:bg-red-700"
+          >
+            Archive
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  )
+}
+
 function FormSection({
   title,
   children,
@@ -524,7 +565,7 @@ export default function VendorProductsPage() {
         title="Products"
         description={`${vendorProducts.length} active listing${vendorProducts.length !== 1 ? 's' : ''}. Set your price within the LGU range and keep stock up to date.`}
         actions={
-          <Button onClick={openAdd} size="lg">
+          <Button onClick={openAdd} size="lg" className="hidden sm:inline-flex">
             <Plus className="h-4 w-4" />
             Add product
           </Button>
@@ -562,7 +603,7 @@ export default function VendorProductsPage() {
               description="Try a different filter or search term."
             />
           ) : (
-            <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+            <div className="hidden gap-5 sm:grid sm:grid-cols-2 xl:grid-cols-3">
               {visibleProducts.map((product) => {
                 const vendorPrice = getVendorPrice(product, commodities)
                 const range = getCommodityRange(product, commodities)
@@ -667,39 +708,10 @@ export default function VendorProductsPage() {
                           <Pencil className="h-3.5 w-3.5" />
                           Edit
                         </Button>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="w-9 px-0 text-red-600 hover:bg-red-50"
-                              aria-label={`Archive ${product.name}`}
-                            >
-                              <Archive className="h-4 w-4" />
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>
-                                Archive "{product.name}"?
-                              </AlertDialogTitle>
-                              <AlertDialogDescription>
-                                This will remove the product from your active
-                                listings. Archived products cannot be restored in
-                                this demo.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction
-                                onClick={() => handleArchive(product)}
-                                className="bg-red-600 text-white hover:bg-red-700"
-                              >
-                                Archive
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
+                        <ArchiveProductButton
+                          product={product}
+                          onArchive={handleArchive}
+                        />
                       </div>
                     </div>
                   </article>
@@ -707,12 +719,108 @@ export default function VendorProductsPage() {
               })}
             </div>
           )}
+
+          {/* Phone list */}
+          {visibleProducts.length > 0 ? (
+            <ul className="space-y-3 sm:hidden">
+              {visibleProducts.map((product) => {
+                const vendorPrice = getVendorPrice(product, commodities)
+                const out = product.stock <= 0
+                const low = !out && product.stock <= LOW_STOCK_THRESHOLD
+                return (
+                  <li
+                    key={product.id}
+                    className={cn(
+                      'rounded-2xl border border-border bg-surface p-3 shadow-[var(--shadow-soft)]',
+                      !product.isAvailable && 'bg-gray-50/70',
+                    )}
+                  >
+                    <div className="flex gap-3">
+                      <ProductImage
+                        src={product.imageUrl}
+                        alt={product.name}
+                        className={cn(
+                          'h-20 w-20 shrink-0 rounded-xl',
+                          !product.isAvailable && 'grayscale',
+                        )}
+                      />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <h3 className="truncate text-[15px] font-extrabold text-primary-deep">
+                              {product.name}
+                            </h3>
+                            <p className="text-[11px] font-bold uppercase tracking-wider text-primary">
+                              {product.category}
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => openEdit(product)}
+                            aria-label={`Edit ${product.name}`}
+                            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary-50 text-primary transition active:scale-90"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </button>
+                        </div>
+                        <div className="mt-2 flex flex-wrap items-end justify-between gap-x-2 gap-y-1.5">
+                          <p className="font-display text-xl font-extrabold leading-none text-primary-deep">
+                            {formatPeso(vendorPrice)}
+                            <span className="ml-0.5 text-xs font-semibold text-muted">
+                              /{formatUnitLabel(product.unit)}
+                            </span>
+                          </p>
+                          <span
+                            className={cn(
+                              'whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-bold',
+                              out
+                                ? 'bg-red-500 text-white'
+                                : low
+                                  ? 'bg-gold text-primary-deep'
+                                  : 'bg-primary-50 text-primary-deep',
+                            )}
+                          >
+                            {out
+                              ? 'Out of stock'
+                              : `${product.stock} ${formatUnitLabel(product.unit)} left`}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="mt-3 flex items-center justify-between border-t border-border pt-3">
+                      <label className="flex cursor-pointer items-center gap-2.5 text-xs font-semibold text-ink">
+                        <Switch
+                          checked={product.isAvailable}
+                          onCheckedChange={() => handleToggle(product)}
+                          aria-label={`Toggle availability for ${product.name}`}
+                        />
+                        {product.isAvailable ? 'On sale' : 'Hidden'}
+                      </label>
+                      <ArchiveProductButton
+                        product={product}
+                        onArchive={handleArchive}
+                      />
+                    </div>
+                  </li>
+                )
+              })}
+            </ul>
+          ) : null}
         </>
       )}
 
+      {/* Phone: floating action button (sits above the tab bar) */}
+      <Button
+        onClick={openAdd}
+        aria-label="Add product"
+        className="fixed bottom-[calc(5.75rem+env(safe-area-inset-bottom))] right-4 z-30 h-14 w-14 rounded-full p-0 shadow-[0_12px_28px_-6px_rgb(42_125_79/0.55)] sm:hidden"
+      >
+        <Plus className="h-6 w-6" />
+      </Button>
+
       {/* Add product dialog */}
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
-        <DialogContent className="max-w-xl">
+        <DialogContent mobileSheet className="max-w-xl">
           <DialogHeader>
             <DialogTitle>Add product</DialogTitle>
             <DialogDescription>
@@ -736,7 +844,7 @@ export default function VendorProductsPage() {
           if (!open) setEditProduct(null)
         }}
       >
-        <DialogContent className="max-w-xl">
+        <DialogContent mobileSheet className="max-w-xl">
           <DialogHeader>
             <DialogTitle>Edit {editProduct?.name ?? 'product'}</DialogTitle>
             <DialogDescription>

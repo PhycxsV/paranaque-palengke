@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ChevronRight, MapPin, Plus, Store } from 'lucide-react'
 import { toast } from 'sonner'
@@ -48,7 +48,11 @@ const DEFAULT_VENDOR_FORM: VendorCreateInput = {
 
 function CreateVendorDialog() {
   const addVendor = useVendorStore((s) => s.addVendor)
-  const branches = useBranchStore((s) => s.branches.filter((b) => b.isActive))
+  const allBranches = useBranchStore((s) => s.branches)
+  const branches = useMemo(
+    () => allBranches.filter((b) => b.isActive),
+    [allBranches],
+  )
   const [open, setOpen] = useState(false)
   const [form, setForm] = useState<VendorCreateInput>(DEFAULT_VENDOR_FORM)
 
@@ -288,50 +292,56 @@ export default function AdminVendorsPage() {
           description="No vendors are registered in the demo yet."
         />
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid auto-rows-fr gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {vendors.map((vendor) => (
-            <Link key={vendor.id} to={`/admin/vendors/${vendor.id}`}>
-              <Card className="group transition hover:shadow-md">
+            <Link
+              key={vendor.id}
+              to={`/admin/vendors/${vendor.id}`}
+              className="h-full"
+            >
+              <Card className="group flex h-full flex-col transition hover:shadow-md">
                 <CardHeader className="pb-2">
                   <div className="flex items-start justify-between gap-2">
-                    <div className="flex items-center gap-3">
+                    <div className="flex min-w-0 items-start gap-3">
                       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary-50 text-primary">
                         <Store className="h-5 w-5" />
                       </div>
                       <div className="min-w-0">
-                        <CardTitle className="text-base">
+                        <CardTitle className="truncate text-base">
                           {vendor.name}
                         </CardTitle>
-                        <CardDescription className="flex items-center gap-1">
-                          <MapPin className="h-3 w-3" />
-                          {branches.find((b) => b.id === vendor.branchId)?.name ??
-                            'Unassigned palengke'}{' '}
-                          · {vendor.location}
+                        <CardDescription className="line-clamp-2 flex items-start gap-1">
+                          <MapPin className="mt-0.5 h-3 w-3 shrink-0" />
+                          <span>
+                            {branches.find((b) => b.id === vendor.branchId)
+                              ?.name ?? 'Unassigned palengke'}{' '}
+                            · {vendor.location}
+                          </span>
                         </CardDescription>
                         <p className="mt-0.5 text-xs text-muted">
                           ★ {vendor.rating.toFixed(1)}
                         </p>
                       </div>
                     </div>
-                    <ChevronRight className="h-4 w-4 shrink-0 text-muted transition group-hover:translate-x-0.5" />
+                    <ChevronRight className="mt-1 h-4 w-4 shrink-0 text-muted transition group-hover:translate-x-0.5" />
                   </div>
                 </CardHeader>
-                <CardContent>
-                  <p className="mb-2 text-xs text-muted line-clamp-2">
+                <CardContent className="flex flex-1 flex-col">
+                  <p className="mb-3 line-clamp-2 min-h-[2.5rem] text-xs text-muted">
                     {vendor.description}
                   </p>
-                  <div className="flex flex-wrap gap-1.5">
+                  <div className="mt-auto flex min-h-[3.25rem] flex-wrap content-start gap-1.5">
                     <Badge variant={vendor.isAvailable ? 'success' : 'muted'}>
                       {vendor.isAvailable ? 'Available' : 'Unavailable'}
                     </Badge>
-                    {vendor.categories.slice(0, 3).map((cat) => (
+                    {vendor.categories.slice(0, 2).map((cat) => (
                       <Badge key={cat} variant="secondary">
                         {cat}
                       </Badge>
                     ))}
-                    {vendor.categories.length > 3 && (
+                    {vendor.categories.length > 2 && (
                       <Badge variant="outline">
-                        +{vendor.categories.length - 3}
+                        +{vendor.categories.length - 2}
                       </Badge>
                     )}
                   </div>

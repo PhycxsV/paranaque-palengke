@@ -23,25 +23,43 @@ export function DialogOverlay({
   )
 }
 
+/** Classes that turn the centred dialog into a bottom sheet on phones. */
+const MOBILE_SHEET =
+  'dialog-sheet max-sm:inset-x-0 max-sm:bottom-0 max-sm:left-0 max-sm:top-auto max-sm:max-h-[90dvh] max-sm:w-full max-sm:max-w-none max-sm:translate-x-0 max-sm:translate-y-0 max-sm:rounded-b-none max-sm:rounded-t-3xl max-sm:border-x-0 max-sm:border-b-0'
+
 export function DialogContent({
   className,
   children,
+  mobileSheet = false,
   ...props
-}: React.ComponentProps<typeof DialogPrimitive.Content>) {
+}: React.ComponentProps<typeof DialogPrimitive.Content> & {
+  /** On phones, slide up from the bottom like a native sheet. */
+  mobileSheet?: boolean
+}) {
   return (
     <DialogPortal>
       <DialogOverlay />
       <DialogPrimitive.Content
         className={cn(
           'dialog-content fixed left-1/2 top-1/2 z-50 flex max-h-[min(92vh,880px)] w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 flex-col gap-0 overflow-hidden rounded-2xl border border-border bg-surface p-0 shadow-[var(--shadow-lift)]',
+          mobileSheet && MOBILE_SHEET,
           className,
         )}
         {...props}
       >
         <span
-          className="brand-ribbon absolute inset-x-0 top-0 z-10 h-1.5 rounded-t-2xl"
+          className={cn(
+            'brand-ribbon absolute inset-x-0 top-0 z-10 h-1.5 rounded-t-2xl',
+            mobileSheet && 'max-sm:rounded-t-3xl',
+          )}
           aria-hidden
         />
+        {mobileSheet ? (
+          <span
+            className="absolute left-1/2 top-2.5 z-20 h-1 w-10 -translate-x-1/2 rounded-full bg-border sm:hidden"
+            aria-hidden
+          />
+        ) : null}
         {children}
         <DialogPrimitive.Close className="absolute right-3.5 top-3.5 z-20 rounded-full p-1.5 text-muted transition hover:bg-primary-50 hover:text-primary-deep">
           <X className="h-4 w-4" />
@@ -94,7 +112,7 @@ export function DialogFooter({
   return (
     <div
       className={cn(
-        'shrink-0 border-t border-border bg-warm-white/90 px-6 py-4 backdrop-blur-sm',
+        'shrink-0 border-t border-border bg-warm-white/90 px-6 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur-sm',
         'flex flex-col-reverse gap-2 sm:flex-row sm:justify-end',
         className,
       )}

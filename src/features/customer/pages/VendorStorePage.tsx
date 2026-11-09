@@ -10,6 +10,9 @@ import { Notice } from '@/components/shared/Notice'
 import { useProductStore } from '@/stores/product-store'
 import { useVendorStore } from '@/stores/vendor-store'
 import { useBranchStore } from '@/stores/branch-store'
+import { summarizeFeedback, useFeedbackStore } from '@/stores/feedback-store'
+import { FeedbackCard, RatingSummary } from '@/components/shared/FeedbackParts'
+import { SectionCard } from '@/components/shared/SectionCard'
 import { useAddToCart } from '@/hooks/useAddToCart'
 import {
   formatVendorTime,
@@ -24,6 +27,7 @@ export default function VendorStorePage() {
   const products = useProductStore((s) => s.products)
   const branches = useBranchStore((s) => s.branches)
   const { addToCart } = useAddToCart()
+  const allFeedback = useFeedbackStore((s) => s.feedback)
 
   const [search, setSearch] = useState('')
   const [category, setCategory] = useState('')
@@ -31,6 +35,15 @@ export default function VendorStorePage() {
   const vendor = vendors.find((v) => v.id === vendorId)
   const branch = vendor ? branches.find((b) => b.id === vendor.branchId) : undefined
   const acceptingOrders = vendor ? isVendorAcceptingOrders(vendor) : false
+
+  const reviews = useMemo(
+    () =>
+      allFeedback
+        .filter((f) => f.vendorId === vendorId)
+        .sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
+    [allFeedback, vendorId],
+  )
+  const reviewSummary = useMemo(() => summarizeFeedback(reviews), [reviews])
 
   const vendorProducts = useMemo(() => {
     if (!vendor) return []
@@ -116,7 +129,11 @@ export default function VendorStorePage() {
             <div className="mt-3 flex flex-wrap items-center gap-2 text-xs font-semibold text-white">
               <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1.5 backdrop-blur">
                 <Star className="h-3.5 w-3.5 fill-gold text-gold" />
-                {Number.isFinite(vendor.rating) ? vendor.rating.toFixed(1) : '—'}
+                {reviewSummary.count
+                  ? `${reviewSummary.average.toFixed(1)} · ${reviewSummary.count} review${reviewSummary.count === 1 ? '' : 's'}`
+                  : Number.isFinite(vendor.rating)
+                    ? vendor.rating.toFixed(1)
+                    : '—'}
               </span>
               <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1.5 backdrop-blur">
                 <MapPin className="h-3.5 w-3.5 text-lime" />
@@ -210,6 +227,28 @@ export default function VendorStorePage() {
             ))}
           </div>
         )}
+
+        {/* Reviews */}
+        <SectionCard
+          title="Customer reviews"
+          icon={Star}
+          className="mt-12"
+        >
+          {reviews.length === 0 ? (
+            <p className="text-sm text-muted">
+              No reviews yet. Order from {vendor.name} and be the first to leave one.
+            </p>
+          ) : (
+            <div className="space-y-6">
+              <RatingSummary summary={reviewSummary} />
+              <ul className="grid gap-3 md:grid-cols-2">
+                {reviews.slice(0, 6).map((item) => (
+                  <FeedbackCard key={item.id} item={item} />
+                ))}
+              </ul>
+            </div>
+          )}
+        </SectionCard>
       </div>
     </div>
   )

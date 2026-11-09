@@ -11,6 +11,7 @@ import {
   Package,
   ShoppingCart,
   Sparkles,
+  Star,
   TriangleAlert,
   XCircle,
 } from 'lucide-react'
@@ -26,6 +27,7 @@ import { cn, formatDateTime, formatPeso } from '@/lib/utils'
 import { useBranchStore } from '@/stores/branch-store'
 import { useChatStore } from '@/stores/chat-store'
 import { useDemoSessionStore } from '@/stores/demo-session-store'
+import { summarizeFeedback, useFeedbackStore } from '@/stores/feedback-store'
 import { useOfferStore } from '@/stores/offer-store'
 import { useOrderStore } from '@/stores/order-store'
 import { useProductStore } from '@/stores/product-store'
@@ -59,6 +61,11 @@ export default function VendorDashboardPage() {
   const products = useProductStore((s) => s.products)
   const chatThreads = useChatStore((s) => s.threads)
   const chatMessages = useChatStore((s) => s.messages)
+  const allFeedback = useFeedbackStore((s) => s.feedback)
+  const reviewSummary = useMemo(
+    () => summarizeFeedback(allFeedback.filter((f) => f.vendorId === activeVendorId)),
+    [allFeedback, activeVendorId],
+  )
 
   const vendorOrders = useMemo<Order[]>(
     () => getOrdersByVendor(activeVendorId),
@@ -155,7 +162,7 @@ export default function VendorDashboardPage() {
   return (
     <div className="space-y-6">
       {/* Hero */}
-      <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary-deep via-primary-deep to-primary p-6 text-white shadow-[var(--shadow-lift)] sm:p-8">
+      <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary-deep via-primary-deep to-primary p-5 text-white shadow-[var(--shadow-lift)] sm:p-8">
         <span
           className="pointer-events-none absolute -right-16 -top-20 h-64 w-64 rounded-full bg-lime/25 blur-3xl"
           aria-hidden
@@ -172,10 +179,22 @@ export default function VendorDashboardPage() {
               <Sparkles className="h-3.5 w-3.5" />
               {greeting()}
             </p>
-            <h1 className="text-3xl font-extrabold leading-tight sm:text-4xl">
+            <h1 className="text-2xl font-extrabold leading-tight sm:text-4xl">
               {vendor?.name ?? 'Vendor'}
             </h1>
-            <div className="mt-4 flex flex-wrap gap-2 text-xs font-semibold">
+            <div className="mt-3 flex flex-wrap gap-2 text-xs font-semibold sm:mt-4">
+              {reviewSummary.count > 0 ? (
+                <Link
+                  to="/vendor/feedback"
+                  className="inline-flex items-center gap-1.5 rounded-full bg-gold px-3 py-1.5 text-primary-deep transition active:scale-95"
+                >
+                  <Star className="h-3.5 w-3.5 fill-primary-deep" />
+                  {reviewSummary.average.toFixed(1)}
+                  <span className="font-medium opacity-80">
+                    · {reviewSummary.count} review{reviewSummary.count === 1 ? '' : 's'}
+                  </span>
+                </Link>
+              ) : null}
               <span
                 className={cn(
                   'inline-flex items-center gap-1.5 rounded-full px-3 py-1.5',
@@ -207,7 +226,7 @@ export default function VendorDashboardPage() {
             </div>
           </div>
 
-          <div className="flex shrink-0 flex-wrap gap-2.5">
+          <div className="hidden shrink-0 flex-wrap gap-2.5 md:flex">
             <Button asChild variant="lime" size="lg">
               <Link to="/vendor/orders">
                 <ClipboardList className="h-4 w-4" />
@@ -229,7 +248,7 @@ export default function VendorDashboardPage() {
       </section>
 
       {/* KPIs */}
-      <div className="grid grid-cols-1 gap-4 min-[520px]:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
         <StatCard
           label="Total orders"
           value={stats.total}

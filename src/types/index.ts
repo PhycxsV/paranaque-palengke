@@ -282,3 +282,18 @@ export interface ChatMessage {
   body: string
   createdAt: string
 }
+
+/** Customer feedback left for a vendor, usually tied to a delivered order. */
+export interface VendorFeedback {
+  id: string
+  vendorId: string
+  /** Order the feedback is about - one feedback per order. */
+  orderId?: string
+  customerName: string
+  /** 1-5 stars. */
+  rating: number
+  comment: string
+  createdAt: string
+}
+
+export type TextSize = 'small' | 'default' | 'large' | 'xlarge'

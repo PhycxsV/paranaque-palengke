@@ -6,6 +6,7 @@ import type { DemoRole } from '@/types'
 import { useCartStore } from './cart-store'
 import { useCommodityStore } from './commodity-store'
 import { useChatStore } from './chat-store'
+import { useFeedbackStore } from './feedback-store'
 import { useOfferStore } from './offer-store'
 import { useOrderStore } from './order-store'
 import { useProductStore } from './product-store'
@@ -34,6 +35,7 @@ export const useDemoSessionStore = create<DemoSessionState>()(
         useOrderStore.getState().resetOrders()
         useOfferStore.getState().resetOffers()
         useChatStore.getState().resetChats()
+        useFeedbackStore.getState().resetFeedback()
         set({
           role: 'customer',
           activeVendorId: seedVendors[0]?.id ?? 'vendor-aling-nena',

@@ -3,6 +3,7 @@ import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { Menu, MessageCircle, MessageSquare, Search, ShoppingCart, X } from 'lucide-react'
 import { BRAND_NAME, FEATURE_TAWAD_ENABLED } from '@/constants'
 import { PortalSwitcher } from '@/components/shared/PortalSwitcher'
+import { TextSizeControl } from '@/components/shared/TextSizeControl'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { LOGOS } from '@/lib/assets'
@@ -200,6 +201,11 @@ export function CustomerHeader() {
             </Link>
           </Button>
 
+          <TextSizeControl
+            onDark={overlay}
+            className="nav-ink hidden sm:inline-flex"
+          />
+
           <PortalSwitcher
             className={cn(
               'nav-ink hidden sm:flex',
@@ -306,6 +312,17 @@ export function CustomerHeader() {
               LGU Admin
             </NavLink>
           </nav>
+          <div className="sm:hidden">
+            <p
+              className={cn(
+                'mb-2 text-[11px] font-bold uppercase tracking-wider',
+                overlay ? 'text-white/70' : 'text-muted',
+              )}
+            >
+              Text size
+            </p>
+            <TextSizeControl variant="inline" />
+          </div>
         </div>
       ) : null}
     </header>

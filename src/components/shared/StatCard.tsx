@@ -47,15 +47,15 @@ export function StatCard({
       />
       <span
         className={cn(
-          'relative flex h-11 w-11 shrink-0 items-center justify-center rounded-xl shadow-sm',
+          'relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl shadow-sm sm:h-11 sm:w-11',
           t.tile,
         )}
       >
         <Icon className="h-5 w-5" />
       </span>
-      <div className="relative min-w-0">
+      <div className="relative min-w-0 max-w-full">
         <p className="mb-1.5 truncate text-xs font-semibold text-muted">{label}</p>
-        <p className="font-display text-3xl font-extrabold leading-none text-primary-deep">
+        <p className="font-display text-2xl font-extrabold leading-none text-primary-deep [overflow-wrap:anywhere] sm:text-3xl">
           {value}
         </p>
         {hint ? <p className="mt-1.5 truncate text-xs text-muted">{hint}</p> : null}
@@ -64,7 +64,7 @@ export function StatCard({
   )
 
   const shell = cn(
-    'group relative flex items-center gap-4 overflow-hidden rounded-2xl border border-border bg-surface p-4 shadow-[var(--shadow-soft)] sm:p-5',
+    'group relative flex flex-col items-start gap-3 overflow-hidden rounded-2xl border border-border bg-surface p-4 shadow-[var(--shadow-soft)] sm:flex-row sm:items-center sm:gap-4 sm:p-5',
     to && 'hover-lift',
     className,
   )

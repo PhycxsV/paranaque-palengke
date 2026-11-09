@@ -202,18 +202,18 @@ export default function ProductDetailPage() {
           </div>
 
           <div className="rounded-2xl border border-primary/10 bg-gradient-to-br from-primary-50 via-white to-lime-50 p-5">
-            <div className="flex flex-wrap items-end gap-x-3 gap-y-2">
+            <div className="space-y-1.5">
+              {lguRange ? (
+                <p className="text-sm font-medium text-muted">
+                  LGU {formatPeso(lguRange.min)}–{formatPeso(lguRange.max)}
+                </p>
+              ) : null}
               <p className="font-display text-4xl font-extrabold leading-none text-primary">
                 {formatPeso(vendorPrice)}
                 <span className="ml-1.5 font-sans text-base font-semibold text-muted">
                   /{product.unit === 'piece' ? 'pcs' : product.unit}
                 </span>
               </p>
-              {lguRange ? (
-                <span className="rounded-full bg-bay-50 px-2.5 py-1 text-xs font-semibold text-[#1e6b64] ring-1 ring-bay/30">
-                  LGU range {formatPeso(lguRange.min)}–{formatPeso(lguRange.max)}
-                </span>
-              ) : null}
             </div>
             <p className="mt-3 text-[11px] italic text-muted">{PRICE_DISCLAIMER}</p>
           </div>

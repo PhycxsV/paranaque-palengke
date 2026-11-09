@@ -281,6 +281,29 @@
   animation: dialog-in 0.35s var(--motion-ease) both;
 }
 
+/* Phone bottom sheet (opt-in via <DialogContent mobileSheet />) */
+@keyframes sheet-in {
+  from {
+    opacity: 0.6;
+    transform: translate3d(0, 100%, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@media (max-width: 639px) {
+  .dialog-sheet[data-state='open'] {
+    animation: sheet-in 0.4s var(--motion-ease) both;
+  }
+}
+
+/* Floating bottom tab bar for the vendor portal (phones) */
+.app-tabbar {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
 /* Thin branded scrollbar for scrollable dialog bodies */
 .dialog-scroll {
   scrollbar-width: thin;

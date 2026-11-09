@@ -7,6 +7,7 @@ import {
   LayoutDashboard,
   MapPinned,
   Menu,
+  MessageSquareHeart,
   ShoppingBag,
   Store,
   X,
@@ -20,6 +21,7 @@ import {
 } from '@/components/shared/PortalSidebarParts'
 import { SIDEBAR_SURFACE, sidebarLinkClass } from '@/components/shared/sidebar-styles'
 import { PortalSwitcher } from '@/components/shared/PortalSwitcher'
+import { TextSizeControl } from '@/components/shared/TextSizeControl'
 import { Button } from '@/components/ui/button'
 const links = [
   { to: '/admin', label: 'Dashboard', icon: LayoutDashboard, end: true },
@@ -29,6 +31,7 @@ const links = [
   { to: '/admin/vendors', label: 'Vendors', icon: Store },
   { to: '/admin/offers', label: 'Offers', icon: HandCoins },
   { to: '/admin/orders', label: 'Orders', icon: ClipboardList },
+  { to: '/admin/feedback', label: 'Feedback', icon: MessageSquareHeart },
 ].filter((link) => FEATURE_TAWAD_ENABLED || link.to !== '/admin/offers')
 
 function AdminSidebar({ onNavigate }: { onNavigate?: () => void }) {
@@ -53,6 +56,12 @@ function AdminSidebar({ onNavigate }: { onNavigate?: () => void }) {
       </nav>
 
       <div className="relative space-y-3 border-t border-white/10 p-3">
+        <div className="px-1">
+          <p className="mb-2 px-2 text-[10px] font-bold uppercase tracking-wider text-white/50">
+            Text size
+          </p>
+          <TextSizeControl variant="inline" />
+        </div>
         <PortalSwitcher className="w-full border-white/20 bg-white/10 text-white hover:bg-white/15 [&_svg]:text-white" />
         <Link
           to="/customer"

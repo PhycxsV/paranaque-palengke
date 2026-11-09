@@ -82,18 +82,18 @@ export function ProductCard({ product, vendor, onAdd }: ProductCardProps) {
             <span className="truncate">{vendor.name}</span>
           </Link>
         ) : null}
-        <div className="mt-auto flex items-end justify-between gap-2 pt-1">
+        <div className="mt-auto space-y-1 pt-1">
+          {range ? (
+            <p className="text-[11px] font-medium text-muted">
+              LGU {formatPeso(range.min)}–{formatPeso(range.max)}
+            </p>
+          ) : null}
           <p className="font-display text-xl font-extrabold leading-none text-primary">
             {formatPeso(vendorPrice)}
             <span className="ml-1 font-sans text-xs font-semibold text-muted">
               /{product.unit === 'piece' ? 'pcs' : product.unit}
             </span>
           </p>
-          {range ? (
-            <p className="rounded-full bg-bay-50 px-2 py-0.5 text-[10px] font-semibold text-[#1e6b64]">
-              LGU {formatPeso(range.min)}–{formatPeso(range.max)}
-            </p>
-          ) : null}
         </div>
         <Button
           className="w-full"

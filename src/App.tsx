@@ -1,6 +1,8 @@
 import { HashRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { Toaster } from 'sonner'
 import { FEATURE_TAWAD_ENABLED } from '@/constants'
+// Side effect: applies the saved text size to the page before first paint.
+import '@/stores/text-size-store'
 import { CustomerLayout } from '@/features/customer/layouts/CustomerLayout'
 import { VendorLayout } from '@/features/vendor/layouts/VendorLayout'
 import AdminLayout from '@/features/admin/layouts/AdminLayout'
@@ -32,6 +34,8 @@ import AdminVendorsPage from '@/features/admin/pages/AdminVendorsPage'
 import AdminVendorDetailPage from '@/features/admin/pages/AdminVendorDetailPage'
 import AdminOffersPage from '@/features/admin/pages/AdminOffersPage'
 import AdminOrdersPage from '@/features/admin/pages/AdminOrdersPage'
+import AdminFeedbackPage from '@/features/admin/pages/AdminFeedbackPage'
+import VendorFeedbackPage from '@/features/vendor/pages/VendorFeedbackPage'
 import NotFoundPage from '@/features/customer/pages/NotFoundPage'
 
 export default function App() {
@@ -67,6 +71,7 @@ export default function App() {
         <Route path="vendor" element={<VendorLayout />}>
           <Route index element={<VendorDashboardPage />} />
           <Route path="orders" element={<VendorOrdersPage />} />
+          <Route path="feedback" element={<VendorFeedbackPage />} />
           <Route path="orders/:orderId" element={<VendorOrderDetailPage />} />
           <Route path="products" element={<VendorProductsPage />} />
           <Route path="store" element={<VendorStoreProfilePage />} />
@@ -102,6 +107,7 @@ export default function App() {
             }
           />
           <Route path="orders" element={<AdminOrdersPage />} />
+          <Route path="feedback" element={<AdminFeedbackPage />} />
         </Route>
 
         <Route index element={<Navigate to="/customer" replace />} />
