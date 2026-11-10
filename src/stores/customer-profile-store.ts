@@ -9,6 +9,8 @@ export interface CustomerProfile {
   deliveryAddress: string
   /** Default notes prefilled on checkout (optional). */
   notes: string
+  /** Optional JPEG/PNG data URL from a local photo upload (demo only). */
+  photoUrl: string
 }
 
 interface CustomerProfileState {
@@ -26,6 +28,7 @@ export const EMPTY_CUSTOMER_PROFILE: CustomerProfile = {
   contactNumber: '',
   deliveryAddress: '',
   notes: '',
+  photoUrl: '',
 }
 
 export const useCustomerProfileStore = create<CustomerProfileState>()(
@@ -44,22 +47,38 @@ export const useCustomerProfileStore = create<CustomerProfileState>()(
             next.deliveryAddress = patch.deliveryAddress.trim()
           }
           if (patch.notes !== undefined) next.notes = patch.notes.trim()
+          if (patch.photoUrl !== undefined) next.photoUrl = patch.photoUrl
           return { hasSaved: true, profile: next }
         }),
       saveFromCheckout: (form) =>
-        set({
+        set((state) => ({
           hasSaved: true,
           profile: {
+            ...state.profile,
             name: form.customerName.trim(),
             contactNumber: form.contactNumber.trim(),
             deliveryAddress: form.deliveryAddress.trim(),
             notes: form.notes?.trim() ?? '',
           },
-        }),
+        })),
       resetProfile: () =>
         set({ profile: { ...EMPTY_CUSTOMER_PROFILE }, hasSaved: false }),
     }),
-    { name: `${STORAGE_PREFIX}-customer-profile` },
+    {
+      name: `${STORAGE_PREFIX}-customer-profile`,
+      merge: (persisted, current) => {
+        const p = persisted as Partial<CustomerProfileState> | undefined
+        return {
+          ...current,
+          ...p,
+          profile: {
+            ...EMPTY_CUSTOMER_PROFILE,
+            ...(p?.profile ?? {}),
+            photoUrl: p?.profile?.photoUrl ?? '',
+          },
+        }
+      },
+    },
   ),
 )
 

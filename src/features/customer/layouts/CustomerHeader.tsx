@@ -18,6 +18,7 @@ import { LOGOS } from '@/lib/assets'
 import { getTotalUnread } from '@/lib/chat'
 import { useCartStore } from '@/stores/cart-store'
 import { useChatStore } from '@/stores/chat-store'
+import { useCustomerProfileStore } from '@/stores/customer-profile-store'
 import { cn } from '@/lib/utils'
 
 export function CustomerHeader() {
@@ -28,6 +29,7 @@ export function CustomerHeader() {
   const chatThreads = useChatStore((s) => s.threads)
   const chatMessages = useChatStore((s) => s.messages)
   const chatUnread = getTotalUnread(chatThreads, chatMessages, 'customer')
+  const profilePhoto = useCustomerProfileStore((s) => s.profile.photoUrl)
   const [query, setQuery] = useState('')
   const [mobileOpen, setMobileOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
@@ -147,18 +149,13 @@ export function CustomerHeader() {
           </div>
         </form>
 
+        {/* Text links for primary browse destinations only — chat/profile are icons. */}
         <nav className="ml-auto hidden items-center gap-7 lg:flex">
           <NavLink to="/customer/products" className={navLinkClass}>
             Products
           </NavLink>
           <NavLink to="/customer/orders" className={navLinkClass}>
             My Orders
-          </NavLink>
-          <NavLink to="/customer/profile" className={navLinkClass}>
-            Profile
-          </NavLink>
-          <NavLink to="/customer/chat" className={navLinkClass}>
-            Chat
           </NavLink>
           {FEATURE_TAWAD_ENABLED ? (
             <NavLink to="/customer/offers" className={navLinkClass}>
@@ -167,13 +164,13 @@ export function CustomerHeader() {
           ) : null}
         </nav>
 
-        <div className="flex items-center gap-1 sm:gap-2">
+        <div className="flex items-center gap-0.5 sm:gap-1">
           <Button
             asChild
             variant="ghost"
             size="icon"
             className={cn(
-              'nav-ink relative hidden sm:inline-flex',
+              'nav-ink relative',
               overlay && 'text-white hover:bg-white/15 hover:text-white',
             )}
           >
@@ -221,15 +218,30 @@ export function CustomerHeader() {
             )}
           >
             <Link to="/customer/profile" aria-label="My profile">
-              <UserRound className="h-5 w-5" />
+              {profilePhoto ? (
+                <img
+                  src={profilePhoto}
+                  alt=""
+                  className="h-7 w-7 rounded-full object-cover ring-2 ring-primary/20"
+                />
+              ) : (
+                <UserRound className="h-5 w-5" />
+              )}
             </Link>
           </Button>
+
+          <span
+            className={cn(
+              'mx-1 hidden h-5 w-px sm:block',
+              overlay ? 'bg-white/25' : 'bg-border',
+            )}
+            aria-hidden
+          />
 
           <TextSizeControl
             onDark={overlay}
             className="nav-ink hidden sm:inline-flex"
           />
-
           <PortalSwitcher
             className={cn(
               'nav-ink hidden sm:flex',
