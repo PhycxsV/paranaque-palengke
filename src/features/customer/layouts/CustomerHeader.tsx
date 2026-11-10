@@ -1,6 +1,14 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom'
-import { Menu, MessageCircle, MessageSquare, Search, ShoppingCart, X } from 'lucide-react'
+import {
+  Menu,
+  MessageCircle,
+  MessageSquare,
+  Search,
+  ShoppingCart,
+  UserRound,
+  X,
+} from 'lucide-react'
 import { BRAND_NAME, FEATURE_TAWAD_ENABLED } from '@/constants'
 import { PortalSwitcher } from '@/components/shared/PortalSwitcher'
 import { TextSizeControl } from '@/components/shared/TextSizeControl'
@@ -146,6 +154,9 @@ export function CustomerHeader() {
           <NavLink to="/customer/orders" className={navLinkClass}>
             My Orders
           </NavLink>
+          <NavLink to="/customer/profile" className={navLinkClass}>
+            Profile
+          </NavLink>
           <NavLink to="/customer/chat" className={navLinkClass}>
             Chat
           </NavLink>
@@ -198,6 +209,19 @@ export function CustomerHeader() {
                   {cartCount}
                 </span>
               ) : null}
+            </Link>
+          </Button>
+          <Button
+            asChild
+            variant="ghost"
+            size="icon"
+            className={cn(
+              'nav-ink',
+              overlay && 'text-white hover:bg-white/15 hover:text-white',
+            )}
+          >
+            <Link to="/customer/profile" aria-label="My profile">
+              <UserRound className="h-5 w-5" />
             </Link>
           </Button>
 
@@ -271,6 +295,14 @@ export function CustomerHeader() {
               onClick={() => setMobileOpen(false)}
             >
               My Orders
+            </NavLink>
+            <NavLink
+              to="/customer/profile"
+              className={navLinkClass}
+              onClick={() => setMobileOpen(false)}
+            >
+              <UserRound className="mr-1 inline h-4 w-4" />
+              Profile
             </NavLink>
             <NavLink
               to="/customer/chat"

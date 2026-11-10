@@ -17,6 +17,7 @@ import PaymentPage from '@/features/customer/pages/PaymentPage'
 import PaymentGroupPage from '@/features/customer/pages/PaymentGroupPage'
 import OrdersPage from '@/features/customer/pages/OrdersPage'
 import OrderDetailPage from '@/features/customer/pages/OrderDetailPage'
+import CustomerProfilePage from '@/features/customer/pages/CustomerProfilePage'
 import CustomerOffersPage from '@/features/customer/pages/CustomerOffersPage'
 import CustomerChatPage from '@/features/customer/pages/CustomerChatPage'
 import VendorDashboardPage from '@/features/vendor/pages/VendorDashboardPage'
@@ -54,6 +55,7 @@ export default function App() {
           <Route path="payment/:orderId" element={<PaymentPage />} />
           <Route path="orders" element={<OrdersPage />} />
           <Route path="orders/:orderId" element={<OrderDetailPage />} />
+          <Route path="profile" element={<CustomerProfilePage />} />
           <Route
             path="offers"
             element={

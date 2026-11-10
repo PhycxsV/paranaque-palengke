@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { CreditCard, Store, UserRound } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -17,6 +17,10 @@ import { useProductStore } from '@/stores/product-store'
 import { useVendorStore } from '@/stores/vendor-store'
 import { useOrderStore } from '@/stores/order-store'
 import { useCommodityStore } from '@/stores/commodity-store'
+import {
+  profileToCheckoutForm,
+  useCustomerProfileStore,
+} from '@/stores/customer-profile-store'
 import { useOfferStore } from '@/stores/offer-store'
 import { DELIVERY_FEE, DELIVERY_FEE_NOTE } from '@/constants'
 import {
@@ -35,13 +39,12 @@ export default function CheckoutPage() {
   const createCheckoutOrders = useOrderStore((s) => s.createCheckoutOrders)
   const commodities = useCommodityStore((s) => s.commodities)
   const allOffers = useOfferStore((s) => s.offers)
+  const profile = useCustomerProfileStore((s) => s.profile)
+  const saveFromCheckout = useCustomerProfileStore((s) => s.saveFromCheckout)
 
-  const [form, setForm] = useState<CheckoutFormInput>({
-    customerName: '',
-    contactNumber: '',
-    deliveryAddress: '',
-    notes: '',
-  })
+  const [form, setForm] = useState<CheckoutFormInput>(() =>
+    profileToCheckoutForm(profile),
+  )
   const [submitting, setSubmitting] = useState(false)
 
   const groups = useMemo(
@@ -99,6 +102,8 @@ export default function CheckoutPage() {
       return
     }
 
+    // Keep the profile in sync so the next checkout is prefilled.
+    saveFromCheckout(form)
     clearCart()
     toast.success(
       result.orders.length > 1
@@ -125,7 +130,18 @@ export default function CheckoutPage() {
         className="mx-auto grid max-w-5xl gap-8 px-4 py-8 sm:px-6 lg:grid-cols-[1fr_340px]"
       >
         <div className="space-y-6">
-          <SectionCard title="Your information" icon={UserRound}>
+          <SectionCard
+            title="Your information"
+            icon={UserRound}
+            action={
+              <Link
+                to="/customer/profile"
+                className="text-sm font-semibold text-primary hover:underline"
+              >
+                Edit profile
+              </Link>
+            }
+          >
             <div className="space-y-4">
               <div className="grid gap-1.5">
                 <Label htmlFor="customerName">Full Name *</Label>

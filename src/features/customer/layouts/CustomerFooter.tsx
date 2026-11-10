@@ -56,6 +56,11 @@ export function CustomerFooter() {
                   My orders
                 </Link>
               </li>
+              <li>
+                <Link to="/customer/profile" className={linkClass}>
+                  My profile
+                </Link>
+              </li>
               {FEATURE_TAWAD_ENABLED ? (
                 <li>
                   <Link to="/customer/offers" className={linkClass}>
