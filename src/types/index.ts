@@ -160,6 +160,8 @@ export interface Order {
   vendorName: string
   customerName: string
   contactNumber: string
+  /** Where Keri should drop off the order. */
+  deliveryAddress: string
   notes?: string
   items: OrderItemSnapshot[]
   subtotal: number
@@ -249,6 +251,8 @@ export interface BranchFormInput {
 export interface CheckoutFormInput {
   customerName: string
   contactNumber: string
+  /** Customer drop-off / delivery address for Keri. */
+  deliveryAddress: string
   notes?: string
 }
 

@@ -110,6 +110,7 @@ const ORDER_HEADER = [
   'Placed',
   'Customer',
   'Contact',
+  'Drop-off address',
   'Vendor',
   'Palengke',
   'Items',
@@ -131,6 +132,7 @@ function orderRow(o: Order): (string | number)[] {
     formatStamp(o.createdAt),
     o.customerName,
     o.contactNumber,
+    o.deliveryAddress,
     o.vendorName,
     o.branchName,
     o.items.length,
@@ -224,8 +226,8 @@ export function buildReport(input: ReportInput): ReportResult {
     ORDER_HEADER.map((v): Cell => ({ v, s: 'header' })),
     ...orderRows.map((row) =>
       row.map((v, c): Cell =>
-        // Columns 7–9 (Subtotal, Delivery fee, Total) are money.
-        c >= 7 && c <= 9 ? { v, s: 'money' } : v,
+        // Columns 8–10 (Subtotal, Delivery fee, Total) are money.
+        c >= 8 && c <= 10 ? { v, s: 'money' } : v,
       ),
     ),
   ]

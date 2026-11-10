@@ -39,6 +39,7 @@ export default function CheckoutPage() {
   const [form, setForm] = useState<CheckoutFormInput>({
     customerName: '',
     contactNumber: '',
+    deliveryAddress: '',
     notes: '',
   })
   const [submitting, setSubmitting] = useState(false)
@@ -74,6 +75,10 @@ export default function CheckoutPage() {
     }
     if (!form.contactNumber.trim()) {
       toast.error('Please enter your contact number.')
+      return
+    }
+    if (!form.deliveryAddress.trim()) {
+      toast.error('Please enter your drop-off address.')
       return
     }
 
@@ -145,6 +150,22 @@ export default function CheckoutPage() {
                   placeholder="09XX XXX XXXX"
                   required
                 />
+              </div>
+              <div className="grid gap-1.5">
+                <Label htmlFor="deliveryAddress">Drop-off address *</Label>
+                <Textarea
+                  id="deliveryAddress"
+                  value={form.deliveryAddress}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, deliveryAddress: e.target.value }))
+                  }
+                  placeholder="House/unit no., street, barangay, landmark…"
+                  rows={3}
+                  required
+                />
+                <p className="text-xs text-muted">
+                  Where Keri should deliver your order.
+                </p>
               </div>
               <div className="grid gap-1.5">
                 <Label htmlFor="notes">Notes (optional)</Label>

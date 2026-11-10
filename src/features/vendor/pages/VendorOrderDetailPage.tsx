@@ -329,6 +329,9 @@ export default function VendorOrderDetailPage() {
             <dl className="grid gap-4">
               <Field label="Name">{order.customerName}</Field>
               <Field label="Contact">{order.contactNumber}</Field>
+              <Field label="Drop-off address">
+                {order.deliveryAddress || '—'}
+              </Field>
               {order.notes ? <Field label="Notes">{order.notes}</Field> : null}
               <Field label="Last updated">{formatDateTime(order.updatedAt)}</Field>
             </dl>

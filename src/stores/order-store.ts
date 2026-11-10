@@ -148,6 +148,7 @@ export const useOrderStore = create<OrderState>()(
             vendorName: vendor.name,
             customerName: customer.customerName.trim(),
             contactNumber: customer.contactNumber.trim(),
+            deliveryAddress: customer.deliveryAddress.trim(),
             notes: customer.notes?.trim() || undefined,
             items: snapshots,
             subtotal,

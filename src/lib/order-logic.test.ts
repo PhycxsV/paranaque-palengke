@@ -64,6 +64,7 @@ const baseOrder: Order = {
   vendorName: 'Demo Vendor',
   customerName: 'Ana',
   contactNumber: '09171234567',
+  deliveryAddress: '123 Sample St, Baclaran, Parañaque',
   items: [],
   subtotal: 160,
   deliveryFee: 100,

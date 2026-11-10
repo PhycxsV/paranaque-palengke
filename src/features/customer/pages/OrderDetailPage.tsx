@@ -122,6 +122,9 @@ export default function OrderDetailPage() {
           <dl className="grid gap-x-6 gap-y-4 sm:grid-cols-2">
             <Field label="Customer">{order.customerName}</Field>
             <Field label="Contact">{order.contactNumber}</Field>
+            <Field label="Drop-off address" wide>
+              {order.deliveryAddress || '—'}
+            </Field>
             <Field label="Vendor">
               <Link
                 to={`/customer/stores/${order.vendorId}`}

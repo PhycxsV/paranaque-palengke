@@ -18,6 +18,7 @@ function makeOrder(overrides: Partial<Order> & Pick<Order, 'id'>): Order {
     vendorName: 'Aling Nena',
     customerName: 'Ana',
     contactNumber: '0917',
+    deliveryAddress: '123 Sample St, Baclaran, Parañaque',
     items: [
       {
         productId: 'p1',

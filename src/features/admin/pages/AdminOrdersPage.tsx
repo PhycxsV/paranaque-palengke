@@ -284,8 +284,11 @@ export default function AdminOrdersPage() {
                         {itemSummary(order)}
                       </p>
                     </td>
-                    <td className="whitespace-nowrap px-4 py-3.5 font-semibold text-primary-deep">
-                      {order.customerName}
+                    <td className="px-4 py-3.5 font-semibold text-primary-deep">
+                      <p className="whitespace-nowrap">{order.customerName}</p>
+                      <p className="mt-0.5 max-w-[14rem] truncate text-xs font-normal text-muted">
+                        {order.deliveryAddress || 'No drop-off address'}
+                      </p>
                     </td>
                     <td className="whitespace-nowrap px-4 py-3.5 text-muted">
                       {order.vendorName}
@@ -337,6 +340,11 @@ export default function AdminOrdersPage() {
                     {formatPeso(order.total)}
                   </p>
                 </div>
+                {order.deliveryAddress ? (
+                  <p className="mt-1 line-clamp-2 text-xs text-muted">
+                    {order.deliveryAddress}
+                  </p>
+                ) : null}
                 <p className="mt-1 truncate text-xs text-muted">
                   {itemSummary(order)}
                 </p>
