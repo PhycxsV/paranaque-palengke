@@ -1,4 +1,8 @@
 import { DELIVERY_STATUS_LABELS, ORDER_STATUS_LABELS } from '@/constants'
+import {
+  formatKeriRiderRemarks,
+  normalizeDeliveryStatus,
+} from '@/lib/delivery'
 import type { Order, Vendor, VendorFeedback } from '@/types'
 
 export type CellStyle = 'money' | 'bold' | 'boldMoney' | 'title' | 'header'
@@ -44,6 +48,7 @@ export interface ReportTotals {
   confirmedGross: number
   delivered: number
   outForDelivery: number
+  readyForKeri: number
   preparing: number
 }
 
@@ -99,9 +104,13 @@ export function computeTotals(orders: Order[]): ReportTotals {
     outForDelivery: confirmed.filter(
       (o) => o.deliveryStatus === 'out_for_delivery',
     ).length,
-    preparing: confirmed.filter(
-      (o) => !o.deliveryStatus || o.deliveryStatus === 'awaiting_pickup',
+    readyForKeri: confirmed.filter(
+      (o) => o.deliveryStatus === 'ready_for_keri',
     ).length,
+    preparing: confirmed.filter((o) => {
+      if (!o.deliveryStatus) return true
+      return normalizeDeliveryStatus(o.deliveryStatus) === 'packing'
+    }).length,
   }
 }
 
@@ -119,6 +128,8 @@ const ORDER_HEADER = [
   'Total (PHP)',
   'Status',
   'Keri delivery',
+  'Pickup PIN',
+  'Rider remarks',
   'Keri tracking ID',
   'Booking group',
   'Transaction ref',
@@ -141,8 +152,10 @@ function orderRow(o: Order): (string | number)[] {
     o.total,
     ORDER_STATUS_LABELS[o.status],
     o.status === 'confirmed'
-      ? DELIVERY_STATUS_LABELS[o.deliveryStatus ?? 'awaiting_pickup']
+      ? DELIVERY_STATUS_LABELS[normalizeDeliveryStatus(o.deliveryStatus)]
       : '',
+    o.pickupCode ?? '',
+    o.pickupCode ? formatKeriRiderRemarks(o.pickupCode) : '',
     o.keriTrackingId ?? '',
     o.bookingGroupId,
     o.transactionReference ?? '',
@@ -179,7 +192,8 @@ export function buildReport(input: ReportInput): ReportResult {
     ['Payment rejected', totals.rejected],
     [],
     [{ v: 'Keri delivery (confirmed orders)', s: 'header' }, { v: 'Count', s: 'header' }],
-    ['Preparing for Keri', totals.preparing],
+    ['Packing', totals.preparing],
+    ['Ready for Keri', totals.readyForKeri],
     ['Out for delivery', totals.outForDelivery],
     ['Delivered', totals.delivered],
     [],

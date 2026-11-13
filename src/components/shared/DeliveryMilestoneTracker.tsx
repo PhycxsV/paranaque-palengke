@@ -1,26 +1,22 @@
-import { Check, Package, Truck } from 'lucide-react'
+import { Check, Package, PackageCheck, Truck } from 'lucide-react'
 import { DELIVERY_MILESTONES } from '@/constants'
+import { DELIVERY_FLOW, normalizeDeliveryStatus } from '@/lib/delivery'
 import { cn } from '@/lib/utils'
 import type { DeliveryStatus } from '@/types'
 
 const ICONS = {
-  awaiting_pickup: Package,
+  packing: Package,
+  ready_for_keri: PackageCheck,
   out_for_delivery: Truck,
   delivered: Check,
 } as const
 
-const ORDER: DeliveryStatus[] = [
-  'awaiting_pickup',
-  'out_for_delivery',
-  'delivered',
-]
-
 function stepIndex(status: DeliveryStatus): number {
-  return ORDER.indexOf(status)
+  return DELIVERY_FLOW.indexOf(status)
 }
 
 interface DeliveryMilestoneTrackerProps {
-  deliveryStatus: DeliveryStatus
+  deliveryStatus: DeliveryStatus | string
   className?: string
 }
 
@@ -28,7 +24,7 @@ export function DeliveryMilestoneTracker({
   deliveryStatus,
   className,
 }: DeliveryMilestoneTrackerProps) {
-  const current = stepIndex(deliveryStatus)
+  const current = stepIndex(normalizeDeliveryStatus(deliveryStatus))
 
   return (
     <section

@@ -17,6 +17,7 @@ export const seedVendors: Vendor[] = [
     rating: 4.9,
     isDemo: true,
     demoQrLabel: 'DEMO QR — Aling Nena Gulayan',
+    ownerUserId: 'vuser-aling-nena',
   },
   {
     id: 'vendor-kuya-ben',
@@ -35,6 +36,7 @@ export const seedVendors: Vendor[] = [
     rating: 4.3,
     isDemo: true,
     demoQrLabel: "DEMO QR — Kuya Ben's Seafood",
+    ownerUserId: 'vuser-kuya-ben',
   },
   {
     id: 'vendor-mang-tony',
@@ -52,6 +54,7 @@ export const seedVendors: Vendor[] = [
     rating: 4.7,
     isDemo: true,
     demoQrLabel: "DEMO QR — Mang Tony's Meat Shop",
+    ownerUserId: 'vuser-mang-tony',
   },
   {
     id: 'vendor-ate-liza',
@@ -69,6 +72,7 @@ export const seedVendors: Vendor[] = [
     rating: 4.8,
     isDemo: true,
     demoQrLabel: "DEMO QR — Ate Liza's Fruits",
+    ownerUserId: 'vuser-ate-liza',
   },
   {
     id: 'vendor-fresh-basket',
@@ -86,6 +90,7 @@ export const seedVendors: Vendor[] = [
     rating: 4.5,
     isDemo: true,
     demoQrLabel: 'DEMO QR — Fresh Basket Poultry',
+    ownerUserId: 'vuser-fresh-basket',
   },
   {
     id: 'vendor-bigas-nanay',
@@ -103,5 +108,6 @@ export const seedVendors: Vendor[] = [
     rating: 4.4,
     isDemo: true,
     demoQrLabel: 'DEMO QR — Bigas ni Nanay',
+    ownerUserId: 'vuser-bigas-nanay',
   },
 ]

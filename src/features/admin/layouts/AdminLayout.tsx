@@ -10,6 +10,7 @@ import {
   MessageSquareHeart,
   ShoppingBag,
   Store,
+  UserRound,
   X,
   Wheat,
 } from 'lucide-react'
@@ -28,7 +29,8 @@ const links = [
   { to: '/admin/commodities', label: 'Commodities', icon: Wheat },
   { to: '/admin/price-history', label: 'Price History', icon: History },
   { to: '/admin/branches', label: 'Palengkes', icon: MapPinned },
-  { to: '/admin/vendors', label: 'Vendors', icon: Store },
+  { to: '/admin/users', label: 'Vendor users', icon: UserRound },
+  { to: '/admin/vendors', label: 'Stores', icon: Store },
   { to: '/admin/offers', label: 'Offers', icon: HandCoins },
   { to: '/admin/orders', label: 'Orders', icon: ClipboardList },
   { to: '/admin/feedback', label: 'Feedback', icon: MessageSquareHeart },

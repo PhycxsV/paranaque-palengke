@@ -16,7 +16,11 @@ export type OrderStatus =
   | 'confirmed'
   | 'payment_rejected'
 
-export type DeliveryStatus = 'awaiting_pickup' | 'out_for_delivery' | 'delivered'
+export type DeliveryStatus =
+  | 'packing'
+  | 'ready_for_keri'
+  | 'out_for_delivery'
+  | 'delivered'
 
 export type OfferStatus =
   | 'pending'
@@ -68,6 +72,20 @@ export interface Branch {
   isActive: boolean
 }
 
+/**
+ * Vendor account (person). Credentials live here — one user can own many stores.
+ * Login UI is not wired yet; plaintext demo storage only.
+ */
+export interface VendorUser {
+  id: string
+  name: string
+  email: string
+  phone: string
+  password: string
+  isActive: boolean
+}
+
+/** Marketplace stall / store. Owned by a VendorUser via ownerUserId. */
 export interface Vendor {
   id: string
   name: string
@@ -87,6 +105,8 @@ export interface Vendor {
   rating: number
   isDemo: true
   demoQrLabel: string
+  /** Vendor user who owns this store (lipatan = change this). */
+  ownerUserId: string
 }
 
 /** Vendor listing of an LGU commodity. Selling price is vendor-declared within range. */
@@ -176,6 +196,11 @@ export interface Order {
    * (first sibling moves to out_for_delivery).
    */
   keriTrackingId?: string
+  /**
+   * 5-digit pickup PIN — generated when order becomes Ready for Keri.
+   * Shown to the vendor; copied into Keri rider remarks for handoff verification.
+   */
+  pickupCode?: string
   /** Palengke / branch used for Keri pickup (from vendor.branchId at checkout). */
   branchId: string
   branchName: string
@@ -220,6 +245,22 @@ export interface VendorProfileInput {
   cutoffTime: string
 }
 
+export interface VendorUserCreateInput {
+  name: string
+  email: string
+  phone: string
+  password: string
+  isActive?: boolean
+}
+
+export type VendorUserUpdateInput = {
+  name?: string
+  email?: string
+  phone?: string
+  password?: string
+  isActive?: boolean
+}
+
 export interface VendorCreateInput {
   name: string
   description: string
@@ -232,12 +273,15 @@ export interface VendorCreateInput {
   cutoffTime: string
   demoQrLabel: string
   rating: number
+  /** Required — create the user first, then assign the store. */
+  ownerUserId: string
 }
 
-/** Admin may also update rating and which palengke the stall belongs to. */
+/** Admin may also update rating, palengke, and owner (lipatan). */
 export type VendorUpdateInput = VendorProfileInput & {
   rating?: number
   branchId?: string
+  ownerUserId?: string
 }
 
 export interface BranchFormInput {

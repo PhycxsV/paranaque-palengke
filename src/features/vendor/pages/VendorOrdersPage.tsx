@@ -7,11 +7,28 @@ import { PortalHeader } from '@/components/shared/PortalHeader'
 import { StatusBadge } from '@/components/shared/StatusBadge'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { DELIVERY_STATUS_LABELS, ORDER_STATUS_LABELS } from '@/constants'
+import { normalizeDeliveryStatus } from '@/lib/delivery'
+import type { DeliveryFilter } from '@/lib/order-filters'
 import { cn, formatDateTime, formatPeso } from '@/lib/utils'
 import { useDemoSessionStore } from '@/stores/demo-session-store'
 import { useOrderStore } from '@/stores/order-store'
 import type { Order, OrderStatus } from '@/types'
+
+const DELIVERY_FILTERS: { value: DeliveryFilter; label: string }[] = [
+  { value: 'all', label: 'All delivery' },
+  { value: 'packing', label: DELIVERY_STATUS_LABELS.packing },
+  { value: 'ready_for_keri', label: DELIVERY_STATUS_LABELS.ready_for_keri },
+  { value: 'out_for_delivery', label: DELIVERY_STATUS_LABELS.out_for_delivery },
+  { value: 'delivered', label: DELIVERY_STATUS_LABELS.delivered },
+]
 
 type FilterTab = 'all' | OrderStatus
 
@@ -43,6 +60,7 @@ export default function VendorOrdersPage() {
   const activeVendorId = useDemoSessionStore((s) => s.activeVendorId)
   const getOrdersByVendor = useOrderStore((s) => s.getOrdersByVendor)
   const [activeTab, setActiveTab] = useState<FilterTab>('all')
+  const [deliveryStatus, setDeliveryStatus] = useState<DeliveryFilter>('all')
   const [query, setQuery] = useState('')
 
   const vendorOrders = useMemo<Order[]>(
@@ -66,14 +84,21 @@ export default function VendorOrdersPage() {
     const q = query.trim().toLowerCase()
     return vendorOrders.filter((o) => {
       if (activeTab !== 'all' && o.status !== activeTab) return false
+      if (deliveryStatus !== 'all') {
+        if (o.status !== 'confirmed') return false
+        if (normalizeDeliveryStatus(o.deliveryStatus) !== deliveryStatus) {
+          return false
+        }
+      }
       if (!q) return true
       return (
         o.id.toLowerCase().includes(q) ||
         o.customerName.toLowerCase().includes(q) ||
-        (o.keriTrackingId ?? '').toLowerCase().includes(q)
+        (o.keriTrackingId ?? '').toLowerCase().includes(q) ||
+        (o.pickupCode ?? '').includes(q)
       )
     })
-  }, [vendorOrders, activeTab, query])
+  }, [vendorOrders, activeTab, deliveryStatus, query])
 
   return (
     <div className="space-y-6">
@@ -83,17 +108,37 @@ export default function VendorOrdersPage() {
         description="Confirm payments, track Keri deliveries and review past orders."
       />
 
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+      <div className="flex flex-col gap-4">
         <FilterTabs items={tabs} value={activeTab} onChange={setActiveTab} />
-        <div className="relative w-full lg:w-72">
-          <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
-          <Input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search order, customer, tracking…"
-            className="pl-10"
-            aria-label="Search orders"
-          />
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="relative w-full sm:flex-1 lg:max-w-sm">
+            <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
+            <Input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search order, customer, tracking…"
+              className="pl-10"
+              aria-label="Search orders"
+            />
+          </div>
+          <Select
+            value={deliveryStatus}
+            onValueChange={(v) => setDeliveryStatus(v as DeliveryFilter)}
+          >
+            <SelectTrigger
+              className="w-full sm:w-48"
+              aria-label="Filter by delivery status"
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {DELIVERY_FILTERS.map((d) => (
+                <SelectItem key={d.value} value={d.value}>
+                  {d.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
@@ -150,6 +195,11 @@ export default function VendorOrdersPage() {
                       >
                         {order.id}
                       </Link>
+                      {order.pickupCode ? (
+                        <p className="mt-0.5 font-mono text-[11px] font-bold text-primary-deep">
+                          PIN {order.pickupCode}
+                        </p>
+                      ) : null}
                       {order.keriTrackingId ? (
                         <p className="mt-0.5 flex items-center gap-1 text-[11px] text-muted">
                           <Truck className="h-3 w-3" />
@@ -164,7 +214,19 @@ export default function VendorOrdersPage() {
                       {formatPeso(order.total)}
                     </td>
                     <td className="px-4 py-3.5">
-                      <StatusBadge status={order.status} />
+                      <div className="flex flex-col items-start gap-1">
+                        <StatusBadge status={order.status} />
+                        {order.status === 'confirmed' ? (
+                          <Badge variant="bay">
+                            <Truck className="h-3 w-3" />
+                            {
+                              DELIVERY_STATUS_LABELS[
+                                normalizeDeliveryStatus(order.deliveryStatus)
+                              ]
+                            }
+                          </Badge>
+                        ) : null}
+                      </div>
                     </td>
                     <td className="px-4 py-3.5 text-muted">
                       <ChevronRight className="h-4 w-4 transition group-hover:translate-x-0.5 group-hover:text-primary" />
@@ -204,7 +266,11 @@ export default function VendorOrdersPage() {
                     {order.status === 'confirmed' ? (
                       <Badge variant="bay">
                         <Truck className="h-3 w-3" />
-                        {DELIVERY_STATUS_LABELS[order.deliveryStatus ?? 'awaiting_pickup']}
+                        {
+                          DELIVERY_STATUS_LABELS[
+                            normalizeDeliveryStatus(order.deliveryStatus)
+                          ]
+                        }
                       </Badge>
                     ) : null}
                     <span className={cn('font-mono text-[11px] text-muted')}>

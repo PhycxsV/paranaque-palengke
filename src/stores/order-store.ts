@@ -2,6 +2,11 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { DELIVERY_FEE, STORAGE_PREFIX } from '@/constants'
 import {
+  DELIVERY_FLOW,
+  generatePickupCode,
+  normalizeDeliveryStatus,
+} from '@/lib/delivery'
+import {
   buildOrderSnapshots,
   calculateCartTotal,
   transitionOrder,
@@ -15,18 +20,11 @@ import type {
   CartItem,
   CheckoutFormInput,
   Commodity,
-  DeliveryStatus,
   Offer,
   Order,
   Product,
   Vendor,
 } from '@/types'
-
-const DELIVERY_FLOW: DeliveryStatus[] = [
-  'awaiting_pickup',
-  'out_for_delivery',
-  'delivered',
-]
 
 function paidEnoughForConfirm(status: Order['status']): boolean {
   return (
@@ -209,7 +207,7 @@ export const useOrderStore = create<OrderState>()(
 
         try {
           const updated = transitionOrder(order, 'confirmed', {
-            deliveryStatus: 'awaiting_pickup',
+            deliveryStatus: 'packing',
           })
           set({
             orders: get().orders.map((o) => (o.id === orderId ? updated : o)),
@@ -248,13 +246,13 @@ export const useOrderStore = create<OrderState>()(
           }
         }
 
-        const current = order.deliveryStatus ?? 'awaiting_pickup'
+        const current = normalizeDeliveryStatus(order.deliveryStatus)
         const idx = DELIVERY_FLOW.indexOf(current)
         if (idx < 0 || idx >= DELIVERY_FLOW.length - 1) {
           return { ok: false, message: 'Delivery is already complete.' }
         }
 
-        const next = DELIVERY_FLOW[idx + 1]
+        const next = DELIVERY_FLOW[idx + 1]!
         const nowIso = new Date().toISOString()
         /** First dispatch in the booking group stamps one shared Keri tracking id. */
         let keriTrackingId = order.keriTrackingId
@@ -263,6 +261,11 @@ export const useOrderStore = create<OrderState>()(
             siblings.find((s) => s.keriTrackingId)?.keriTrackingId ??
             generateId('KERI')
         }
+        /** Pickup PIN is per store order — stamped once at Ready for Keri. */
+        const pickupCode =
+          next === 'ready_for_keri'
+            ? order.pickupCode || generatePickupCode()
+            : order.pickupCode
 
         set({
           orders: get().orders.map((o) => {
@@ -271,6 +274,7 @@ export const useOrderStore = create<OrderState>()(
               return {
                 ...o,
                 deliveryStatus: next,
+                pickupCode: pickupCode ?? o.pickupCode,
                 keriTrackingId:
                   next === 'out_for_delivery' || o.keriTrackingId
                     ? keriTrackingId ?? o.keriTrackingId

@@ -1,10 +1,14 @@
 import { endOfDay, startOfDay } from '@/lib/report'
-import type { Order, OrderStatus } from '@/types'
+import { normalizeDeliveryStatus } from '@/lib/delivery'
+import type { DeliveryStatus, Order, OrderStatus } from '@/types'
 
 export type StatusFilter = 'all' | OrderStatus
+export type DeliveryFilter = 'all' | DeliveryStatus
 
 export interface OrderFilters {
   status: StatusFilter
+  /** `'all'` or a delivery status (confirmed orders only meaningfully match). */
+  deliveryStatus?: DeliveryFilter
   /** `'all'` or a vendor id. */
   vendorId: string
   /** `'all'` or a branch id. */
@@ -18,8 +22,13 @@ export function filterOrders(orders: Order[], f: OrderFilters): Order[] {
   const q = (f.query ?? '').trim().toLowerCase()
   const from = f.from?.getTime()
   const to = f.to?.getTime()
+  const delivery = f.deliveryStatus ?? 'all'
   return orders.filter((o) => {
     if (f.status !== 'all' && o.status !== f.status) return false
+    if (delivery !== 'all') {
+      if (o.status !== 'confirmed') return false
+      if (normalizeDeliveryStatus(o.deliveryStatus) !== delivery) return false
+    }
     if (f.vendorId !== 'all' && o.vendorId !== f.vendorId) return false
     if (f.branchId !== 'all' && o.branchId !== f.branchId) return false
     const t = new Date(o.createdAt).getTime()
@@ -31,6 +40,7 @@ export function filterOrders(orders: Order[], f: OrderFilters): Order[] {
       o.customerName.toLowerCase().includes(q) ||
       o.vendorName.toLowerCase().includes(q) ||
       (o.keriTrackingId ?? '').toLowerCase().includes(q) ||
+      (o.pickupCode ?? '').includes(q) ||
       (o.bookingGroupId ?? '').toLowerCase().includes(q)
     )
   })

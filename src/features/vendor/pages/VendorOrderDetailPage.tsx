@@ -12,6 +12,11 @@ import {
 import { toast } from 'sonner'
 import { DELIVERY_STATUS_LABELS } from '@/constants'
 import {
+  formatKeriRiderRemarks,
+  normalizeDeliveryStatus,
+  nextDeliveryActionLabel,
+} from '@/lib/delivery'
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -130,17 +135,24 @@ export default function VendorOrderDetailPage() {
     const result = advanceDelivery(order.id, activeVendorId)
     if (result.ok) {
       const label =
-        DELIVERY_STATUS_LABELS[result.order.deliveryStatus ?? 'awaiting_pickup']
-      toast.success(`Keri delivery updated: ${label}`)
+        DELIVERY_STATUS_LABELS[
+          normalizeDeliveryStatus(result.order.deliveryStatus)
+        ]
+      if (result.order.pickupCode && result.order.deliveryStatus === 'ready_for_keri') {
+        toast.success(`Ready for Keri — pickup PIN ${result.order.pickupCode}`)
+      } else {
+        toast.success(`Keri delivery updated: ${label}`)
+      }
     } else {
       toast.error(result.message)
     }
     setProcessing(false)
   }
 
-  const deliveryStatus = order.deliveryStatus ?? 'awaiting_pickup'
+  const deliveryStatus = normalizeDeliveryStatus(order.deliveryStatus)
+  const advanceLabel = nextDeliveryActionLabel(deliveryStatus)
   const canAdvanceDelivery =
-    order.status === 'confirmed' && deliveryStatus !== 'delivered'
+    order.status === 'confirmed' && advanceLabel !== null
 
   const statusNotice = (() => {
     switch (order.status) {
@@ -240,12 +252,37 @@ export default function VendorOrderDetailPage() {
             <SectionCard title="Keri delivery" icon={Truck}>
               <div className="space-y-5">
                 <DeliveryMilestoneTracker deliveryStatus={deliveryStatus} />
-                {canAdvanceDelivery ? (
+                {order.pickupCode ? (
+                  <div className="rounded-2xl border-2 border-primary/30 bg-primary-50/80 p-4 text-center sm:p-5">
+                    <p className="text-[11px] font-bold uppercase tracking-wider text-primary-deep">
+                      Pickup PIN — verify with Keri rider
+                    </p>
+                    <p className="mt-2 font-display text-4xl font-extrabold tracking-[0.35em] text-primary-deep sm:text-5xl">
+                      {order.pickupCode}
+                    </p>
+                    <p className="mt-3 text-xs leading-relaxed text-muted">
+                      Same code is in the rider’s remarks. Confirm it matches
+                      before handing over the order.
+                    </p>
+                    <p className="mt-2 rounded-lg bg-surface px-3 py-2 text-left text-[11px] text-muted ring-1 ring-border">
+                      <span className="font-bold text-primary-deep">
+                        Rider remarks:{' '}
+                      </span>
+                      <span className="font-mono text-ink">
+                        {formatKeriRiderRemarks(order.pickupCode)}
+                      </span>
+                    </p>
+                  </div>
+                ) : deliveryStatus === 'packing' ? (
+                  <p className="text-xs text-muted">
+                    A 5-digit pickup PIN is created when you mark this order
+                    Ready for Keri.
+                  </p>
+                ) : null}
+                {canAdvanceDelivery && advanceLabel ? (
                   <Button onClick={handleAdvanceDelivery} disabled={processing}>
                     <Truck className="h-4 w-4" />
-                    {deliveryStatus === 'awaiting_pickup'
-                      ? 'Mark out for delivery (Keri)'
-                      : 'Mark delivered'}
+                    {advanceLabel}
                   </Button>
                 ) : null}
               </div>
@@ -358,6 +395,14 @@ export default function VendorOrderDetailPage() {
               <Field label="Palengke">{order.branchName}</Field>
               <Field label="Coordinates" mono>
                 {order.pickupLat.toFixed(5)}, {order.pickupLng.toFixed(5)}
+              </Field>
+              <Field label="Pickup PIN" mono>
+                {order.pickupCode ?? 'Created at Ready for Keri'}
+              </Field>
+              <Field label="Rider remarks" mono>
+                {order.pickupCode
+                  ? formatKeriRiderRemarks(order.pickupCode)
+                  : '—'}
               </Field>
               <Field label="Tracking ID" mono>
                 {order.keriTrackingId ?? 'Assigned when dispatched'}

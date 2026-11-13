@@ -12,6 +12,7 @@ import { useOfferStore } from './offer-store'
 import { useOrderStore } from './order-store'
 import { useProductStore } from './product-store'
 import { useVendorStore } from './vendor-store'
+import { useVendorUserStore } from './vendor-user-store'
 
 interface DemoSessionState {
   role: DemoRole
@@ -32,6 +33,7 @@ export const useDemoSessionStore = create<DemoSessionState>()(
         useCommodityStore.getState().resetCommodities()
         useProductStore.getState().resetProducts()
         useVendorStore.getState().resetVendors()
+        useVendorUserStore.getState().resetUsers()
         useCartStore.getState().resetCart()
         useOrderStore.getState().resetOrders()
         useOfferStore.getState().resetOffers()

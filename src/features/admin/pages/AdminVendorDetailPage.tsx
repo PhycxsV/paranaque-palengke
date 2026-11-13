@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { ArrowLeft, MapPin, Package, Save, Store } from 'lucide-react'
+import { ArrowLeft, ArrowRightLeft, MapPin, Package, Save, Store, User } from 'lucide-react'
 import { toast } from 'sonner'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -20,12 +20,14 @@ import { useOfferStore } from '@/stores/offer-store'
 import { useOrderStore } from '@/stores/order-store'
 import { useProductStore } from '@/stores/product-store'
 import { useVendorStore } from '@/stores/vendor-store'
+import { useVendorUserStore } from '@/stores/vendor-user-store'
 import { formatPeso } from '@/lib/utils'
 
 export default function AdminVendorDetailPage() {
   const { vendorId } = useParams<{ vendorId: string }>()
   const vendors = useVendorStore((s) => s.vendors)
   const updateVendor = useVendorStore((s) => s.updateVendor)
+  const users = useVendorUserStore((s) => s.users)
   const branches = useBranchStore((s) => s.branches)
   const products = useProductStore((s) => s.products)
   const commodities = useCommodityStore((s) => s.commodities)
@@ -34,14 +36,17 @@ export default function AdminVendorDetailPage() {
 
   const vendor = vendors.find((v) => v.id === vendorId)
   const branch = branches.find((b) => b.id === vendor?.branchId)
+  const owner = users.find((u) => u.id === vendor?.ownerUserId)
 
   const [rating, setRating] = useState(4.5)
   const [branchId, setBranchId] = useState('')
+  const [ownerUserId, setOwnerUserId] = useState('')
 
   useEffect(() => {
     if (vendor) {
       setRating(vendor.rating)
       setBranchId(vendor.branchId)
+      setOwnerUserId(vendor.ownerUserId)
     }
   }, [vendor])
 
@@ -50,13 +55,13 @@ export default function AdminVendorDetailPage() {
       <div className="space-y-4">
         <Link to="/admin/vendors">
           <Button variant="ghost" size="sm" className="gap-1.5">
-            <ArrowLeft className="h-4 w-4" /> Back to vendors
+            <ArrowLeft className="h-4 w-4" /> Back to stores
           </Button>
         </Link>
         <EmptyState
           icon={Store}
-          title="Vendor not found"
-          description="This vendor does not exist in the demo data."
+          title="Store not found"
+          description="This store does not exist in the demo data."
         />
       </div>
     )
@@ -87,7 +92,7 @@ export default function AdminVendorDetailPage() {
       toast.error('Select a palengke / market.')
       return
     }
-    updateVendor(vendor.id, {
+    const result = updateVendor(vendor.id, {
       name: vendor.name,
       description: vendor.description,
       location: vendor.location,
@@ -97,7 +102,41 @@ export default function AdminVendorDetailPage() {
       rating,
       branchId,
     })
-    toast.success('Vendor rating and palengke assignment saved')
+    if (!result.ok) {
+      toast.error(result.message)
+      return
+    }
+    toast.success('Store rating and palengke assignment saved')
+  }
+
+  const handleLipatan = () => {
+    if (!ownerUserId) {
+      toast.error('Select a vendor user.')
+      return
+    }
+    if (ownerUserId === vendor.ownerUserId) {
+      toast.info('This user already owns the store.')
+      return
+    }
+    const result = updateVendor(vendor.id, {
+      name: vendor.name,
+      description: vendor.description,
+      location: vendor.location,
+      isAvailable: vendor.isAvailable,
+      opensAt: vendor.opensAt,
+      cutoffTime: vendor.cutoffTime,
+      ownerUserId,
+    })
+    if (!result.ok) {
+      toast.error(result.message)
+      return
+    }
+    const next = users.find((u) => u.id === ownerUserId)
+    toast.success(
+      next
+        ? `Store transferred to ${next.name}`
+        : 'Store ownership updated',
+    )
   }
 
   const selectedBranch = branches.find((b) => b.id === branchId) ?? branch
@@ -106,7 +145,7 @@ export default function AdminVendorDetailPage() {
     <div className="space-y-6">
       <Link to="/admin/vendors">
         <Button variant="ghost" size="sm" className="gap-1.5">
-          <ArrowLeft className="h-4 w-4" /> Back to vendors
+          <ArrowLeft className="h-4 w-4" /> Back to stores
         </Button>
       </Link>
 
@@ -129,6 +168,21 @@ export default function AdminVendorDetailPage() {
                 {branch?.name ?? 'No palengke'} · {vendor.location}
               </CardDescription>
               <p className="mt-2 text-sm text-muted">{vendor.description}</p>
+              {owner ? (
+                <p className="mt-2 flex flex-wrap items-center gap-1.5 text-sm">
+                  <User className="h-3.5 w-3.5 text-muted" />
+                  <span className="text-muted">Owned by</span>
+                  <Link
+                    to={`/admin/users/${owner.id}`}
+                    className="font-semibold text-primary underline"
+                  >
+                    {owner.name}
+                  </Link>
+                  <span className="text-muted">· {owner.email}</span>
+                </p>
+              ) : (
+                <p className="mt-2 text-sm text-amber-700">No owner assigned</p>
+              )}
             </div>
           </div>
         </CardHeader>
@@ -160,6 +214,44 @@ export default function AdminVendorDetailPage() {
               <span className="text-muted">Orders</span>
             </div>
           </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center gap-2">
+            <ArrowRightLeft className="h-5 w-5" />
+            Lipatan / transfer ownership
+          </CardTitle>
+          <CardDescription>
+            Give this store to a different vendor user. Credentials stay on the
+            user accounts — only the store link changes. One user can own many
+            stores.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-1.5">
+            <Label htmlFor="lipatan-owner">New owner</Label>
+            <select
+              id="lipatan-owner"
+              className="flex h-10 w-full rounded-md border border-border bg-surface px-3 text-sm"
+              value={ownerUserId}
+              onChange={(e) => setOwnerUserId(e.target.value)}
+            >
+              <option value="">Select vendor user…</option>
+              {users.map((u) => (
+                <option key={u.id} value={u.id}>
+                  {u.name} · {u.email}
+                  {!u.isActive ? ' (inactive)' : ''}
+                  {u.id === vendor.ownerUserId ? ' — current' : ''}
+                </option>
+              ))}
+            </select>
+          </div>
+          <Button onClick={handleLipatan} className="gap-1.5">
+            <ArrowRightLeft className="h-4 w-4" />
+            Transfer store
+          </Button>
         </CardContent>
       </Card>
 
@@ -225,7 +317,7 @@ export default function AdminVendorDetailPage() {
           <EmptyState
             icon={Package}
             title="No products"
-            description="This vendor has no active products."
+            description="This store has no active products."
           />
         ) : (
           <div className="overflow-x-auto rounded-xl border border-border bg-surface">

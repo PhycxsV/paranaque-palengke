@@ -98,7 +98,7 @@ export default function OrderDetailPage() {
 
         {allGroupConfirmed ? (
           <DeliveryMilestoneTracker
-            deliveryStatus={order.deliveryStatus ?? 'awaiting_pickup'}
+            deliveryStatus={order.deliveryStatus ?? 'packing'}
           />
         ) : waitingOnOtherVendors ? (
           <Notice tone="warning" title="Waiting on other vendors">

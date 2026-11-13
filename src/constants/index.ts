@@ -35,7 +35,8 @@ export const VENDOR_STOCK_UNITS: Array<'kg' | 'piece'> = ['kg', 'piece']
 export const FEATURE_TAWAD_ENABLED = false
 
 export const DELIVERY_STATUS_LABELS: Record<DeliveryStatus, string> = {
-  awaiting_pickup: 'Preparing for Keri',
+  packing: 'Packing',
+  ready_for_keri: 'Ready for Keri',
   out_for_delivery: 'Out for delivery',
   delivered: 'Delivered',
 }
@@ -47,9 +48,14 @@ export const DELIVERY_MILESTONES: {
   description: string
 }[] = [
   {
-    id: 'awaiting_pickup',
-    label: 'Preparing for Keri',
+    id: 'packing',
+    label: 'Packing',
     description: 'Vendor is packing your order for pickup by Keri.',
+  },
+  {
+    id: 'ready_for_keri',
+    label: 'Ready for Keri',
+    description: 'Order is packed and waiting for the Keri rider.',
   },
   {
     id: 'out_for_delivery',

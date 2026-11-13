@@ -25,10 +25,12 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { DELIVERY_STATUS_LABELS, ORDER_STATUS_LABELS } from '@/constants'
+import { normalizeDeliveryStatus } from '@/lib/delivery'
 import {
   filterOrders,
   PERIOD_PRESETS,
   resolvePeriod,
+  type DeliveryFilter,
   type PeriodPreset,
   type StatusFilter,
 } from '@/lib/order-filters'
@@ -39,6 +41,14 @@ import { useOrderStore } from '@/stores/order-store'
 import { useVendorStore } from '@/stores/vendor-store'
 import type { Order } from '@/types'
 import { ExportReportDialog } from '../components/ExportReportDialog'
+
+const DELIVERY_FILTERS: { value: DeliveryFilter; label: string }[] = [
+  { value: 'all', label: 'All delivery' },
+  { value: 'packing', label: DELIVERY_STATUS_LABELS.packing },
+  { value: 'ready_for_keri', label: DELIVERY_STATUS_LABELS.ready_for_keri },
+  { value: 'out_for_delivery', label: DELIVERY_STATUS_LABELS.out_for_delivery },
+  { value: 'delivered', label: DELIVERY_STATUS_LABELS.delivered },
+]
 
 const TAB_DEFS: { value: StatusFilter; label: string }[] = [
   { value: 'all', label: 'All' },
@@ -61,6 +71,7 @@ export default function AdminOrdersPage() {
   const branches = useBranchStore((s) => s.branches)
 
   const [status, setStatus] = useState<StatusFilter>('all')
+  const [deliveryStatus, setDeliveryStatus] = useState<DeliveryFilter>('all')
   const [vendorId, setVendorId] = useState('all')
   const [branchId, setBranchId] = useState('all')
   const [period, setPeriod] = useState<PeriodPreset>('all')
@@ -76,13 +87,14 @@ export default function AdminOrdersPage() {
     () =>
       filterOrders(orders, {
         status: 'all',
+        deliveryStatus,
         vendorId,
         branchId,
         from: range.from,
         to: range.to,
         query,
       }),
-    [orders, vendorId, branchId, range, query],
+    [orders, deliveryStatus, vendorId, branchId, range, query],
   )
   const filtered = useMemo(
     () => (status === 'all' ? base : base.filter((o) => o.status === status)),
@@ -104,6 +116,7 @@ export default function AdminOrdersPage() {
 
   const hasActiveFilters =
     status !== 'all' ||
+    deliveryStatus !== 'all' ||
     vendorId !== 'all' ||
     branchId !== 'all' ||
     period !== 'all' ||
@@ -111,6 +124,7 @@ export default function AdminOrdersPage() {
 
   function clearFilters() {
     setStatus('all')
+    setDeliveryStatus('all')
     setVendorId('all')
     setBranchId('all')
     setPeriod('all')
@@ -165,7 +179,7 @@ export default function AdminOrdersPage() {
       <div className="space-y-3">
         <FilterTabs items={tabs} value={status} onChange={setStatus} />
 
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(0,1.4fr)_repeat(3,minmax(0,1fr))_auto]">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(0,1.4fr)_repeat(4,minmax(0,1fr))_auto]">
           <div className="relative sm:col-span-2 lg:col-span-1">
             <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
             <Input
@@ -211,6 +225,22 @@ export default function AdminOrdersPage() {
               {visibleVendors.map((v) => (
                 <SelectItem key={v.id} value={v.id}>
                   {v.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select
+            value={deliveryStatus}
+            onValueChange={(v) => setDeliveryStatus(v as DeliveryFilter)}
+          >
+            <SelectTrigger aria-label="Filter by delivery status">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {DELIVERY_FILTERS.map((d) => (
+                <SelectItem key={d.value} value={d.value}>
+                  {d.label}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -305,7 +335,16 @@ export default function AdminOrdersPage() {
                         {order.status === 'confirmed' ? (
                           <Badge variant="bay">
                             <Truck className="h-3 w-3" />
-                            {DELIVERY_STATUS_LABELS[order.deliveryStatus ?? 'awaiting_pickup']}
+                            {
+                              DELIVERY_STATUS_LABELS[
+                                normalizeDeliveryStatus(order.deliveryStatus)
+                              ]
+                            }
+                          </Badge>
+                        ) : null}
+                        {order.pickupCode ? (
+                          <Badge variant="secondary" className="font-mono">
+                            PIN {order.pickupCode}
                           </Badge>
                         ) : null}
                       </div>

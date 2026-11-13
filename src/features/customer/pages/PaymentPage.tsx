@@ -116,7 +116,7 @@ export default function PaymentPage() {
               milestones are below.
             </Notice>
             <DeliveryMilestoneTracker
-              deliveryStatus={order.deliveryStatus ?? 'awaiting_pickup'}
+              deliveryStatus={order.deliveryStatus ?? 'packing'}
             />
           </div>
         )}

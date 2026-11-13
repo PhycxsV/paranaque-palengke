@@ -97,7 +97,7 @@ export default function VendorStorePage() {
       setErrors(validation)
       return
     }
-    updateVendor(vendor.id, {
+    const result = updateVendor(vendor.id, {
       name: form.name.trim(),
       description: form.description.trim(),
       location: form.location.trim(),
@@ -105,6 +105,10 @@ export default function VendorStorePage() {
       opensAt: form.opensAt,
       cutoffTime: form.cutoffTime,
     })
+    if (!result.ok) {
+      toast.error(result.message)
+      return
+    }
     setErrors({})
     toast.success('Store profile updated')
   }

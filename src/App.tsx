@@ -33,6 +33,8 @@ import AdminPriceHistoryPage from '@/features/admin/pages/AdminPriceHistoryPage'
 import AdminBranchesPage from '@/features/admin/pages/AdminBranchesPage'
 import AdminVendorsPage from '@/features/admin/pages/AdminVendorsPage'
 import AdminVendorDetailPage from '@/features/admin/pages/AdminVendorDetailPage'
+import AdminUsersPage from '@/features/admin/pages/AdminUsersPage'
+import AdminUserDetailPage from '@/features/admin/pages/AdminUserDetailPage'
 import AdminOffersPage from '@/features/admin/pages/AdminOffersPage'
 import AdminOrdersPage from '@/features/admin/pages/AdminOrdersPage'
 import AdminFeedbackPage from '@/features/admin/pages/AdminFeedbackPage'
@@ -96,6 +98,8 @@ export default function App() {
           <Route path="commodities" element={<AdminCommoditiesPage />} />
           <Route path="price-history" element={<AdminPriceHistoryPage />} />
           <Route path="branches" element={<AdminBranchesPage />} />
+          <Route path="users" element={<AdminUsersPage />} />
+          <Route path="users/:userId" element={<AdminUserDetailPage />} />
           <Route path="vendors" element={<AdminVendorsPage />} />
           <Route path="vendors/:vendorId" element={<AdminVendorDetailPage />} />
           <Route
