@@ -83,7 +83,7 @@ export default function AdminVendorDetailPage() {
     return { min: commodity.priceMin, max: commodity.priceMax }
   }
 
-  const handleSaveAssignment = () => {
+  const handleSaveAssignment = async () => {
     if (!Number.isFinite(rating) || rating < 1 || rating > 5) {
       toast.error('Rating must be between 1 and 5.')
       return
@@ -92,7 +92,7 @@ export default function AdminVendorDetailPage() {
       toast.error('Select a palengke / market.')
       return
     }
-    const result = updateVendor(vendor.id, {
+    const result = await updateVendor(vendor.id, {
       name: vendor.name,
       description: vendor.description,
       location: vendor.location,
@@ -109,7 +109,7 @@ export default function AdminVendorDetailPage() {
     toast.success('Store rating and palengke assignment saved')
   }
 
-  const handleLipatan = () => {
+  const handleLipatan = async () => {
     if (!ownerUserId) {
       toast.error('Select a vendor user.')
       return
@@ -118,7 +118,7 @@ export default function AdminVendorDetailPage() {
       toast.info('This user already owns the store.')
       return
     }
-    const result = updateVendor(vendor.id, {
+    const result = await updateVendor(vendor.id, {
       name: vendor.name,
       description: vendor.description,
       location: vendor.location,

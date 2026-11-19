@@ -91,13 +91,13 @@ export default function VendorStorePage() {
     return errs
   }
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const validation = validate()
     if (Object.keys(validation).length > 0) {
       setErrors(validation)
       return
     }
-    const result = updateVendor(vendor.id, {
+    const result = await updateVendor(vendor.id, {
       name: form.name.trim(),
       description: form.description.trim(),
       location: form.location.trim(),

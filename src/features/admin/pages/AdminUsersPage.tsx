@@ -40,16 +40,29 @@ const DEFAULT_USER_FORM: VendorUserCreateInput = {
 
 function CreateUserDialog() {
   const addUser = useVendorUserStore((s) => s.addUser)
+  const vendors = useVendorStore((s) => s.vendors)
   const [open, setOpen] = useState(false)
   const [form, setForm] = useState<VendorUserCreateInput>(DEFAULT_USER_FORM)
 
   const handleOpen = (isOpen: boolean) => {
-    if (isOpen) setForm({ ...DEFAULT_USER_FORM })
+    if (isOpen) setForm({ ...DEFAULT_USER_FORM, vendorIds: [] })
     setOpen(isOpen)
   }
 
-  const handleSave = () => {
-    const result = addUser(form)
+  const toggleVendor = (vendorId: string) => {
+    setForm((f) => {
+      const current = f.vendorIds ?? []
+      return {
+        ...f,
+        vendorIds: current.includes(vendorId)
+          ? current.filter((id) => id !== vendorId)
+          : [...current, vendorId],
+      }
+    })
+  }
+
+  const handleSave = async () => {
+    const result = await addUser(form)
     if (result.ok) {
       toast.success(`Created user ${result.user.name}`)
       setOpen(false)
@@ -70,8 +83,8 @@ function CreateUserDialog() {
         <DialogHeader>
           <DialogTitle>Create vendor user</DialogTitle>
           <DialogDescription>
-            Account with email, phone, and password. Assign stores afterward —
-            one user can own multiple stores.
+            Creates a vendor login and assigns one or more stores.
+            Create the store first if it does not exist yet.
           </DialogDescription>
         </DialogHeader>
         <DialogBody>
@@ -123,8 +136,35 @@ function CreateUserDialog() {
                 onChange={(e) =>
                   setForm((f) => ({ ...f, password: e.target.value }))
                 }
-                placeholder="At least 6 characters"
+                placeholder="At least 8 characters"
               />
+            </div>
+            <div className="space-y-2">
+              <Label>Assign stores</Label>
+              <div className="max-h-40 space-y-2 overflow-y-auto rounded-lg border border-border p-3">
+                {vendors.length === 0 ? (
+                  <p className="text-xs text-muted">
+                    No stores yet. Create a store first, then create this user.
+                  </p>
+                ) : (
+                  vendors.map((vendor) => {
+                    const checked = (form.vendorIds ?? []).includes(vendor.id)
+                    return (
+                      <label
+                        key={vendor.id}
+                        className="flex cursor-pointer items-center gap-2 text-sm"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => toggleVendor(vendor.id)}
+                        />
+                        <span>{vendor.name}</span>
+                      </label>
+                    )
+                  })
+                )}
+              </div>
             </div>
             <div className="flex items-center gap-3">
               <Switch
@@ -136,10 +176,6 @@ function CreateUserDialog() {
               />
               <Label htmlFor="user-active">Active account</Label>
             </div>
-            <p className="text-[11px] text-muted">
-              Login UI comes later. Password is stored as plain text in
-              localStorage for the demo only.
-            </p>
           </div>
         </DialogBody>
         <DialogFooter>

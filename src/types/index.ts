@@ -103,7 +103,7 @@ export interface Vendor {
   cutoffTime: string
   /** Demo / curated store rating (1–5). Used for home “top rated”. */
   rating: number
-  isDemo: true
+  isDemo: boolean
   demoQrLabel: string
   /** Vendor user who owns this store (lipatan = change this). */
   ownerUserId: string
@@ -251,6 +251,8 @@ export interface VendorUserCreateInput {
   phone: string
   password: string
   isActive?: boolean
+  /** Required when creating through the LGU vendor-account endpoint. */
+  vendorIds?: string[]
 }
 
 export type VendorUserUpdateInput = {
@@ -273,8 +275,8 @@ export interface VendorCreateInput {
   cutoffTime: string
   demoQrLabel: string
   rating: number
-  /** Required — create the user first, then assign the store. */
-  ownerUserId: string
+  /** Optional on create when using API — assign later via LGU vendor-accounts. */
+  ownerUserId?: string
 }
 
 /** Admin may also update rating, palengke, and owner (lipatan). */

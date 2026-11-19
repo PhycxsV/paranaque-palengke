@@ -12,7 +12,11 @@ interface ChatThreadViewProps {
   selfSender: ChatSender
   peerLabel: string
   selfLabel: string
-  onSend: (body: string) => { ok: boolean; message?: string }
+  onSend: (
+    body: string,
+  ) =>
+    | { ok: boolean; message?: string }
+    | Promise<{ ok: boolean; message?: string }>
   disabled?: boolean
   disabledHint?: string
 }
@@ -35,10 +39,10 @@ export function ChatThreadView({
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages.length])
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
     if (disabled) return
-    const result = onSend(draft)
+    const result = await onSend(draft)
     if (!result.ok) {
       setError(result.message ?? 'Unable to send.')
       return

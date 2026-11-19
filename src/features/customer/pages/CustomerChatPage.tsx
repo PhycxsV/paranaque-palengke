@@ -34,14 +34,26 @@ export default function CustomerChatPage() {
     if (!vendorParam || threadId) return
     const vendor = vendors.find((v) => v.id === vendorParam)
     if (!vendor) return
-    const thread = getOrCreateThread(vendor.id)
-    navigate(`/customer/chat/${thread.id}`, { replace: true })
+    let cancelled = false
+    void (async () => {
+      try {
+        const thread = await getOrCreateThread(vendor.id)
+        if (!cancelled) navigate(`/customer/chat/${thread.id}`, { replace: true })
+      } catch (error) {
+        toast.error(
+          error instanceof Error ? error.message : 'Unable to open chat.',
+        )
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
   }, [vendorParam, threadId, vendors, getOrCreateThread, navigate])
 
   useEffect(() => {
     if (!threadId) return
     if (!useChatStore.getState().threads.some((t) => t.id === threadId)) return
-    markThreadRead(threadId, 'customer')
+    void markThreadRead(threadId, 'customer')
   }, [threadId, allMessages.length, markThreadRead])
 
   const activeThread = threadId
@@ -85,8 +97,8 @@ export default function CustomerChatPage() {
             selfSender="customer"
             selfLabel="You"
             peerLabel={activeVendor.name}
-            onSend={(body) => {
-              const result = sendMessage({
+            onSend={async (body) => {
+              const result = await sendMessage({
                 threadId: activeThread.id,
                 sender: 'customer',
                 body,

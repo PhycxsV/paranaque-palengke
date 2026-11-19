@@ -62,8 +62,8 @@ function AddCommodityDialog() {
     setOpen(isOpen)
   }
 
-  const handleSave = () => {
-    const result = addCommodity({
+  const handleSave = async () => {
+    const result = await addCommodity({
       ...form,
       priceMin: Number(form.priceMin),
       priceMax: Number(form.priceMax),
@@ -243,10 +243,10 @@ function EditPriceDialog({ commodity }: { commodity: Commodity }) {
     setOpen(isOpen)
   }
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const parsedMin = parseFloat(priceMin)
     const parsedMax = parseFloat(priceMax)
-    const result = updatePriceRange({
+    const result = await updatePriceRange({
       commodityId: commodity.id,
       priceMin: parsedMin,
       priceMax: parsedMax,

@@ -16,6 +16,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { LOGOS } from '@/lib/assets'
 import { getTotalUnread } from '@/lib/chat'
+import { isApiConfigured } from '@/lib/api'
+import { useAuthStore } from '@/stores/auth-store'
 import { useCartStore } from '@/stores/cart-store'
 import { useChatStore } from '@/stores/chat-store'
 import { useCustomerProfileStore } from '@/stores/customer-profile-store'
@@ -30,6 +32,7 @@ export function CustomerHeader() {
   const chatMessages = useChatStore((s) => s.messages)
   const chatUnread = getTotalUnread(chatThreads, chatMessages, 'customer')
   const profilePhoto = useCustomerProfileStore((s) => s.profile.photoUrl)
+  const authUser = useAuthStore((s) => s.user)
   const [query, setQuery] = useState('')
   const [mobileOpen, setMobileOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
@@ -242,6 +245,16 @@ export function CustomerHeader() {
             onDark={overlay}
             className="nav-ink hidden sm:inline-flex"
           />
+          {isApiConfigured() && !authUser ? (
+            <Button
+              asChild
+              variant="ghost"
+              size="sm"
+              className={cn('nav-ink hidden sm:inline-flex', overlay && 'text-white')}
+            >
+              <Link to="/auth">Sign in</Link>
+            </Button>
+          ) : null}
           <PortalSwitcher
             className={cn(
               'nav-ink hidden sm:flex',

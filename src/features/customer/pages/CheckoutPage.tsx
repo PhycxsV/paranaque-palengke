@@ -69,7 +69,7 @@ export default function CheckoutPage() {
 
   if (items.length === 0 && !submitting) return null
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
 
     if (!form.customerName.trim()) {
@@ -87,7 +87,7 @@ export default function CheckoutPage() {
 
     setSubmitting(true)
 
-    const result = createCheckoutOrders({
+    const result = await createCheckoutOrders({
       items,
       products,
       commodities,
@@ -102,7 +102,6 @@ export default function CheckoutPage() {
       return
     }
 
-    // Keep the profile in sync so the next checkout is prefilled.
     saveFromCheckout(form)
     clearCart()
     toast.success(

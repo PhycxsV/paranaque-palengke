@@ -9,7 +9,7 @@ export interface CustomerProfile {
   deliveryAddress: string
   /** Default notes prefilled on checkout (optional). */
   notes: string
-  /** Optional JPEG/PNG data URL from a local photo upload (demo only). */
+  /** Local profile photo as a data URL. */
   photoUrl: string
 }
 

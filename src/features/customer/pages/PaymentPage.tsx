@@ -48,9 +48,9 @@ export default function PaymentPage() {
   const isAwaitingConfirmation = order.status === 'awaiting_vendor_confirmation'
   const isConfirmed = order.status === 'confirmed'
 
-  const handleSubmitPayment = () => {
+  const handleSubmitPayment = async () => {
     setSubmitting(true)
-    const result = submitDemoPayment(order.id, transactionRef)
+    const result = await submitDemoPayment(order.id, transactionRef)
     if (!result.ok) {
       toast.error(result.message)
       setSubmitting(false)

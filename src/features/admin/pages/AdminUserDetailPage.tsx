@@ -65,12 +65,12 @@ export default function AdminUserDetailPage() {
     )
   }
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (changePassword && password.trim().length < 6) {
       toast.error('Password must be at least 6 characters.')
       return
     }
-    const result = updateUser(user.id, {
+    const result = await updateUser(user.id, {
       name,
       email,
       phone,

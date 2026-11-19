@@ -1,11 +1,13 @@
 import { HashRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { Toaster } from 'sonner'
 import { FEATURE_TAWAD_ENABLED } from '@/constants'
-// Side effect: applies the saved text size to the page before first paint.
 import '@/stores/text-size-store'
+import { useBackendSync } from '@/hooks/useBackendSync'
+import { RequireAuth } from '@/components/shared/RequireAuth'
 import { CustomerLayout } from '@/features/customer/layouts/CustomerLayout'
 import { VendorLayout } from '@/features/vendor/layouts/VendorLayout'
 import AdminLayout from '@/features/admin/layouts/AdminLayout'
+import AuthPage from '@/features/auth/AuthPage'
 import HomePage from '@/features/customer/pages/HomePage'
 import ProductsPage from '@/features/customer/pages/ProductsPage'
 import ProductDetailPage from '@/features/customer/pages/ProductDetailPage'
@@ -41,10 +43,30 @@ import AdminFeedbackPage from '@/features/admin/pages/AdminFeedbackPage'
 import VendorFeedbackPage from '@/features/vendor/pages/VendorFeedbackPage'
 import NotFoundPage from '@/features/customer/pages/NotFoundPage'
 
-export default function App() {
+function AppShell() {
+  const { catalogReady, catalogError, apiConfigured } = useBackendSync()
+
+  if (apiConfigured && !catalogReady) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-warm-white text-sm text-muted-foreground">
+        Connecting to Palengke API…
+      </div>
+    )
+  }
+
   return (
-    <HashRouter>
+    <>
+      {catalogError ? (
+        <div className="border-b border-amber-200 bg-amber-50 px-4 py-2 text-center text-xs text-amber-900">
+          Catalog warning: {catalogError}. Some listings may be empty until the API is available.
+        </div>
+      ) : null}
       <Routes>
+        <Route path="auth" element={<AuthPage portal="customer" />} />
+        <Route path="customer/login" element={<AuthPage portal="customer" />} />
+        <Route path="vendor/login" element={<AuthPage portal="vendor" />} />
+        <Route path="admin/login" element={<AuthPage portal="lgu-admin" />} />
+
         <Route path="customer" element={<CustomerLayout />}>
           <Route index element={<HomePage />} />
           <Route path="products" element={<ProductsPage />} />
@@ -52,12 +74,54 @@ export default function App() {
           <Route path="vendors" element={<VendorsPage />} />
           <Route path="stores/:vendorId" element={<VendorStorePage />} />
           <Route path="cart" element={<CartPage />} />
-          <Route path="checkout" element={<CheckoutPage />} />
-          <Route path="payment/group/:groupId" element={<PaymentGroupPage />} />
-          <Route path="payment/:orderId" element={<PaymentPage />} />
-          <Route path="orders" element={<OrdersPage />} />
-          <Route path="orders/:orderId" element={<OrderDetailPage />} />
-          <Route path="profile" element={<CustomerProfilePage />} />
+          <Route
+            path="checkout"
+            element={
+              <RequireAuth roles={['customer']}>
+                <CheckoutPage />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="payment/group/:groupId"
+            element={
+              <RequireAuth roles={['customer']}>
+                <PaymentGroupPage />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="payment/:orderId"
+            element={
+              <RequireAuth roles={['customer']}>
+                <PaymentPage />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="orders"
+            element={
+              <RequireAuth roles={['customer']}>
+                <OrdersPage />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="orders/:orderId"
+            element={
+              <RequireAuth roles={['customer']}>
+                <OrderDetailPage />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="profile"
+            element={
+              <RequireAuth roles={['customer']}>
+                <CustomerProfilePage />
+              </RequireAuth>
+            }
+          />
           <Route
             path="offers"
             element={
@@ -68,11 +132,32 @@ export default function App() {
               )
             }
           />
-          <Route path="chat" element={<CustomerChatPage />} />
-          <Route path="chat/:threadId" element={<CustomerChatPage />} />
+          <Route
+            path="chat"
+            element={
+              <RequireAuth roles={['customer']}>
+                <CustomerChatPage />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="chat/:threadId"
+            element={
+              <RequireAuth roles={['customer']}>
+                <CustomerChatPage />
+              </RequireAuth>
+            }
+          />
         </Route>
 
-        <Route path="vendor" element={<VendorLayout />}>
+        <Route
+          path="vendor"
+          element={
+            <RequireAuth roles={['vendor']}>
+              <VendorLayout />
+            </RequireAuth>
+          }
+        >
           <Route index element={<VendorDashboardPage />} />
           <Route path="orders" element={<VendorOrdersPage />} />
           <Route path="feedback" element={<VendorFeedbackPage />} />
@@ -93,7 +178,14 @@ export default function App() {
           <Route path="chat/:threadId" element={<VendorChatPage />} />
         </Route>
 
-        <Route path="admin" element={<AdminLayout />}>
+        <Route
+          path="admin"
+          element={
+            <RequireAuth roles={['lgu-admin']}>
+              <AdminLayout />
+            </RequireAuth>
+          }
+        >
           <Route index element={<AdminDashboardPage />} />
           <Route path="commodities" element={<AdminCommoditiesPage />} />
           <Route path="price-history" element={<AdminPriceHistoryPage />} />
@@ -124,6 +216,14 @@ export default function App() {
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
       <Toaster richColors position="top-center" closeButton />
+    </>
+  )
+}
+
+export default function App() {
+  return (
+    <HashRouter>
+      <AppShell />
     </HashRouter>
   )
 }

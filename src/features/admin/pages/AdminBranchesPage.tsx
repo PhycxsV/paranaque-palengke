@@ -113,8 +113,8 @@ function CreateBranchDialog() {
     setOpen(isOpen)
   }
 
-  const handleSave = () => {
-    const result = addBranch(form)
+  const handleSave = async () => {
+    const result = await addBranch(form)
     if (result.ok) {
       toast.success(`Added ${result.branch.name}`)
       setOpen(false)
@@ -177,8 +177,8 @@ function EditBranchDialog({ branch }: { branch: Branch }) {
     setOpen(isOpen)
   }
 
-  const handleSave = () => {
-    const result = updateBranch(branch.id, form)
+  const handleSave = async () => {
+    const result = await updateBranch(branch.id, form)
     if (result.ok) {
       toast.success('Palengke updated')
       setOpen(false)

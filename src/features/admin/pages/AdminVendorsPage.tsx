@@ -93,8 +93,8 @@ function CreateStoreDialog() {
     })
   }
 
-  const handleSave = () => {
-    const result = addVendor(form)
+  const handleSave = async () => {
+    const result = await addVendor(form)
     if (result.ok) {
       toast.success(`Added store ${result.vendor.name}`)
       setOpen(false)
@@ -115,8 +115,8 @@ function CreateStoreDialog() {
         <DialogHeader>
           <DialogTitle>Create store</DialogTitle>
           <DialogDescription>
-            Register a marketplace stall and assign it to an existing vendor
-            user. Create the user first if needed.
+            Register a marketplace stall. Owner can be assigned now or later when
+            creating a vendor login account.
           </DialogDescription>
         </DialogHeader>
         <DialogBody>

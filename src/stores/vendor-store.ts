@@ -3,6 +3,11 @@ import { persist } from 'zustand/middleware'
 import { STORAGE_PREFIX } from '@/constants'
 import { seedVendorUsers } from '@/data/vendor-users'
 import { seedVendors } from '@/data/vendors'
+import {
+  createVendor,
+  isApiConfigured,
+  updateVendor as updateVendorApi,
+} from '@/lib/api'
 import { generateId } from '@/lib/utils'
 import type { Vendor, VendorCreateInput, VendorUpdateInput } from '@/types'
 
@@ -10,11 +15,11 @@ interface VendorState {
   vendors: Vendor[]
   addVendor: (
     input: VendorCreateInput,
-  ) => { ok: true; vendor: Vendor } | { ok: false; message: string }
+  ) => Promise<{ ok: true; vendor: Vendor } | { ok: false; message: string }>
   updateVendor: (
     vendorId: string,
     input: VendorUpdateInput,
-  ) => { ok: true } | { ok: false; message: string }
+  ) => Promise<{ ok: true } | { ok: false; message: string }>
   resetVendors: () => void
   getStoresByOwner: (ownerUserId: string) => Vendor[]
 }
@@ -32,7 +37,6 @@ type LegacyVendor = Vendor & {
   password?: string
 }
 
-/** Strip old on-store credentials and ensure ownerUserId. */
 function normalizeVendor(raw: LegacyVendor, index: number): Vendor {
   const seed = seedVendors.find((s) => s.id === raw.id)
   const ownerFromEmail = raw.email
@@ -61,69 +65,74 @@ function normalizeVendor(raw: LegacyVendor, index: number): Vendor {
     opensAt: raw.opensAt || seed?.opensAt || '05:00',
     cutoffTime: raw.cutoffTime || seed?.cutoffTime || '17:00',
     rating: raw.rating ?? seed?.rating ?? 4.5,
-    isDemo: true,
+    isDemo: raw.isDemo ?? true,
     demoQrLabel: raw.demoQrLabel || seed?.demoQrLabel || 'DEMO QR',
     ownerUserId,
   }
 }
 
+function validateCreate(input: VendorCreateInput): string | null {
+  if (!input.name.trim()) return 'Store name is required.'
+  if (!input.description.trim()) return 'Description is required.'
+  if (!input.location.trim()) return 'Stall location is required.'
+  if (!input.branchId) return 'Select a palengke / market branch.'
+  if (!input.imageUrl.trim()) return 'Image URL is required.'
+  if (!input.demoQrLabel.trim()) return 'QR label is required.'
+  if (input.categories.length === 0) return 'Select at least one category.'
+  return validateRating(input.rating)
+}
+
 export const useVendorStore = create<VendorState>()(
   persist(
     (set, get) => ({
-      vendors: seedVendors,
+      vendors: isApiConfigured() ? [] : seedVendors,
       getStoresByOwner: (ownerUserId) =>
         get().vendors.filter((v) => v.ownerUserId === ownerUserId),
-      addVendor: (input) => {
-        const name = input.name.trim()
-        const description = input.description.trim()
-        const location = input.location.trim()
-        const imageUrl = input.imageUrl.trim()
-        const demoQrLabel = input.demoQrLabel.trim()
-        if (!name) return { ok: false, message: 'Store name is required.' }
-        if (!description) {
-          return { ok: false, message: 'Description is required.' }
-        }
-        if (!location) return { ok: false, message: 'Stall location is required.' }
-        if (!input.branchId) {
-          return { ok: false, message: 'Select a palengke / market branch.' }
-        }
-        if (!input.ownerUserId) {
+      addVendor: async (input) => {
+        const error = validateCreate(input)
+        if (error) return { ok: false, message: error }
+        if (!input.ownerUserId && !isApiConfigured()) {
           return {
             ok: false,
             message: 'Select a vendor user who will own this store.',
           }
         }
-        if (!imageUrl) return { ok: false, message: 'Image URL is required.' }
-        if (!demoQrLabel) {
-          return { ok: false, message: 'QR label is required.' }
+
+        if (isApiConfigured()) {
+          try {
+            const vendor = await createVendor(input)
+            set({ vendors: [vendor, ...get().vendors] })
+            return { ok: true, vendor }
+          } catch (err) {
+            return {
+              ok: false,
+              message:
+                err instanceof Error ? err.message : 'Unable to create store.',
+            }
+          }
         }
-        if (input.categories.length === 0) {
-          return { ok: false, message: 'Select at least one category.' }
-        }
-        const ratingError = validateRating(input.rating)
-        if (ratingError) return { ok: false, message: ratingError }
 
         const vendor: Vendor = {
           id: generateId('vendor'),
-          name,
-          description,
-          location,
+          name: input.name.trim(),
+          description: input.description.trim(),
+          location: input.location.trim(),
           branchId: input.branchId,
           categories: input.categories,
-          imageUrl,
+          imageUrl: input.imageUrl.trim(),
           isAvailable: input.isAvailable,
           opensAt: input.opensAt,
           cutoffTime: input.cutoffTime,
           rating: Number(input.rating.toFixed(1)),
           isDemo: true,
-          demoQrLabel,
-          ownerUserId: input.ownerUserId,
+          demoQrLabel: input.demoQrLabel.trim(),
+          ownerUserId: input.ownerUserId ?? '',
         }
 
         set({ vendors: [vendor, ...get().vendors] })
         return { ok: true, vendor }
       },
-      updateVendor: (vendorId, input) => {
+      updateVendor: async (vendorId, input) => {
         const current = get().vendors.find((v) => v.id === vendorId)
         if (!current) return { ok: false, message: 'Store not found.' }
 
@@ -133,6 +142,24 @@ export const useVendorStore = create<VendorState>()(
         }
         if (input.ownerUserId !== undefined && !input.ownerUserId) {
           return { ok: false, message: 'Select a vendor user for this store.' }
+        }
+
+        if (isApiConfigured()) {
+          try {
+            const vendor = await updateVendorApi(vendorId, input)
+            set({
+              vendors: get().vendors.map((v) =>
+                v.id === vendorId ? vendor : v,
+              ),
+            })
+            return { ok: true }
+          } catch (err) {
+            return {
+              ok: false,
+              message:
+                err instanceof Error ? err.message : 'Unable to update store.',
+            }
+          }
         }
 
         set({
@@ -151,7 +178,10 @@ export const useVendorStore = create<VendorState>()(
         })
         return { ok: true }
       },
-      resetVendors: () => set({ vendors: structuredClone(seedVendors) }),
+      resetVendors: () =>
+        set({
+          vendors: isApiConfigured() ? [] : structuredClone(seedVendors),
+        }),
     }),
     {
       name: `${STORAGE_PREFIX}-vendors`,

@@ -8,7 +8,7 @@ import type {
 
 export const BRAND_NAME = 'Palengke mo, Keri ko'
 export const BRAND_TAGLINE = 'Preskong Pamalengke, Mas Madaling Mamili.'
-export const STORAGE_PREFIX = 'paranaque-palengke-v10'
+export const STORAGE_PREFIX = 'paranaque-palengke-v11-api'
 /** How many top-rated vendors to feature on the customer home page. */
 export const HOME_TOP_RATED_VENDOR_COUNT = 3
 
@@ -28,9 +28,8 @@ export const DELIVERY_FEE_NOTE =
 /** Units vendors may choose when marking stock. */
 export const VENDOR_STOCK_UNITS: Array<'kg' | 'piece'> = ['kg', 'piece']
 /**
- * Tumawad / offer negotiation. Hidden for now — LGU feedback that
- * negotiated prices may destabilize controlled standard pricing.
- * Set true to restore Offers UI without deleting the feature code.
+ * Offer negotiation (Tumawad). Disabled while standard pricing remains
+ * the controlled path. Set to `true` to restore the Offers UI.
  */
 export const FEATURE_TAWAD_ENABLED = false
 

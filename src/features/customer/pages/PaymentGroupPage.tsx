@@ -36,9 +36,9 @@ function VendorPaymentCard({
   const awaiting = order.status === 'awaiting_vendor_confirmation'
   const confirmed = order.status === 'confirmed'
 
-  const handlePay = () => {
+  const handlePay = async () => {
     setSubmitting(true)
-    const result = submitDemoPayment(order.id, ref)
+    const result = await submitDemoPayment(order.id, ref)
     if (!result.ok) {
       toast.error(result.message)
       setSubmitting(false)

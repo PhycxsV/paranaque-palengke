@@ -105,10 +105,10 @@ export default function VendorOrderDetailPage() {
 
   const canProcess = order.status === 'awaiting_vendor_confirmation'
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     if (processing) return
     setProcessing(true)
-    const result = confirmPayment(order.id, activeVendorId)
+    const result = await confirmPayment(order.id, activeVendorId)
     if (result.ok) {
       toast.success('Payment confirmed successfully')
     } else {
@@ -117,10 +117,10 @@ export default function VendorOrderDetailPage() {
     setProcessing(false)
   }
 
-  const handleReject = () => {
+  const handleReject = async () => {
     if (processing) return
     setProcessing(true)
-    const result = rejectPayment(order.id, activeVendorId)
+    const result = await rejectPayment(order.id, activeVendorId)
     if (result.ok) {
       toast.error('Payment has been rejected')
     } else {
@@ -129,10 +129,10 @@ export default function VendorOrderDetailPage() {
     setProcessing(false)
   }
 
-  const handleAdvanceDelivery = () => {
+  const handleAdvanceDelivery = async () => {
     if (processing) return
     setProcessing(true)
-    const result = advanceDelivery(order.id, activeVendorId)
+    const result = await advanceDelivery(order.id, activeVendorId)
     if (result.ok) {
       const label =
         DELIVERY_STATUS_LABELS[

@@ -2,8 +2,10 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { STORAGE_PREFIX } from '@/constants'
 import { seedVendorUsers } from '@/data/vendor-users'
+import { createVendorAccount, fetchVendors, isApiConfigured } from '@/lib/api'
 import { validateVendorCredentials } from '@/lib/vendor-credentials'
 import { generateId } from '@/lib/utils'
+import { useVendorStore } from '@/stores/vendor-store'
 import type {
   VendorUser,
   VendorUserCreateInput,
@@ -14,11 +16,11 @@ interface VendorUserState {
   users: VendorUser[]
   addUser: (
     input: VendorUserCreateInput,
-  ) => { ok: true; user: VendorUser } | { ok: false; message: string }
+  ) => Promise<{ ok: true; user: VendorUser } | { ok: false; message: string }>
   updateUser: (
     userId: string,
     input: VendorUserUpdateInput,
-  ) => { ok: true } | { ok: false; message: string }
+  ) => Promise<{ ok: true } | { ok: false; message: string }>
   resetUsers: () => void
   getUserById: (userId: string) => VendorUser | undefined
 }
@@ -26,9 +28,9 @@ interface VendorUserState {
 export const useVendorUserStore = create<VendorUserState>()(
   persist(
     (set, get) => ({
-      users: seedVendorUsers,
+      users: isApiConfigured() ? [] : seedVendorUsers,
       getUserById: (userId) => get().users.find((u) => u.id === userId),
-      addUser: (input) => {
+      addUser: async (input) => {
         const name = input.name.trim()
         const email = input.email.trim().toLowerCase()
         const phone = input.phone.trim()
@@ -36,6 +38,38 @@ export const useVendorUserStore = create<VendorUserState>()(
         if (!name) return { ok: false, message: 'Name is required.' }
         const credError = validateVendorCredentials({ email, phone, password })
         if (credError) return { ok: false, message: credError }
+
+        if (isApiConfigured()) {
+          const vendorIds = input.vendorIds?.filter(Boolean) ?? []
+          if (vendorIds.length === 0) {
+            return {
+              ok: false,
+              message: 'Select at least one store to assign to this user.',
+            }
+          }
+          try {
+            const user = await createVendorAccount({
+              name,
+              email,
+              phone,
+              password,
+              vendorIds,
+            })
+            set({ users: [user, ...get().users.filter((u) => u.id !== user.id)] })
+            const refreshed = await fetchVendors()
+            useVendorStore.setState({ vendors: refreshed.vendors })
+            return { ok: true, user }
+          } catch (error) {
+            return {
+              ok: false,
+              message:
+                error instanceof Error
+                  ? error.message
+                  : 'Unable to create vendor account.',
+            }
+          }
+        }
+
         if (get().users.some((u) => u.email === email)) {
           return { ok: false, message: 'That email is already used.' }
         }
@@ -51,9 +85,17 @@ export const useVendorUserStore = create<VendorUserState>()(
         set({ users: [user, ...get().users] })
         return { ok: true, user }
       },
-      updateUser: (userId, input) => {
+      updateUser: async (userId, input) => {
         const current = get().users.find((u) => u.id === userId)
         if (!current) return { ok: false, message: 'User not found.' }
+
+        if (isApiConfigured()) {
+          return {
+            ok: false,
+            message:
+              'Vendor account profile edits are managed in the admin panel. Reassign stores from the store detail page.',
+          }
+        }
 
         const name =
           input.name !== undefined ? input.name.trim() : current.name
@@ -69,9 +111,7 @@ export const useVendorUserStore = create<VendorUserState>()(
         if (!name) return { ok: false, message: 'Name is required.' }
         const credError = validateVendorCredentials({ email, phone, password })
         if (credError) return { ok: false, message: credError }
-        if (
-          get().users.some((u) => u.id !== userId && u.email === email)
-        ) {
+        if (get().users.some((u) => u.id !== userId && u.email === email)) {
           return { ok: false, message: 'That email is already used.' }
         }
 
@@ -91,7 +131,10 @@ export const useVendorUserStore = create<VendorUserState>()(
         })
         return { ok: true }
       },
-      resetUsers: () => set({ users: structuredClone(seedVendorUsers) }),
+      resetUsers: () =>
+        set({
+          users: isApiConfigured() ? [] : structuredClone(seedVendorUsers),
+        }),
     }),
     {
       name: `${STORAGE_PREFIX}-vendor-users`,

@@ -2,6 +2,11 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { STORAGE_PREFIX } from '@/constants'
 import { seedBranches } from '@/data/branches'
+import {
+  createBranch,
+  isApiConfigured,
+  updateBranch as updateBranchApi,
+} from '@/lib/api'
 import { generateId } from '@/lib/utils'
 import type { Branch, BranchFormInput } from '@/types'
 
@@ -9,11 +14,11 @@ interface BranchState {
   branches: Branch[]
   addBranch: (
     input: BranchFormInput,
-  ) => { ok: true; branch: Branch } | { ok: false; message: string }
+  ) => Promise<{ ok: true; branch: Branch } | { ok: false; message: string }>
   updateBranch: (
     branchId: string,
     input: BranchFormInput,
-  ) => { ok: true } | { ok: false; message: string }
+  ) => Promise<{ ok: true } | { ok: false; message: string }>
   getBranchById: (branchId: string) => Branch | undefined
   resetBranches: () => void
 }
@@ -33,10 +38,23 @@ function validateBranch(input: BranchFormInput): string | null {
 export const useBranchStore = create<BranchState>()(
   persist(
     (set, get) => ({
-      branches: seedBranches,
-      addBranch: (input) => {
+      branches: isApiConfigured() ? [] : seedBranches,
+      addBranch: async (input) => {
         const error = validateBranch(input)
         if (error) return { ok: false, message: error }
+        if (isApiConfigured()) {
+          try {
+            const branch = await createBranch(input)
+            set({ branches: [branch, ...get().branches] })
+            return { ok: true, branch }
+          } catch (err) {
+            return {
+              ok: false,
+              message:
+                err instanceof Error ? err.message : 'Unable to create branch.',
+            }
+          }
+        }
         const branch: Branch = {
           id: generateId('branch'),
           name: input.name.trim(),
@@ -48,9 +66,26 @@ export const useBranchStore = create<BranchState>()(
         set({ branches: [branch, ...get().branches] })
         return { ok: true, branch }
       },
-      updateBranch: (branchId, input) => {
+      updateBranch: async (branchId, input) => {
         const error = validateBranch(input)
         if (error) return { ok: false, message: error }
+        if (isApiConfigured()) {
+          try {
+            const branch = await updateBranchApi(branchId, input)
+            set({
+              branches: get().branches.map((b) =>
+                b.id === branchId ? branch : b,
+              ),
+            })
+            return { ok: true }
+          } catch (err) {
+            return {
+              ok: false,
+              message:
+                err instanceof Error ? err.message : 'Unable to update branch.',
+            }
+          }
+        }
         const exists = get().branches.some((b) => b.id === branchId)
         if (!exists) return { ok: false, message: 'Palengke not found.' }
         set({
@@ -71,7 +106,10 @@ export const useBranchStore = create<BranchState>()(
       },
       getBranchById: (branchId) =>
         get().branches.find((b) => b.id === branchId),
-      resetBranches: () => set({ branches: structuredClone(seedBranches) }),
+      resetBranches: () =>
+        set({
+          branches: isApiConfigured() ? [] : structuredClone(seedBranches),
+        }),
     }),
     {
       name: `${STORAGE_PREFIX}-branches`,

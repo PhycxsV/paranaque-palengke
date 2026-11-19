@@ -317,25 +317,29 @@ export default function VendorProductsPage() {
     setErrors((prev) => ({ ...prev, commodityId: undefined, vendorPrice: undefined }))
   }
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
     const commodity = activeCommodities.find((c) => c.id === form.commodityId)
     const validation = validateForm(form, commodity)
     if (hasErrors(validation)) {
       setErrors(validation)
       return
     }
-    addProduct(activeVendorId, {
+    const result = await addProduct(activeVendorId, {
       ...form,
       name: form.name.trim(),
       description: form.description.trim(),
       imageUrl: form.imageUrl.trim(),
       vendorPrice: Number(form.vendorPrice.toFixed(2)),
     })
+    if (!result.ok) {
+      toast.error(result.message)
+      return
+    }
     setAddOpen(false)
     toast.success('Product added')
   }
 
-  const handleEdit = () => {
+  const handleEdit = async () => {
     if (!editProduct) return
     const commodity = activeCommodities.find((c) => c.id === form.commodityId)
     const validation = validateForm(form, commodity)
@@ -343,7 +347,7 @@ export default function VendorProductsPage() {
       setErrors(validation)
       return
     }
-    updateProduct(editProduct.id, {
+    const result = await updateProduct(editProduct.id, {
       description: form.description.trim(),
       unit: form.unit,
       vendorPrice: Number(form.vendorPrice.toFixed(2)),
@@ -351,12 +355,20 @@ export default function VendorProductsPage() {
       imageUrl: form.imageUrl.trim(),
       isAvailable: form.isAvailable,
     })
+    if (!result.ok) {
+      toast.error(result.message)
+      return
+    }
     setEditProduct(null)
     toast.success('Product updated')
   }
 
-  const handleToggle = (product: Product) => {
-    toggleAvailability(product.id)
+  const handleToggle = async (product: Product) => {
+    const result = await toggleAvailability(product.id)
+    if (!result.ok) {
+      toast.error(result.message)
+      return
+    }
     toast.success(
       product.isAvailable
         ? `${product.name} marked unavailable`
@@ -364,8 +376,12 @@ export default function VendorProductsPage() {
     )
   }
 
-  const handleArchive = (product: Product) => {
-    archiveProduct(product.id)
+  const handleArchive = async (product: Product) => {
+    const result = await archiveProduct(product.id)
+    if (!result.ok) {
+      toast.error(result.message)
+      return
+    }
     toast.success(`${product.name} archived`)
   }
 

@@ -57,7 +57,7 @@ export default function VendorChatPage() {
     if (!threadId) return
     const thread = useChatStore.getState().threads.find((t) => t.id === threadId)
     if (!thread || thread.vendorId !== activeVendorId) return
-    markThreadRead(threadId, 'vendor')
+    void markThreadRead(threadId, 'vendor')
   }, [threadId, activeVendorId, allMessages.length, markThreadRead])
 
   if (!vendor) {
@@ -85,8 +85,8 @@ export default function VendorChatPage() {
           selfSender="vendor"
           selfLabel={vendor.name}
           peerLabel={activeThread.customerLabel}
-          onSend={(body) => {
-            const result = sendMessage({
+          onSend={async (body) => {
+            const result = await sendMessage({
               threadId: activeThread.id,
               sender: 'vendor',
               body,

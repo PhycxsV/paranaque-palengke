@@ -2,6 +2,12 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { STORAGE_PREFIX } from '@/constants'
 import { seedChatMessages, seedChatThreads } from '@/data/chats'
+import {
+  createChatThread,
+  isApiConfigured,
+  markChatThreadRead,
+  sendChatMessage,
+} from '@/lib/api'
 import { generateId } from '@/lib/utils'
 import type { ChatMessage, ChatSender, ChatThread } from '@/types'
 
@@ -18,13 +24,16 @@ function withReadDefaults(thread: ChatThread): ChatThread {
 interface ChatState {
   threads: ChatThread[]
   messages: ChatMessage[]
-  getOrCreateThread: (vendorId: string, customerLabel?: string) => ChatThread
+  getOrCreateThread: (
+    vendorId: string,
+    customerLabel?: string,
+  ) => Promise<ChatThread>
   sendMessage: (input: {
     threadId: string
     sender: ChatSender
     body: string
-  }) => { ok: true; message: ChatMessage } | { ok: false; message: string }
-  markThreadRead: (threadId: string, reader: ChatSender) => void
+  }) => Promise<{ ok: true; message: ChatMessage } | { ok: false; message: string }>
+  markThreadRead: (threadId: string, reader: ChatSender) => Promise<void>
   getThreadById: (threadId: string) => ChatThread | undefined
   getThreadsByVendor: (vendorId: string) => ChatThread[]
   getThreadsForCustomer: () => ChatThread[]
@@ -35,14 +44,22 @@ interface ChatState {
 export const useChatStore = create<ChatState>()(
   persist(
     (set, get) => ({
-      threads: structuredClone(seedChatThreads).map(withReadDefaults),
-      messages: structuredClone(seedChatMessages),
-      getOrCreateThread: (vendorId, customerLabel = DEMO_CUSTOMER_LABEL) => {
+      threads: isApiConfigured()
+        ? []
+        : structuredClone(seedChatThreads).map(withReadDefaults),
+      messages: isApiConfigured() ? [] : structuredClone(seedChatMessages),
+      getOrCreateThread: async (vendorId, customerLabel = DEMO_CUSTOMER_LABEL) => {
         const label = customerLabel.trim() || DEMO_CUSTOMER_LABEL
         const existing = get().threads.find(
           (t) => t.vendorId === vendorId && t.customerLabel === label,
         )
         if (existing) return withReadDefaults(existing)
+
+        if (isApiConfigured()) {
+          const thread = await createChatThread(vendorId)
+          set({ threads: [thread, ...get().threads.map(withReadDefaults)] })
+          return thread
+        }
 
         const now = new Date().toISOString()
         const thread: ChatThread = {
@@ -58,7 +75,7 @@ export const useChatStore = create<ChatState>()(
         set({ threads: [thread, ...get().threads.map(withReadDefaults)] })
         return thread
       },
-      sendMessage: ({ threadId, sender, body }) => {
+      sendMessage: async ({ threadId, sender, body }) => {
         const trimmed = body.trim()
         if (!trimmed) {
           return { ok: false, message: 'Message cannot be empty.' }
@@ -66,6 +83,37 @@ export const useChatStore = create<ChatState>()(
         const thread = get().threads.find((t) => t.id === threadId)
         if (!thread) {
           return { ok: false, message: 'Conversation not found.' }
+        }
+
+        if (isApiConfigured()) {
+          try {
+            const message = await sendChatMessage(threadId, trimmed)
+            const now = message.createdAt
+            set({
+              messages: [...get().messages, message],
+              threads: get().threads.map((t) => {
+                if (t.id !== threadId) return withReadDefaults(t)
+                return {
+                  ...withReadDefaults(t),
+                  updatedAt: now,
+                  lastMessagePreview:
+                    trimmed.length > 80 ? `${trimmed.slice(0, 77)}...` : trimmed,
+                  ...(sender === 'customer'
+                    ? { customerLastReadAt: now }
+                    : { vendorLastReadAt: now }),
+                }
+              }),
+            })
+            return { ok: true, message }
+          } catch (error) {
+            return {
+              ok: false,
+              message:
+                error instanceof Error
+                  ? error.message
+                  : 'Unable to send message.',
+            }
+          }
         }
 
         const now = new Date().toISOString()
@@ -86,7 +134,6 @@ export const useChatStore = create<ChatState>()(
               updatedAt: now,
               lastMessagePreview:
                 trimmed.length > 80 ? `${trimmed.slice(0, 77)}...` : trimmed,
-              // Sender has seen the thread through their own message
               ...(sender === 'customer'
                 ? { customerLastReadAt: now }
                 : { vendorLastReadAt: now }),
@@ -95,7 +142,19 @@ export const useChatStore = create<ChatState>()(
         })
         return { ok: true, message }
       },
-      markThreadRead: (threadId, reader) => {
+      markThreadRead: async (threadId, reader) => {
+        if (isApiConfigured()) {
+          try {
+            const thread = await markChatThreadRead(threadId, reader)
+            set({
+              threads: get().threads.map((t) =>
+                t.id === threadId ? withReadDefaults(thread) : withReadDefaults(t),
+              ),
+            })
+            return
+          } catch {
+          }
+        }
         const now = new Date().toISOString()
         set({
           threads: get().threads.map((t) => {
@@ -128,8 +187,10 @@ export const useChatStore = create<ChatState>()(
           .sort((a, b) => a.createdAt.localeCompare(b.createdAt)),
       resetChats: () =>
         set({
-          threads: structuredClone(seedChatThreads).map(withReadDefaults),
-          messages: structuredClone(seedChatMessages),
+          threads: isApiConfigured()
+            ? []
+            : structuredClone(seedChatThreads).map(withReadDefaults),
+          messages: isApiConfigured() ? [] : structuredClone(seedChatMessages),
         }),
     }),
     {
