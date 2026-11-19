@@ -4,11 +4,7 @@ import { useAuthStore } from '@/stores/auth-store'
 
 type AllowedRole = 'customer' | 'vendor' | 'lgu-admin'
 
-function loginPathForRoles(roles?: AllowedRole[]): string {
-  if (roles?.length === 1 && roles[0] === 'vendor') return '/vendor/login'
-  if (roles?.length === 1 && roles[0] === 'lgu-admin') return '/admin/login'
-  return '/auth'
-}
+const LOGIN_PATH = '/auth'
 
 export function RequireAuth({
   roles,
@@ -33,12 +29,8 @@ export function RequireAuth({
 
   if (!jwt || !user) {
     const next = `${location.pathname}${location.search}`
-    const loginPath = loginPathForRoles(roles)
     return (
-      <Navigate
-        to={`${loginPath}?next=${encodeURIComponent(next)}`}
-        replace
-      />
+      <Navigate to={`${LOGIN_PATH}?next=${encodeURIComponent(next)}`} replace />
     )
   }
 
@@ -48,7 +40,7 @@ export function RequireAuth({
     user.role === 'lgu-admin'
 
   if (roles && knownRole && !roles.includes(user.role as AllowedRole)) {
-    return <Navigate to={loginPathForRoles(roles)} replace />
+    return <Navigate to={LOGIN_PATH} replace />
   }
 
   return <>{children}</>

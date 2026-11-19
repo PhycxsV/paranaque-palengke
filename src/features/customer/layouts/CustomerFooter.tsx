@@ -68,16 +68,6 @@ export function CustomerFooter() {
                   </Link>
                 </li>
               ) : null}
-              <li>
-                <Link to="/vendor" className={linkClass}>
-                  Vendor portal
-                </Link>
-              </li>
-              <li>
-                <Link to="/admin" className={linkClass}>
-                  LGU Admin
-                </Link>
-              </li>
             </ul>
           </div>
 

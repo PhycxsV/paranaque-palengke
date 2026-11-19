@@ -10,7 +10,6 @@ import {
   X,
 } from 'lucide-react'
 import { BRAND_NAME, FEATURE_TAWAD_ENABLED } from '@/constants'
-import { PortalSwitcher } from '@/components/shared/PortalSwitcher'
 import { TextSizeControl } from '@/components/shared/TextSizeControl'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -255,21 +254,6 @@ export function CustomerHeader() {
               <Link to="/auth">Sign in</Link>
             </Button>
           ) : null}
-          <PortalSwitcher
-            className={cn(
-              'nav-ink hidden sm:flex',
-              overlay &&
-                'border-white/30 bg-white/10 text-white [&_svg]:text-white',
-            )}
-          />
-          <PortalSwitcher
-            compact
-            className={cn(
-              'nav-ink sm:hidden',
-              overlay &&
-                'border-white/30 bg-white/10 text-white [&_svg]:text-white',
-            )}
-          />
         </div>
       </div>
 
@@ -353,20 +337,6 @@ export function CustomerHeader() {
               onClick={() => setMobileOpen(false)}
             >
               Cart
-            </NavLink>
-            <NavLink
-              to="/vendor"
-              className={navLinkClass}
-              onClick={() => setMobileOpen(false)}
-            >
-              Vendor portal
-            </NavLink>
-            <NavLink
-              to="/admin"
-              className={navLinkClass}
-              onClick={() => setMobileOpen(false)}
-            >
-              LGU Admin
             </NavLink>
           </nav>
           <div className="sm:hidden">

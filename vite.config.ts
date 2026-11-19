@@ -11,6 +11,7 @@ const rootDir = path.dirname(fileURLToPath(import.meta.url))
 const base = process.env.VITE_BASE_PATH || '/'
 
 export default defineConfig({
+  server: { port: 5173, strictPort: true },
   base,
   plugins: [react(), tailwindcss()],
   resolve: {

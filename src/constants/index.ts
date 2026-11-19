@@ -8,7 +8,7 @@ import type {
 
 export const BRAND_NAME = 'Palengke mo, Keri ko'
 export const BRAND_TAGLINE = 'Preskong Pamalengke, Mas Madaling Mamili.'
-export const STORAGE_PREFIX = 'paranaque-palengke-v11-api'
+export const STORAGE_PREFIX = 'paranaque-customerfront-v1'
 /** How many top-rated vendors to feature on the customer home page. */
 export const HOME_TOP_RATED_VENDOR_COUNT = 3
 

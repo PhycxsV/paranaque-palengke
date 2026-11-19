@@ -5,8 +5,6 @@ import '@/stores/text-size-store'
 import { useBackendSync } from '@/hooks/useBackendSync'
 import { RequireAuth } from '@/components/shared/RequireAuth'
 import { CustomerLayout } from '@/features/customer/layouts/CustomerLayout'
-import { VendorLayout } from '@/features/vendor/layouts/VendorLayout'
-import AdminLayout from '@/features/admin/layouts/AdminLayout'
 import AuthPage from '@/features/auth/AuthPage'
 import HomePage from '@/features/customer/pages/HomePage'
 import ProductsPage from '@/features/customer/pages/ProductsPage'
@@ -22,25 +20,6 @@ import OrderDetailPage from '@/features/customer/pages/OrderDetailPage'
 import CustomerProfilePage from '@/features/customer/pages/CustomerProfilePage'
 import CustomerOffersPage from '@/features/customer/pages/CustomerOffersPage'
 import CustomerChatPage from '@/features/customer/pages/CustomerChatPage'
-import VendorDashboardPage from '@/features/vendor/pages/VendorDashboardPage'
-import VendorOrdersPage from '@/features/vendor/pages/VendorOrdersPage'
-import VendorOrderDetailPage from '@/features/vendor/pages/VendorOrderDetailPage'
-import VendorProductsPage from '@/features/vendor/pages/VendorProductsPage'
-import VendorStoreProfilePage from '@/features/vendor/pages/VendorStorePage'
-import VendorOffersPage from '@/features/vendor/pages/VendorOffersPage'
-import VendorChatPage from '@/features/vendor/pages/VendorChatPage'
-import AdminDashboardPage from '@/features/admin/pages/AdminDashboardPage'
-import AdminCommoditiesPage from '@/features/admin/pages/AdminCommoditiesPage'
-import AdminPriceHistoryPage from '@/features/admin/pages/AdminPriceHistoryPage'
-import AdminBranchesPage from '@/features/admin/pages/AdminBranchesPage'
-import AdminVendorsPage from '@/features/admin/pages/AdminVendorsPage'
-import AdminVendorDetailPage from '@/features/admin/pages/AdminVendorDetailPage'
-import AdminUsersPage from '@/features/admin/pages/AdminUsersPage'
-import AdminUserDetailPage from '@/features/admin/pages/AdminUserDetailPage'
-import AdminOffersPage from '@/features/admin/pages/AdminOffersPage'
-import AdminOrdersPage from '@/features/admin/pages/AdminOrdersPage'
-import AdminFeedbackPage from '@/features/admin/pages/AdminFeedbackPage'
-import VendorFeedbackPage from '@/features/vendor/pages/VendorFeedbackPage'
 import NotFoundPage from '@/features/customer/pages/NotFoundPage'
 
 function AppShell() {
@@ -63,9 +42,8 @@ function AppShell() {
       ) : null}
       <Routes>
         <Route path="auth" element={<AuthPage portal="customer" />} />
+        <Route path="login" element={<AuthPage portal="customer" />} />
         <Route path="customer/login" element={<AuthPage portal="customer" />} />
-        <Route path="vendor/login" element={<AuthPage portal="vendor" />} />
-        <Route path="admin/login" element={<AuthPage portal="lgu-admin" />} />
 
         <Route path="customer" element={<CustomerLayout />}>
           <Route index element={<HomePage />} />
@@ -148,64 +126,6 @@ function AppShell() {
               </RequireAuth>
             }
           />
-        </Route>
-
-        <Route
-          path="vendor"
-          element={
-            <RequireAuth roles={['vendor']}>
-              <VendorLayout />
-            </RequireAuth>
-          }
-        >
-          <Route index element={<VendorDashboardPage />} />
-          <Route path="orders" element={<VendorOrdersPage />} />
-          <Route path="feedback" element={<VendorFeedbackPage />} />
-          <Route path="orders/:orderId" element={<VendorOrderDetailPage />} />
-          <Route path="products" element={<VendorProductsPage />} />
-          <Route path="store" element={<VendorStoreProfilePage />} />
-          <Route
-            path="offers"
-            element={
-              FEATURE_TAWAD_ENABLED ? (
-                <VendorOffersPage />
-              ) : (
-                <Navigate to="/vendor" replace />
-              )
-            }
-          />
-          <Route path="chat" element={<VendorChatPage />} />
-          <Route path="chat/:threadId" element={<VendorChatPage />} />
-        </Route>
-
-        <Route
-          path="admin"
-          element={
-            <RequireAuth roles={['lgu-admin']}>
-              <AdminLayout />
-            </RequireAuth>
-          }
-        >
-          <Route index element={<AdminDashboardPage />} />
-          <Route path="commodities" element={<AdminCommoditiesPage />} />
-          <Route path="price-history" element={<AdminPriceHistoryPage />} />
-          <Route path="branches" element={<AdminBranchesPage />} />
-          <Route path="users" element={<AdminUsersPage />} />
-          <Route path="users/:userId" element={<AdminUserDetailPage />} />
-          <Route path="vendors" element={<AdminVendorsPage />} />
-          <Route path="vendors/:vendorId" element={<AdminVendorDetailPage />} />
-          <Route
-            path="offers"
-            element={
-              FEATURE_TAWAD_ENABLED ? (
-                <AdminOffersPage />
-              ) : (
-                <Navigate to="/admin" replace />
-              )
-            }
-          />
-          <Route path="orders" element={<AdminOrdersPage />} />
-          <Route path="feedback" element={<AdminFeedbackPage />} />
         </Route>
 
         <Route index element={<Navigate to="/customer" replace />} />
