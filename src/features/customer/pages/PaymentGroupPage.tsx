@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { Clock, CreditCard, Store } from 'lucide-react'
 import { toast } from 'sonner'
@@ -13,6 +13,7 @@ import { Notice } from '@/components/shared/Notice'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { SectionCard } from '@/components/shared/SectionCard'
 import { StatusBadge } from '@/components/shared/StatusBadge'
+import { useOrdersLiveSync } from '@/hooks/useOrdersLiveSync'
 import { useOrderStore } from '@/stores/order-store'
 import { useVendorStore } from '@/stores/vendor-store'
 import { formatPeso } from '@/lib/utils'
@@ -117,7 +118,14 @@ export default function PaymentGroupPage() {
   const { groupId } = useParams<{ groupId: string }>()
   const navigate = useNavigate()
   const orders = useOrderStore((s) => s.orders)
-  const groupOrders = orders.filter((o) => o.bookingGroupId === groupId)
+  const groupOrders = useMemo(
+    () => orders.filter((o) => o.bookingGroupId === groupId),
+    [orders, groupId],
+  )
+  useOrdersLiveSync({
+    enabled: Boolean(groupId),
+    intervalMs: 3_000,
+  })
   const [, setTick] = useState(0)
 
   if (!groupId || groupOrders.length === 0) {

@@ -476,13 +476,21 @@ export const useOrderStore = create<OrderState>()(
     }),
     {
       name: `${STORAGE_PREFIX}-orders`,
+      // When the API is connected, orders come from Strapi — don't rehydrate a
+      // stale local copy that can overwrite live vendor confirmations.
+      partialize: (state) =>
+        isApiConfigured() ? {} : { orders: state.orders },
       merge: (persisted, current) => {
+        if (isApiConfigured()) {
+          return { ...current }
+        }
         const p = persisted as Partial<OrderState> | undefined
         const orders = (p?.orders ?? current.orders).map((o) => {
           const legacy = o as Order & { checkoutGroupId?: string }
           return {
             ...o,
-            bookingGroupId: legacy.bookingGroupId || legacy.checkoutGroupId || o.id,
+            bookingGroupId:
+              legacy.bookingGroupId || legacy.checkoutGroupId || o.id,
           }
         })
         return { ...current, ...p, orders }

@@ -82,12 +82,27 @@ export async function apiRequest<T>(
     headers['Content-Type'] = 'application/json'
   }
 
-  const token =
+  let token =
     options.token !== undefined
       ? options.token
       : options.auth === false
         ? null
         : getStoredToken()
+
+  // Fall back to the in-memory auth session if the dedicated JWT key is missing.
+  if (!token && options.auth !== false && options.token === undefined) {
+    try {
+      const raw = localStorage.getItem(`${STORAGE_PREFIX}-auth`)
+      if (raw) {
+        const parsed = JSON.parse(raw) as { state?: { jwt?: string | null } }
+        token = parsed.state?.jwt ?? null
+        if (token) setStoredToken(token)
+      }
+    } catch {
+      // ignore malformed persisted auth
+    }
+  }
+
   if (token) headers.Authorization = `Bearer ${token}`
 
   const response = await fetch(

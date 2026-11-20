@@ -8,6 +8,7 @@ import { PageHeader } from '@/components/shared/PageHeader'
 import { SectionCard } from '@/components/shared/SectionCard'
 import { StatusBadge } from '@/components/shared/StatusBadge'
 import { ProductImage } from '@/components/shared/ProductImage'
+import { useOrdersLiveSync } from '@/hooks/useOrdersLiveSync'
 import { useOrderStore } from '@/stores/order-store'
 import { RateVendorCard } from '../components/RateVendorCard'
 import { ORDER_STATUS_MESSAGES } from '@/constants'
@@ -47,8 +48,15 @@ export default function OrderDetailPage() {
   const navigate = useNavigate()
   const orders = useOrderStore((s) => s.orders)
   const getOrdersByBookingGroup = useOrderStore((s) => s.getOrdersByBookingGroup)
-
   const order = orders.find((o) => o.id === orderId)
+  const live =
+    !order ||
+    order.status === 'awaiting_vendor_confirmation' ||
+    order.status === 'confirmed'
+  useOrdersLiveSync({
+    enabled: live,
+    intervalMs: order?.status === 'awaiting_vendor_confirmation' ? 4_000 : 10_000,
+  })
 
   if (!order) {
     return (

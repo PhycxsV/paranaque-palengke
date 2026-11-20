@@ -4,12 +4,14 @@ import { EmptyState } from '@/components/shared/EmptyState'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { ProductImage } from '@/components/shared/ProductImage'
 import { StatusBadge } from '@/components/shared/StatusBadge'
+import { useOrdersLiveSync } from '@/hooks/useOrdersLiveSync'
 import { useOrderStore } from '@/stores/order-store'
 import { formatDateTime, formatPeso } from '@/lib/utils'
 
 export default function OrdersPage() {
   const navigate = useNavigate()
   const orders = useOrderStore((s) => s.orders)
+  useOrdersLiveSync({ intervalMs: 8_000 })
 
   return (
     <>

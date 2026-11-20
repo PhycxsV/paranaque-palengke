@@ -13,6 +13,7 @@ import { Notice } from '@/components/shared/Notice'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { SectionCard } from '@/components/shared/SectionCard'
 import { StatusBadge } from '@/components/shared/StatusBadge'
+import { useOrdersLiveSync } from '@/hooks/useOrdersLiveSync'
 import { useOrderStore } from '@/stores/order-store'
 import { useVendorStore } from '@/stores/vendor-store'
 import { formatPeso } from '@/lib/utils'
@@ -29,6 +30,11 @@ export default function PaymentPage() {
 
   const order = orders.find((o) => o.id === orderId)
   const vendor = order ? vendors.find((v) => v.id === order.vendorId) : undefined
+  useOrdersLiveSync({
+    enabled: Boolean(orderId),
+    intervalMs:
+      order?.status === 'awaiting_vendor_confirmation' ? 4_000 : 12_000,
+  })
 
   if (!order) {
     return (

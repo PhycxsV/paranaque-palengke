@@ -7,6 +7,7 @@ import { ChatThreadView } from '@/components/shared/ChatThreadView'
 import { EmptyState } from '@/components/shared/EmptyState'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { ProductImage } from '@/components/shared/ProductImage'
+import { useChatLiveSync } from '@/hooks/useChatLiveSync'
 import { getUnreadCount, isMessageSeenByPeer } from '@/lib/chat'
 import { useChatStore } from '@/stores/chat-store'
 import { useVendorStore } from '@/stores/vendor-store'
@@ -17,6 +18,8 @@ export default function CustomerChatPage() {
   const { threadId } = useParams<{ threadId?: string }>()
   const [searchParams] = useSearchParams()
   const vendorParam = searchParams.get('vendor')
+
+  useChatLiveSync({ intervalMs: 4_000 })
 
   const vendors = useVendorStore((s) => s.vendors)
   const allThreads = useChatStore((s) => s.threads)
@@ -121,7 +124,7 @@ export default function CustomerChatPage() {
         <EmptyState
           icon={MessageCircle}
           title="Conversation not found"
-          description="This chat may have been cleared with demo data reset."
+          description="This conversation is no longer available."
           actionLabel="Back to chats"
           onAction={() => navigate('/customer/chat')}
         />

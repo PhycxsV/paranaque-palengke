@@ -1,7 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { STORAGE_PREFIX } from '@/constants'
-import { seedChatMessages, seedChatThreads } from '@/data/chats'
 import {
   createChatThread,
   isApiConfigured,
@@ -11,7 +10,7 @@ import {
 import { generateId } from '@/lib/utils'
 import type { ChatMessage, ChatSender, ChatThread } from '@/types'
 
-const DEMO_CUSTOMER_LABEL = 'Demo Customer'
+const DEFAULT_CUSTOMER_LABEL = 'Customer'
 
 function withReadDefaults(thread: ChatThread): ChatThread {
   return {
@@ -44,20 +43,22 @@ interface ChatState {
 export const useChatStore = create<ChatState>()(
   persist(
     (set, get) => ({
-      threads: isApiConfigured()
-        ? []
-        : structuredClone(seedChatThreads).map(withReadDefaults),
-      messages: isApiConfigured() ? [] : structuredClone(seedChatMessages),
-      getOrCreateThread: async (vendorId, customerLabel = DEMO_CUSTOMER_LABEL) => {
-        const label = customerLabel.trim() || DEMO_CUSTOMER_LABEL
-        const existing = get().threads.find(
-          (t) => t.vendorId === vendorId && t.customerLabel === label,
+      threads: [],
+      messages: [],
+      getOrCreateThread: async (vendorId, customerLabel = DEFAULT_CUSTOMER_LABEL) => {
+        const label = customerLabel.trim() || DEFAULT_CUSTOMER_LABEL
+        // API threads are scoped to the signed-in customer, so match by store only.
+        const existing = get().threads.find((t) =>
+          isApiConfigured()
+            ? t.vendorId === vendorId
+            : t.vendorId === vendorId && t.customerLabel === label,
         )
         if (existing) return withReadDefaults(existing)
 
         if (isApiConfigured()) {
           const thread = await createChatThread(vendorId)
-          set({ threads: [thread, ...get().threads.map(withReadDefaults)] })
+          const others = get().threads.filter((t) => t.id !== thread.id)
+          set({ threads: [thread, ...others.map(withReadDefaults)] })
           return thread
         }
 
@@ -185,17 +186,16 @@ export const useChatStore = create<ChatState>()(
         get()
           .messages.filter((m) => m.threadId === threadId)
           .sort((a, b) => a.createdAt.localeCompare(b.createdAt)),
-      resetChats: () =>
-        set({
-          threads: isApiConfigured()
-            ? []
-            : structuredClone(seedChatThreads).map(withReadDefaults),
-          messages: isApiConfigured() ? [] : structuredClone(seedChatMessages),
-        }),
+      resetChats: () => set({ threads: [], messages: [] }),
     }),
     {
-      name: `${STORAGE_PREFIX}-chats-v2`,
+      name: `${STORAGE_PREFIX}-chats-v3`,
+      partialize: (state) =>
+        isApiConfigured()
+          ? {}
+          : { threads: state.threads, messages: state.messages },
       merge: (persisted, current) => {
+        if (isApiConfigured()) return current
         const p = persisted as Partial<ChatState> | undefined
         return {
           ...current,

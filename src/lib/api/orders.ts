@@ -4,7 +4,6 @@ import type { CheckoutFormInput, DeliveryStatus, Order } from '@/types'
 
 const ORDER_POPULATE = {
   'populate[vendor]': 'true',
-  'populate[customer]': 'true',
   'sort[0]': 'createdAt:desc',
 } as const
 
@@ -30,20 +29,33 @@ export async function checkoutOrders(input: {
     },
   })
 
-  // Reload the booking group; checkout returns a slim payload.
-  const bookingGroupId = payload.data[0]?.bookingGroupId
-  if (!bookingGroupId) {
-    return (payload.data ?? []).map(mapOrder)
-  }
+  const fromCheckout = (payload.data ?? []).map((row) =>
+    mapOrder({
+      ...row,
+      customerName: row.customerName ?? input.customer.customerName.trim(),
+      contactNumber: row.contactNumber ?? input.customer.contactNumber.trim(),
+      deliveryAddress:
+        row.deliveryAddress ?? input.customer.deliveryAddress.trim(),
+      notes: row.notes ?? (input.customer.notes?.trim() || undefined),
+    }),
+  )
 
-  const rows = await apiFetchAll<StrapiOrder>('/orders', {
-    query: {
-      ...ORDER_POPULATE,
-      'filters[bookingGroupId][$eq]': bookingGroupId,
-    },
-  })
-  if (rows.length > 0) return rows.map(mapOrder)
-  return (payload.data ?? []).map(mapOrder)
+  // Prefer a full reload of the booking group when the list endpoint works.
+  const bookingGroupId = payload.data[0]?.bookingGroupId
+  if (!bookingGroupId) return fromCheckout
+
+  try {
+    const rows = await apiFetchAll<StrapiOrder>('/orders', {
+      query: {
+        ...ORDER_POPULATE,
+        'filters[bookingGroupId][$eq]': bookingGroupId,
+      },
+    })
+    if (rows.length > 0) return rows.map(mapOrder)
+  } catch {
+    // Fall back to the checkout payload (includes items).
+  }
+  return fromCheckout
 }
 
 export async function submitOrderPayment(
