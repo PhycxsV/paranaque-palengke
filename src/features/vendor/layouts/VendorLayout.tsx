@@ -1,4 +1,4 @@
-﻿import { useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
 import {
   ClipboardList,
@@ -35,13 +35,13 @@ import { getTotalUnread } from '@/lib/chat'
 import { formatVendorTime, isVendorAcceptingOrders } from '@/lib/vendor-hours'
 import { cn } from '@/lib/utils'
 import { useChatStore } from '@/stores/chat-store'
-import { useDemoSessionStore } from '@/stores/demo-session-store'
+import { useSessionStore } from '@/stores/session-reset-store'
 import { useOrderStore } from '@/stores/order-store'
 import { useVendorStore } from '@/stores/vendor-store'
 import { VendorSidebar } from './VendorSidebar'
 
 function StoreStatusPill({ className }: { className?: string }) {
-  const activeVendorId = useDemoSessionStore((s) => s.activeVendorId)
+  const activeVendorId = useSessionStore((s) => s.activeVendorId)
   const vendor = useVendorStore((s) =>
     s.vendors.find((v) => v.id === activeVendorId),
   )
@@ -76,7 +76,7 @@ function StoreStatusPill({ className }: { className?: string }) {
 
 /** Live counts for the tab bar badges. */
 function useVendorBadges() {
-  const activeVendorId = useDemoSessionStore((s) => s.activeVendorId)
+  const activeVendorId = useSessionStore((s) => s.activeVendorId)
   const orders = useOrderStore((s) => s.orders)
   const threads = useChatStore((s) => s.threads)
   const messages = useChatStore((s) => s.messages)
@@ -96,7 +96,7 @@ function useVendorBadges() {
 
 /** App-style header shown on phones. */
 function MobileTopBar() {
-  const activeVendorId = useDemoSessionStore((s) => s.activeVendorId)
+  const activeVendorId = useSessionStore((s) => s.activeVendorId)
   const vendor = useVendorStore((s) =>
     s.vendors.find((v) => v.id === activeVendorId),
   )
@@ -213,8 +213,8 @@ function MoreSheet({
   open: boolean
   onOpenChange: (open: boolean) => void
 }) {
-  const activeVendorId = useDemoSessionStore((s) => s.activeVendorId)
-  const setActiveVendorId = useDemoSessionStore((s) => s.setActiveVendorId)
+  const activeVendorId = useSessionStore((s) => s.activeVendorId)
+  const setActiveVendorId = useSessionStore((s) => s.setActiveVendorId)
   const vendors = useVendorStore((s) => s.vendors)
   const close = () => onOpenChange(false)
 
@@ -238,7 +238,7 @@ function MoreSheet({
           <div className="space-y-6">
             <section className="space-y-2">
               <p className="text-[11px] font-bold uppercase tracking-wider text-muted">
-                Active store (demo)
+                Active store
               </p>
               <Select value={activeVendorId} onValueChange={setActiveVendorId}>
                 <SelectTrigger aria-label="Active store">
@@ -299,7 +299,7 @@ function MoreSheet({
 export function VendorLayout() {
   const [moreOpen, setMoreOpen] = useState(false)
   const location = useLocation()
-  const activeVendorId = useDemoSessionStore((s) => s.activeVendorId)
+  const activeVendorId = useSessionStore((s) => s.activeVendorId)
   const vendorName = useVendorStore(
     (s) => s.vendors.find((v) => v.id === activeVendorId)?.name,
   )

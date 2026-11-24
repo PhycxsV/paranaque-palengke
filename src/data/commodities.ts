@@ -1,6 +1,6 @@
 import type { Commodity } from '@/types'
 
-/** Illustrative demo commodity catalog. Prices are NOT official LGU rates. */
+/** Illustrative commodity catalog. Prices are NOT official LGU rates. */
 export const seedCommodities: Commodity[] = [
   {
     id: 'comm-kamatis',
@@ -257,7 +257,7 @@ export const seedCommodities: Commodity[] = [
   {
     id: 'comm-mangga',
     name: 'Mangga',
-    description: 'Ripe Philippine mangoes — demo seasonal selection.',
+    description: 'Ripe Philippine mangoes — seasonal selection.',
     category: 'Fruits',
     unit: 'kg',
     priceMin: 136,
@@ -365,7 +365,7 @@ export const seedCommodities: Commodity[] = [
   {
     id: 'comm-bigas',
     name: 'Bigas (Sinandomeng)',
-    description: 'Everyday table rice — demo packaging and pricing.',
+    description: 'Everyday table rice — packaging and pricing.',
     category: 'Rice and Grains',
     unit: 'kg',
     priceMin: 49,

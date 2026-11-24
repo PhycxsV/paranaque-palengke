@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { ArrowUpRight, Clock, MapPin, Star } from 'lucide-react'
+import { ArrowUpRight, Clock, MapPin } from 'lucide-react'
 import { ProductImage } from '@/components/shared/ProductImage'
 import {
   formatVendorTime,
@@ -8,10 +8,6 @@ import {
 import { useBranchStore } from '@/stores/branch-store'
 import { cn } from '@/lib/utils'
 import type { Vendor } from '@/types'
-
-function formatRating(rating: number) {
-  return Number.isFinite(rating) ? rating.toFixed(1) : '—'
-}
 
 export function VendorCard({ vendor }: { vendor: Vendor }) {
   const branch = useBranchStore((s) =>
@@ -32,10 +28,6 @@ export function VendorCard({ vendor }: { vendor: Vendor }) {
           className="pointer-events-none absolute inset-0 bg-gradient-to-t from-primary-deep/55 via-transparent to-transparent"
           aria-hidden
         />
-        <span className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-white/95 px-2.5 py-1 text-xs font-bold text-primary-deep shadow-sm backdrop-blur">
-          <Star className="h-3.5 w-3.5 fill-gold text-gold" />
-          {formatRating(vendor.rating)}
-        </span>
         {branch ? (
           <span className="absolute bottom-3 left-3 inline-flex max-w-[85%] items-center gap-1 rounded-full bg-primary-deep/80 px-2.5 py-1 text-[11px] font-semibold text-white backdrop-blur">
             <MapPin className="h-3 w-3 shrink-0 text-lime" />

@@ -1,9 +1,11 @@
 import { useMemo } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { ArrowRight, ShoppingCart, Store, Trash2, Truck } from 'lucide-react'
+import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { CheckoutSteps } from '@/components/shared/CheckoutSteps'
 import { EmptyState } from '@/components/shared/EmptyState'
+import { Notice } from '@/components/shared/Notice'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { ProductImage } from '@/components/shared/ProductImage'
 import { QuantityStepper } from '@/components/shared/QuantityStepper'
@@ -12,10 +14,16 @@ import { useProductStore } from '@/stores/product-store'
 import { useVendorStore } from '@/stores/vendor-store'
 import { useCommodityStore } from '@/stores/commodity-store'
 import { useOfferStore } from '@/stores/offer-store'
-import { DELIVERY_FEE, DELIVERY_FEE_NOTE } from '@/constants'
+import {
+  DELIVERY_FEE,
+  DELIVERY_FEE_NOTE,
+  MAX_BOOKING_WEIGHT_KG,
+  MAX_BOOKING_WEIGHT_MESSAGE,
+} from '@/constants'
 import {
   resolveCartUnitPrice,
   calculateCartTotalWithPricing,
+  calculateCartWeightKg,
   groupCartItemsByVendor,
 } from '@/lib/pricing'
 import { formatPeso } from '@/lib/utils'
@@ -42,6 +50,19 @@ export default function CartPage() {
     allOffers,
   )
   const total = subtotal + DELIVERY_FEE
+  const totalWeightKg = useMemo(
+    () => calculateCartWeightKg(items, products),
+    [items, products],
+  )
+  const overWeightLimit = totalWeightKg > MAX_BOOKING_WEIGHT_KG
+
+  function handleProceedToCheckout() {
+    if (overWeightLimit) {
+      toast.error(MAX_BOOKING_WEIGHT_MESSAGE)
+      return
+    }
+    navigate('/customer/checkout')
+  }
 
   if (items.length === 0) {
     return (
@@ -193,22 +214,36 @@ export default function CartPage() {
                 </span>
                 <span className="font-semibold">{formatPeso(DELIVERY_FEE)}</span>
               </div>
+              <div className="flex items-center justify-between text-sm text-ink/80">
+                <span>Total weight</span>
+                <span className="font-semibold">
+                  {totalWeightKg.toFixed(3)} kg / {MAX_BOOKING_WEIGHT_KG} kg
+                </span>
+              </div>
               <div className="flex items-center justify-between border-t border-dashed border-border pt-4">
                 <span className="font-bold text-primary-deep">Total</span>
                 <span className="font-display text-2xl font-extrabold text-primary">
                   {formatPeso(total)}
                 </span>
               </div>
+              {overWeightLimit ? (
+                <Notice tone="warning" title="Weight limit exceeded">
+                  {MAX_BOOKING_WEIGHT_MESSAGE}
+                </Notice>
+              ) : null}
               <p className="rounded-xl bg-primary-50 p-3 text-xs leading-relaxed text-muted">
                 {DELIVERY_FEE_NOTE} At checkout you get a separate QR per vendor;
                 each total includes their share of the placeholder Keri fee. All
                 vendor orders in this checkout share one booking group for Keri.
               </p>
-              <Button asChild className="w-full" size="lg">
-                <Link to="/customer/checkout">
-                  Proceed to Checkout
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
+              <Button
+                type="button"
+                className="w-full"
+                size="lg"
+                onClick={handleProceedToCheckout}
+              >
+                Proceed to Checkout
+                <ArrowRight className="h-4 w-4" />
               </Button>
               <Button asChild variant="outline" className="w-full">
                 <Link to="/customer/products">Continue Shopping</Link>

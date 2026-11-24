@@ -18,7 +18,7 @@ import { DELIVERY_STATUS_LABELS, ORDER_STATUS_LABELS } from '@/constants'
 import { normalizeDeliveryStatus } from '@/lib/delivery'
 import type { DeliveryFilter } from '@/lib/order-filters'
 import { cn, formatDateTime, formatPeso } from '@/lib/utils'
-import { useDemoSessionStore } from '@/stores/demo-session-store'
+import { useSessionStore } from '@/stores/session-reset-store'
 import { useOrderStore } from '@/stores/order-store'
 import type { Order, OrderStatus } from '@/types'
 
@@ -57,7 +57,7 @@ function itemSummary(order: Order) {
 }
 
 export default function VendorOrdersPage() {
-  const activeVendorId = useDemoSessionStore((s) => s.activeVendorId)
+  const activeVendorId = useSessionStore((s) => s.activeVendorId)
   const getOrdersByVendor = useOrderStore((s) => s.getOrdersByVendor)
   const [activeTab, setActiveTab] = useState<FilterTab>('all')
   const [deliveryStatus, setDeliveryStatus] = useState<DeliveryFilter>('all')

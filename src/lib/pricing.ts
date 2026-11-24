@@ -165,3 +165,17 @@ export function groupCartItemsByVendor(
   }
   return groups
 }
+
+/** Total cart weight from product weightKg × qty. */
+export function calculateCartWeightKg(
+  items: CartItem[],
+  products: Product[],
+): number {
+  const total = items.reduce((sum, item) => {
+    const product = products.find((p) => p.id === item.productId)
+    const unitWeight = Number(product?.weightKg)
+    if (!product || !Number.isFinite(unitWeight) || unitWeight <= 0) return sum
+    return sum + unitWeight * item.quantity
+  }, 0)
+  return Number(total.toFixed(3))
+}

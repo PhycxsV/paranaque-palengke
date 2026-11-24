@@ -28,7 +28,7 @@ export default function VendorsPage() {
     return [...vendors]
       .filter((v) => v.isAvailable)
       .filter((v) => branchId === 'all' || v.branchId === branchId)
-      .sort((a, b) => b.rating - a.rating || a.name.localeCompare(b.name))
+      .sort((a, b) => a.name.localeCompare(b.name))
   }, [vendors, branchId])
 
   const availableCount = vendors.filter((v) => v.isAvailable).length
@@ -41,7 +41,7 @@ export default function VendorsPage() {
         title="All Vendors"
         description={
           branchId === 'all'
-            ? `${listed.length} available ${listed.length === 1 ? 'stall' : 'stalls'} — sorted by rating.`
+            ? `${listed.length} available ${listed.length === 1 ? 'stall' : 'stalls'}.`
             : `${listed.length} of ${availableCount} available ${listed.length === 1 ? 'stall' : 'stalls'} in this palengke.`
         }
       />

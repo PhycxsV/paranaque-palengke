@@ -17,15 +17,34 @@ export async function fetchOrders(): Promise<Order[]> {
 export async function checkoutOrders(input: {
   customer: CheckoutFormInput
   items: Array<{ productId: string; quantity: number }>
+  /** One distance per cart vendor: dropoff pin → that vendor's branch. */
+  vendorDistances: Array<{ vendorId: string; distanceKm: number }>
 }): Promise<Order[]> {
+  const { dropoffLat, dropoffLng } = input.customer
+  if (
+    dropoffLat === null ||
+    dropoffLng === null ||
+    !Number.isFinite(dropoffLat) ||
+    !Number.isFinite(dropoffLng)
+  ) {
+    throw new Error('Enter valid drop-off latitude and longitude.')
+  }
+  if (!input.vendorDistances.length) {
+    throw new Error('Missing vendor distances for checkout.')
+  }
+
   const payload = await apiRequest<{ data: StrapiOrder[] }>('/orders/checkout', {
     method: 'POST',
     body: {
       customerName: input.customer.customerName.trim(),
       contactNumber: input.customer.contactNumber.trim(),
       deliveryAddress: input.customer.deliveryAddress.trim(),
+      dropoffLat,
+      dropoffLng,
+      dropoffLandmark: input.customer.dropoffLandmark.trim(),
       notes: input.customer.notes?.trim() || undefined,
       items: input.items,
+      vendorDistances: input.vendorDistances,
     },
   })
 
@@ -63,12 +82,22 @@ export async function submitOrderPayment(
   transactionReference: string,
 ): Promise<Pick<Order, 'id' | 'status'>> {
   const payload = await apiRequest<{
-    data: { documentId: string; status: Order['status'] }
+    data: {
+      documentId: string
+      paymentStatus?: Order['status']
+      status?: Order['status']
+    }
   }>(`/orders/${orderId}/payment`, {
     method: 'POST',
     body: { transactionReference },
   })
-  return { id: payload.data.documentId, status: payload.data.status }
+  return {
+    id: payload.data.documentId,
+    status:
+      payload.data.paymentStatus ??
+      payload.data.status ??
+      'awaiting_vendor_confirmation',
+  }
 }
 
 export async function vendorDecideOrder(
@@ -82,16 +111,18 @@ export async function vendorDecideOrder(
   const payload = await apiRequest<{
     data: {
       documentId: string
-      status: Order['status']
+      paymentStatus?: Order['status']
+      status?: Order['status']
       deliveryStatus?: DeliveryStatus
     }
   }>(`/orders/${orderId}/vendor-decision`, {
     method: 'POST',
+    // Request body still uses `status` for the decision value (Axel API).
     body: { status },
   })
   return {
     id: payload.data.documentId,
-    status: payload.data.status,
+    status: payload.data.paymentStatus ?? payload.data.status ?? status,
     deliveryStatus: payload.data.deliveryStatus,
   }
 }
@@ -125,5 +156,34 @@ export async function advanceOrderDelivery(
     deliveryStatus: payload.data.deliveryStatus,
     pickupCode: payload.data.pickupCode,
     keriTrackingId: payload.data.keriTrackingId,
+  }
+}
+
+export type KeriDraftStatus =
+  | 'created'
+  | 'sending'
+  | 'blocked'
+  | 'failed'
+  | 'not_ready'
+
+export interface KeriDraftResult {
+  bookingGroupId: string
+  status: KeriDraftStatus
+  error?: string
+  alreadyCreated?: boolean
+  alreadySending?: boolean
+}
+
+/** LGU admin: (re)send a ready booking group to Keri as a draft booking. */
+export async function retryKeriDraft(
+  bookingGroupId: string,
+): Promise<KeriDraftResult> {
+  const payload = await apiRequest<{ data: KeriDraftResult }>(
+    `/orders/booking-groups/${encodeURIComponent(bookingGroupId)}/keri-draft`,
+    { method: 'POST', body: {} },
+  )
+  return {
+    ...payload.data,
+    bookingGroupId: payload.data?.bookingGroupId ?? bookingGroupId,
   }
 }

@@ -30,7 +30,7 @@ export type OfferStatus =
   | 'counter_accepted'
   | 'counter_declined'
 
-export type DemoRole = 'customer' | 'vendor' | 'admin'
+export type AppRole = 'customer' | 'vendor' | 'admin'
 
 export interface Commodity {
   id: string
@@ -74,7 +74,7 @@ export interface Branch {
 
 /**
  * Vendor account (person). Credentials live here — one user can own many stores.
- * Login UI is not wired yet; plaintext demo storage only.
+ * Login UI is not wired yet; plaintext local storage only.
  */
 export interface VendorUser {
   id: string
@@ -101,10 +101,11 @@ export interface Vendor {
   opensAt: string
   /** Order cut-off in 24h `HH:mm` (local). Past this, vendor is closed for new orders. */
   cutoffTime: string
-  /** Demo / curated store rating (1–5). Used for home “top rated”. */
+  /** Curated store rating (1–5). Used for home “top rated”. */
   rating: number
-  isDemo: boolean
-  demoQrLabel: string
+  qrLabel: string
+  /** Absolute URL of the vendor-uploaded payment QR image, when set. */
+  paymentQrUrl: string
   /** Vendor user who owns this store (lipatan = change this). */
   ownerUserId: string
 }
@@ -120,6 +121,8 @@ export interface Product {
   unit: ProductUnit
   /** Vendor-declared unit price (must sit inside commodity priceMin–priceMax). */
   vendorPrice: number
+  /** Weight per unit in kilograms. Required (> 0) by the backend at checkout. */
+  weightKg: number
   stock: number
   imageUrl: string
   isAvailable: boolean
@@ -187,6 +190,8 @@ export interface Order {
   subtotal: number
   /** Share of the (placeholder) Keri delivery fee for this vendor order. */
   deliveryFee: number
+  /** Straight-line km from drop-off pin to the vendor branch (from checkout). */
+  distanceKm?: number
   total: number
   status: OrderStatus
   /** Set when payment is confirmed — tracks Keri delivery progress. */
@@ -231,6 +236,8 @@ export interface ProductFormInput {
   category: ProductCategory
   unit: ProductUnit
   vendorPrice: number
+  /** Weight per unit in kilograms (must be positive). */
+  weightKg: number
   stock: number
   imageUrl: string
   isAvailable: boolean
@@ -273,7 +280,7 @@ export interface VendorCreateInput {
   isAvailable: boolean
   opensAt: string
   cutoffTime: string
-  demoQrLabel: string
+  qrLabel: string
   rating: number
   /** Optional on create when using API — assign later via LGU vendor-accounts. */
   ownerUserId?: string
@@ -299,6 +306,12 @@ export interface CheckoutFormInput {
   contactNumber: string
   /** Customer drop-off / delivery address for Keri. */
   deliveryAddress: string
+  /** Drop-off pin latitude (WGS84). `null` until the customer provides one. */
+  dropoffLat: number | null
+  /** Drop-off pin longitude (WGS84). `null` until the customer provides one. */
+  dropoffLng: number | null
+  /** Landmark / handoff hint for the rider. */
+  dropoffLandmark: string
   notes?: string
 }
 

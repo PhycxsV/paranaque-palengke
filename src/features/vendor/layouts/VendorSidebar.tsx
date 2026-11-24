@@ -1,4 +1,4 @@
-﻿import { Link, NavLink } from 'react-router-dom'
+import { Link, NavLink } from 'react-router-dom'
 import {
   ClipboardList,
   HandCoins,
@@ -25,7 +25,7 @@ import {
 } from '@/components/ui/select'
 import { getTotalUnread } from '@/lib/chat'
 import { useChatStore } from '@/stores/chat-store'
-import { useDemoSessionStore } from '@/stores/demo-session-store'
+import { useSessionStore } from '@/stores/session-reset-store'
 import { useVendorStore } from '@/stores/vendor-store'
 
 const links = [
@@ -39,8 +39,8 @@ const links = [
 ].filter((link) => FEATURE_TAWAD_ENABLED || link.to !== '/vendor/offers')
 
 export function VendorSidebar({ onNavigate }: { onNavigate?: () => void }) {
-  const activeVendorId = useDemoSessionStore((s) => s.activeVendorId)
-  const setActiveVendorId = useDemoSessionStore((s) => s.setActiveVendorId)
+  const activeVendorId = useSessionStore((s) => s.activeVendorId)
+  const setActiveVendorId = useSessionStore((s) => s.setActiveVendorId)
   const vendors = useVendorStore((s) => s.vendors)
   const vendor = vendors.find((v) => v.id === activeVendorId)
   const chatThreads = useChatStore((s) => s.threads)

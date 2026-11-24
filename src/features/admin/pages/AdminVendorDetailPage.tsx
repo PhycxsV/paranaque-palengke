@@ -61,7 +61,7 @@ export default function AdminVendorDetailPage() {
         <EmptyState
           icon={Store}
           title="Store not found"
-          description="This store does not exist in the demo data."
+          description="This store does not exist."
         />
       </div>
     )

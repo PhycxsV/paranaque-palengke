@@ -7,6 +7,7 @@ import {
   createVendor,
   isApiConfigured,
   updateVendor as updateVendorApi,
+  uploadVendorPaymentQr,
 } from '@/lib/api'
 import { generateId } from '@/lib/utils'
 import type { Vendor, VendorCreateInput, VendorUpdateInput } from '@/types'
@@ -20,6 +21,10 @@ interface VendorState {
     vendorId: string,
     input: VendorUpdateInput,
   ) => Promise<{ ok: true } | { ok: false; message: string }>
+  uploadPaymentQr: (
+    vendorId: string,
+    file: File,
+  ) => Promise<{ ok: true; paymentQrUrl: string } | { ok: false; message: string }>
   resetVendors: () => void
   getStoresByOwner: (ownerUserId: string) => Vendor[]
 }
@@ -65,8 +70,8 @@ function normalizeVendor(raw: LegacyVendor, index: number): Vendor {
     opensAt: raw.opensAt || seed?.opensAt || '05:00',
     cutoffTime: raw.cutoffTime || seed?.cutoffTime || '17:00',
     rating: raw.rating ?? seed?.rating ?? 4.5,
-    isDemo: raw.isDemo ?? true,
-    demoQrLabel: raw.demoQrLabel || seed?.demoQrLabel || 'DEMO QR',
+    qrLabel: raw.qrLabel || seed?.qrLabel || 'QR Payment',
+    paymentQrUrl: raw.paymentQrUrl || seed?.paymentQrUrl || '',
     ownerUserId,
   }
 }
@@ -77,7 +82,7 @@ function validateCreate(input: VendorCreateInput): string | null {
   if (!input.location.trim()) return 'Stall location is required.'
   if (!input.branchId) return 'Select a palengke / market branch.'
   if (!input.imageUrl.trim()) return 'Image URL is required.'
-  if (!input.demoQrLabel.trim()) return 'QR label is required.'
+  if (!input.qrLabel.trim()) return 'QR label is required.'
   if (input.categories.length === 0) return 'Select at least one category.'
   return validateRating(input.rating)
 }
@@ -124,8 +129,8 @@ export const useVendorStore = create<VendorState>()(
           opensAt: input.opensAt,
           cutoffTime: input.cutoffTime,
           rating: Number(input.rating.toFixed(1)),
-          isDemo: true,
-          demoQrLabel: input.demoQrLabel.trim(),
+          qrLabel: input.qrLabel.trim(),
+          paymentQrUrl: '',
           ownerUserId: input.ownerUserId ?? '',
         }
 
@@ -177,6 +182,29 @@ export const useVendorStore = create<VendorState>()(
           }),
         })
         return { ok: true }
+      },
+      uploadPaymentQr: async (vendorId, file) => {
+        if (!isApiConfigured()) {
+          return {
+            ok: false,
+            message: 'Payment QR upload needs a connection to the server.',
+          }
+        }
+        try {
+          const result = await uploadVendorPaymentQr(vendorId, file)
+          set({
+            vendors: get().vendors.map((v) =>
+              v.id === vendorId ? { ...v, paymentQrUrl: result.paymentQrUrl } : v,
+            ),
+          })
+          return { ok: true, paymentQrUrl: result.paymentQrUrl }
+        } catch (err) {
+          return {
+            ok: false,
+            message:
+              err instanceof Error ? err.message : 'Unable to upload payment QR.',
+          }
+        }
       },
       resetVendors: () =>
         set({

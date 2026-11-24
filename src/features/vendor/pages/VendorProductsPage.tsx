@@ -38,7 +38,7 @@ import { EmptyState } from '@/components/shared/EmptyState'
 import { FilterTabs, type FilterTabItem } from '@/components/shared/FilterTabs'
 import { PortalHeader } from '@/components/shared/PortalHeader'
 import { ProductImage } from '@/components/shared/ProductImage'
-import { useDemoSessionStore } from '@/stores/demo-session-store'
+import { useSessionStore } from '@/stores/session-reset-store'
 import { useProductStore } from '@/stores/product-store'
 import { useCommodityStore } from '@/stores/commodity-store'
 import {
@@ -61,6 +61,7 @@ const EMPTY_FORM: ProductFormInput = {
   category: 'Vegetables',
   unit: 'kg',
   vendorPrice: 0,
+  weightKg: 0,
   stock: 0,
   imageUrl: '',
   isAvailable: true,
@@ -71,6 +72,7 @@ interface FormErrors {
   description?: string
   stock?: string
   vendorPrice?: string
+  weightKg?: string
   unit?: string
 }
 
@@ -81,6 +83,9 @@ function validateForm(
   const errors: FormErrors = {}
   if (!form.commodityId) errors.commodityId = 'Select a commodity'
   if (form.stock < 0) errors.stock = 'Stock cannot be negative'
+  if (!Number.isFinite(form.weightKg) || form.weightKg <= 0) {
+    errors.weightKg = 'Enter the weight per unit in kg (greater than 0).'
+  }
   if (!VENDOR_STOCK_UNITS.includes(form.unit as 'kg' | 'piece')) {
     errors.unit = 'Unit must be kg or pcs'
   }
@@ -165,7 +170,7 @@ function ArchiveProductButton({
           <AlertDialogTitle>Archive "{product.name}"?</AlertDialogTitle>
           <AlertDialogDescription>
             This will remove the product from your active listings. Archived
-            products cannot be restored in this demo.
+            products cannot be restored.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
@@ -200,7 +205,7 @@ function FormSection({
 }
 
 export default function VendorProductsPage() {
-  const activeVendorId = useDemoSessionStore((s) => s.activeVendorId)
+  const activeVendorId = useSessionStore((s) => s.activeVendorId)
   const products = useProductStore((s) => s.products)
   const addProduct = useProductStore((s) => s.addProduct)
   const updateProduct = useProductStore((s) => s.updateProduct)
@@ -274,6 +279,7 @@ export default function VendorProductsPage() {
       category: product.category,
       unit: product.unit,
       vendorPrice: product.vendorPrice,
+      weightKg: product.weightKg,
       stock: product.stock,
       imageUrl: product.imageUrl,
       isAvailable: product.isAvailable,
@@ -330,6 +336,7 @@ export default function VendorProductsPage() {
       description: form.description.trim(),
       imageUrl: form.imageUrl.trim(),
       vendorPrice: Number(form.vendorPrice.toFixed(2)),
+      weightKg: Number(form.weightKg.toFixed(3)),
     })
     if (!result.ok) {
       toast.error(result.message)
@@ -351,6 +358,7 @@ export default function VendorProductsPage() {
       description: form.description.trim(),
       unit: form.unit,
       vendorPrice: Number(form.vendorPrice.toFixed(2)),
+      weightKg: Number(form.weightKg.toFixed(3)),
       stock: form.stock,
       imageUrl: form.imageUrl.trim(),
       isAvailable: form.isAvailable,
@@ -507,6 +515,33 @@ export default function VendorProductsPage() {
               </span>
             </div>
           </div>
+        </div>
+        <div className="grid gap-1.5 sm:max-w-[calc(33.333%-0.67rem)]">
+          <Label htmlFor="pf-weight">Weight per unit *</Label>
+          <div className="relative">
+            <Input
+              id="pf-weight"
+              type="number"
+              step="0.001"
+              min="0.001"
+              className="pr-10"
+              value={form.weightKg || ''}
+              onChange={(e) =>
+                updateField('weightKg', parseFloat(e.target.value) || 0)
+              }
+              required
+            />
+            <span className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-muted">
+              kg
+            </span>
+          </div>
+          {errors.weightKg ? (
+            <p className="text-xs text-red-600">{errors.weightKg}</p>
+          ) : (
+            <p className="text-xs text-muted">
+              Used for Keri delivery booking at checkout.
+            </p>
+          )}
         </div>
         {errors.unit ? <p className="text-xs text-red-600">{errors.unit}</p> : null}
         {errors.stock ? <p className="text-xs text-red-600">{errors.stock}</p> : null}

@@ -7,7 +7,8 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { CheckoutSteps } from '@/components/shared/CheckoutSteps'
-import { DemoQrPlaceholder } from '@/components/shared/DemoQrPlaceholder'
+import { MapPinPicker, DEFAULT_DROPOFF_PIN } from '@/components/shared/MapPinPicker'
+import { PaymentQrCard } from '@/components/shared/PaymentQrCard'
 import { Notice } from '@/components/shared/Notice'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { ProductImage } from '@/components/shared/ProductImage'
@@ -18,14 +19,27 @@ import { useVendorStore } from '@/stores/vendor-store'
 import { useOrderStore } from '@/stores/order-store'
 import { useCommodityStore } from '@/stores/commodity-store'
 import {
+  persistCustomerProfile,
   profileToCheckoutForm,
   useCustomerProfileStore,
 } from '@/stores/customer-profile-store'
 import { useOfferStore } from '@/stores/offer-store'
-import { DELIVERY_FEE, DELIVERY_FEE_NOTE } from '@/constants'
+import {
+  DELIVERY_FEE,
+  DELIVERY_FEE_NOTE,
+  MAX_BOOKING_WEIGHT_KG,
+  MAX_BOOKING_WEIGHT_MESSAGE,
+} from '@/constants'
+import { isApiConfigured } from '@/lib/api'
+import {
+  formatCoordinate,
+  mapPinFromText,
+  parseDropoffCoordinates,
+} from '@/lib/coordinates'
 import {
   resolveCartUnitPrice,
   calculateCartTotalWithPricing,
+  calculateCartWeightKg,
   groupCartItemsByVendor,
 } from '@/lib/pricing'
 import { formatPeso } from '@/lib/utils'
@@ -45,7 +59,25 @@ export default function CheckoutPage() {
   const [form, setForm] = useState<CheckoutFormInput>(() =>
     profileToCheckoutForm(profile),
   )
+  const [latText, setLatText] = useState(() => formatCoordinate(profile.dropoffLat))
+  const [lngText, setLngText] = useState(() => formatCoordinate(profile.dropoffLng))
   const [submitting, setSubmitting] = useState(false)
+  const apiMode = isApiConfigured()
+
+  // The profile may finish loading from the API after this page mounts; fill
+  // only the fields the customer has not typed into yet.
+  useEffect(() => {
+    setForm((f) => ({
+      ...f,
+      customerName: f.customerName || profile.name,
+      contactNumber: f.contactNumber || profile.contactNumber,
+      deliveryAddress: f.deliveryAddress || profile.deliveryAddress,
+      dropoffLandmark: f.dropoffLandmark || profile.dropoffLandmark,
+      notes: f.notes || profile.notes,
+    }))
+    setLatText((v) => v || formatCoordinate(profile.dropoffLat))
+    setLngText((v) => v || formatCoordinate(profile.dropoffLng))
+  }, [profile])
 
   const groups = useMemo(
     () => groupCartItemsByVendor(items, products),
@@ -60,6 +92,11 @@ export default function CheckoutPage() {
     allOffers,
   )
   const total = subtotal + DELIVERY_FEE
+  const totalWeightKg = useMemo(
+    () => calculateCartWeightKg(items, products),
+    [items, products],
+  )
+  const overWeightLimit = totalWeightKg > MAX_BOOKING_WEIGHT_KG
 
   useEffect(() => {
     if (items.length === 0 && !submitting) {
@@ -71,6 +108,11 @@ export default function CheckoutPage() {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
+
+    if (overWeightLimit) {
+      toast.error(MAX_BOOKING_WEIGHT_MESSAGE)
+      return
+    }
 
     if (!form.customerName.trim()) {
       toast.error('Please enter your name.')
@@ -85,6 +127,29 @@ export default function CheckoutPage() {
       return
     }
 
+    const coordinates = parseDropoffCoordinates(latText, lngText)
+    if (!coordinates.ok) {
+      toast.error(coordinates.message)
+      return
+    }
+    if (apiMode) {
+      if (!form.dropoffLandmark.trim()) {
+        toast.error('Please enter a drop-off landmark.')
+        return
+      }
+      if (coordinates.lat === null || coordinates.lng === null) {
+        toast.error('Please enter your drop-off latitude and longitude.')
+        return
+      }
+    }
+
+    const customer: CheckoutFormInput = {
+      ...form,
+      dropoffLat: coordinates.lat,
+      dropoffLng: coordinates.lng,
+      dropoffLandmark: form.dropoffLandmark.trim(),
+    }
+
     setSubmitting(true)
 
     const result = await createCheckoutOrders({
@@ -93,7 +158,7 @@ export default function CheckoutPage() {
       commodities,
       offers: allOffers,
       vendors,
-      customer: form,
+      customer,
     })
 
     if (!result.ok) {
@@ -102,12 +167,26 @@ export default function CheckoutPage() {
       return
     }
 
-    saveFromCheckout(form)
+    saveFromCheckout(customer)
+    if (apiMode) {
+      try {
+        await persistCustomerProfile({
+          deliveryAddress: customer.deliveryAddress,
+          dropoffLat: customer.dropoffLat,
+          dropoffLng: customer.dropoffLng,
+          dropoffLandmark: customer.dropoffLandmark,
+          notes: customer.notes ?? '',
+        })
+      } catch {
+        // The order is placed; the profile stays cached on this device.
+        toast.warning('Order placed, but your profile could not be saved to the server.')
+      }
+    }
     clearCart()
     toast.success(
       result.orders.length > 1
         ? `Order placed across ${result.orders.length} vendors — complete each QR payment.`
-        : 'Order placed! Complete your demo payment.',
+        : 'Order placed! Complete your payment.',
     )
     navigate(`/customer/payment/group/${result.bookingGroupId}`)
   }
@@ -181,6 +260,80 @@ export default function CheckoutPage() {
                 <p className="text-xs text-muted">
                   Where Keri should deliver your order.
                 </p>
+              </div>
+              <div className="grid gap-1.5">
+                <Label htmlFor="dropoffLandmark">
+                  Landmark{apiMode ? ' *' : ''}
+                </Label>
+                <Input
+                  id="dropoffLandmark"
+                  value={form.dropoffLandmark}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, dropoffLandmark: e.target.value }))
+                  }
+                  placeholder="e.g. Beside the blue gate, near the chapel"
+                  required={apiMode}
+                />
+              </div>
+              <MapPinPicker
+                {...mapPinFromText(latText, lngText, DEFAULT_DROPOFF_PIN)}
+                onChange={({ lat, lng }) => {
+                  setLatText(formatCoordinate(lat))
+                  setLngText(formatCoordinate(lng))
+                  setForm((f) => ({
+                    ...f,
+                    dropoffLat: lat,
+                    dropoffLng: lng,
+                  }))
+                }}
+                onPlaceSelected={({ address, lat, lng }) => {
+                  setLatText(formatCoordinate(lat))
+                  setLngText(formatCoordinate(lng))
+                  setForm((f) => ({
+                    ...f,
+                    deliveryAddress: f.deliveryAddress.trim()
+                      ? f.deliveryAddress
+                      : address,
+                    dropoffLat: lat,
+                    dropoffLng: lng,
+                  }))
+                }}
+              />
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="grid gap-1.5">
+                  <Label htmlFor="dropoffLat">
+                    Latitude{apiMode ? ' *' : ''}
+                  </Label>
+                  <Input
+                    id="dropoffLat"
+                    type="number"
+                    inputMode="decimal"
+                    step="any"
+                    min={-90}
+                    max={90}
+                    value={latText}
+                    onChange={(e) => setLatText(e.target.value)}
+                    placeholder="14.4793"
+                    required={apiMode}
+                  />
+                </div>
+                <div className="grid gap-1.5">
+                  <Label htmlFor="dropoffLng">
+                    Longitude{apiMode ? ' *' : ''}
+                  </Label>
+                  <Input
+                    id="dropoffLng"
+                    type="number"
+                    inputMode="decimal"
+                    step="any"
+                    min={-180}
+                    max={180}
+                    value={lngText}
+                    onChange={(e) => setLngText(e.target.value)}
+                    placeholder="121.0198"
+                    required={apiMode}
+                  />
+                </div>
               </div>
               <div className="grid gap-1.5">
                 <Label htmlFor="notes">Notes (optional)</Label>
@@ -277,9 +430,10 @@ export default function CheckoutPage() {
                     </div>
                   </div>
                   <div className="mt-5">
-                    <DemoQrPlaceholder
-                      label={vendor?.demoQrLabel ?? 'Demo QR'}
+                    <PaymentQrCard
+                      label={vendor?.qrLabel ?? 'QR Payment'}
                       amountLabel={formatPeso(vendorTotal)}
+                      imageUrl={vendor?.paymentQrUrl}
                     />
                   </div>
                 </SectionCard>
@@ -302,18 +456,29 @@ export default function CheckoutPage() {
                 <span>Delivery (placeholder)</span>
                 <span className="font-semibold">{formatPeso(DELIVERY_FEE)}</span>
               </div>
+              <div className="flex justify-between text-sm text-ink/80">
+                <span>Total weight</span>
+                <span className="font-semibold">
+                  {totalWeightKg.toFixed(3)} kg / {MAX_BOOKING_WEIGHT_KG} kg
+                </span>
+              </div>
               <div className="flex items-center justify-between border-t border-dashed border-border pt-4">
                 <span className="font-bold text-primary-deep">Grand total</span>
                 <span className="font-display text-2xl font-extrabold text-primary">
                   {formatPeso(total)}
                 </span>
               </div>
+              {overWeightLimit ? (
+                <Notice tone="warning" title="Weight limit exceeded">
+                  {MAX_BOOKING_WEIGHT_MESSAGE}
+                </Notice>
+              ) : null}
               <p className="text-xs text-muted">{DELIVERY_FEE_NOTE}</p>
               <Button
                 type="submit"
                 size="lg"
                 className="w-full"
-                disabled={submitting}
+                disabled={submitting || overWeightLimit}
               >
                 {submitting ? 'Placing order...' : 'Place Order & Pay'}
               </Button>
@@ -326,7 +491,7 @@ export default function CheckoutPage() {
           </Notice>
           <p className="flex items-center justify-center gap-1.5 text-xs text-muted">
             <CreditCard className="h-3.5 w-3.5" />
-            Demo payment — no real money is moved.
+            Pay by QR — the vendor confirms your payment.
           </p>
         </aside>
       </form>

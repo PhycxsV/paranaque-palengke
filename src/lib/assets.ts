@@ -9,4 +9,5 @@ export const LOGOS = {
   bagongParanaque: asset('mo.png'),
   megaCity: asset('MEGA.png'),
   helpCard: asset('Helpcard.png'),
+  keri: asset('keri-logo.png'),
 } as const

@@ -8,6 +8,15 @@ export function isApiConfigured(): boolean {
   return Boolean(API_BASE_URL)
 }
 
+/** Resolve a Strapi media `url` (absolute or `/uploads/...`) for <img src>. */
+export function resolveMediaUrl(url?: string | null): string {
+  if (!url) return ''
+  if (/^https?:\/\//i.test(url)) return url
+  const origin = (API_BASE_URL ?? '').replace(/\/api\/?$/, '')
+  if (!origin) return url
+  return `${origin}${url.startsWith('/') ? url : `/${url}`}`
+}
+
 const TOKEN_KEY = `${STORAGE_PREFIX}-auth-jwt`
 
 export function getStoredToken(): string | null {
@@ -114,6 +123,10 @@ export async function apiRequest<T>(
     },
   )
 
+  return parseResponse<T>(response)
+}
+
+async function parseResponse<T>(response: Response): Promise<T> {
   const text = await response.text()
   let payload: unknown = null
   if (text) {
@@ -133,6 +146,35 @@ export async function apiRequest<T>(
   }
 
   return payload as T
+}
+
+/**
+ * Multipart upload (e.g. Strapi `files` field). Does not set `Content-Type`
+ * so the browser adds the multipart boundary.
+ */
+export async function apiUpload<T>(
+  path: string,
+  formData: FormData,
+  options: { method?: string; token?: string | null } = {},
+): Promise<T> {
+  if (!API_BASE_URL) {
+    throw new ApiError('API URL is not configured (set VITE_API_URL).', 0)
+  }
+
+  const headers: Record<string, string> = { Accept: 'application/json' }
+  const token = options.token !== undefined ? options.token : getStoredToken()
+  if (token) headers.Authorization = `Bearer ${token}`
+
+  const response = await fetch(
+    `${API_BASE_URL}${path.startsWith('/') ? path : `/${path}`}`,
+    {
+      method: options.method ?? 'POST',
+      headers,
+      body: formData,
+    },
+  )
+
+  return parseResponse<T>(response)
 }
 
 /** Fetches every page of a collection endpoint (page size 100). */

@@ -74,7 +74,7 @@ export const useOfferStore = create<OfferState>()(
           standardUnitPriceSnapshot: standardUnitPrice,
           proposedUnitPrice: Number(form.proposedUnitPrice.toFixed(2)),
           status: 'pending',
-          customerLabel: form.customerLabel?.trim() || 'Demo Customer',
+          customerLabel: form.customerLabel?.trim() || 'Customer',
           createdAt: now,
           updatedAt: now,
           note: form.note?.trim() || undefined,

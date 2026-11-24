@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { CheckoutSteps } from '@/components/shared/CheckoutSteps'
 import { DeliveryMilestoneTracker } from '@/components/shared/DeliveryMilestoneTracker'
-import { DemoQrPlaceholder } from '@/components/shared/DemoQrPlaceholder'
+import { PaymentQrCard } from '@/components/shared/PaymentQrCard'
 import { EmptyState } from '@/components/shared/EmptyState'
 import { Notice } from '@/components/shared/Notice'
 import { PageHeader } from '@/components/shared/PageHeader'
@@ -22,7 +22,7 @@ export default function PaymentPage() {
   const { orderId } = useParams<{ orderId: string }>()
   const navigate = useNavigate()
   const orders = useOrderStore((s) => s.orders)
-  const submitDemoPayment = useOrderStore((s) => s.submitDemoPayment)
+  const submitPayment = useOrderStore((s) => s.submitPayment)
   const vendors = useVendorStore((s) => s.vendors)
 
   const [transactionRef, setTransactionRef] = useState('')
@@ -56,13 +56,13 @@ export default function PaymentPage() {
 
   const handleSubmitPayment = async () => {
     setSubmitting(true)
-    const result = await submitDemoPayment(order.id, transactionRef)
+    const result = await submitPayment(order.id, transactionRef)
     if (!result.ok) {
       toast.error(result.message)
       setSubmitting(false)
       return
     }
-    toast.success('Demo payment submitted! Waiting for vendor confirmation.')
+    toast.success('Payment submitted! Waiting for vendor confirmation.')
     navigate(`/customer/orders/${order.id}`)
   }
 
@@ -118,7 +118,7 @@ export default function PaymentPage() {
               title="Payment Confirmed"
               action={viewOrder}
             >
-              Salamat! The vendor has confirmed your demo payment. Keri delivery
+              Salamat! The vendor has confirmed your payment. Keri delivery
               milestones are below.
             </Notice>
             <DeliveryMilestoneTracker
@@ -134,7 +134,7 @@ export default function PaymentPage() {
             title="Awaiting Vendor Confirmation"
             action={viewOrder}
           >
-            Your demo payment has been submitted. The vendor will verify it shortly.
+            Your payment has been submitted. The vendor will verify it shortly.
             {order.transactionReference && (
               <span className="mt-2 block text-xs">
                 Reference: <span className="font-mono">{order.transactionReference}</span>
@@ -152,17 +152,18 @@ export default function PaymentPage() {
               </Notice>
             )}
 
-            <DemoQrPlaceholder
-              label={vendor?.demoQrLabel ?? 'Demo QR Payment'}
+            <PaymentQrCard
+              label={vendor?.qrLabel ?? 'QR Payment'}
               amountLabel={formatPeso(order.total)}
+              imageUrl={vendor?.paymentQrUrl}
             />
 
-            <SectionCard title="How to pay (demo)" icon={ListChecks}>
+            <SectionCard title="How to pay" icon={ListChecks}>
               <ol className="space-y-3 text-sm text-ink/80">
                 {[
-                  'Scan the demo QR code above (simulated — no real money involved).',
+                  'Scan the QR code above using your e-wallet or banking app.',
                   'Optionally enter a transaction reference below.',
-                  'Click "I\'ve Paid" to submit your demo payment.',
+                  'Click "I\'ve Paid" to submit your payment.',
                   'Wait for the vendor to confirm the payment in the vendor portal.',
                 ].map((step, i) => (
                   <li key={step} className="flex gap-3">
@@ -181,7 +182,7 @@ export default function PaymentPage() {
                 id="transactionRef"
                 value={transactionRef}
                 onChange={(e) => setTransactionRef(e.target.value)}
-                placeholder="e.g. DEMO-REF-12345"
+                placeholder="e.g. TXN-REF-12345"
               />
             </div>
 

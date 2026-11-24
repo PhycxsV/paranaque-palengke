@@ -1,4 +1,10 @@
-import { apiFetchAll, apiRequest } from './client'
+import {
+  ApiError,
+  apiFetchAll,
+  apiRequest,
+  apiUpload,
+  resolveMediaUrl,
+} from './client'
 import {
   mapBranch,
   mapCommodity,
@@ -8,6 +14,7 @@ import {
   mapVendorUser,
   type StrapiBranch,
   type StrapiCommodity,
+  type StrapiMedia,
   type StrapiPriceHistory,
   type StrapiProduct,
   type StrapiUser,
@@ -140,6 +147,7 @@ export async function fetchVendors(): Promise<{
     query: {
       'populate[branch]': 'true',
       'populate[owner]': 'true',
+      'populate[paymentQr]': 'true',
       'sort[0]': 'name:asc',
     },
   })
@@ -168,15 +176,15 @@ export async function createVendor(input: VendorCreateInput): Promise<Vendor> {
         isAvailable: input.isAvailable,
         opensAt: input.opensAt,
         cutoffTime: input.cutoffTime,
-        demoQrLabel: input.demoQrLabel.trim(),
+        demoQrLabel: input.qrLabel.trim(),
         rating: input.rating,
-        isDemo: true,
         ...(input.ownerUserId ? { owner: input.ownerUserId } : {}),
       },
     },
     query: {
       'populate[branch]': 'true',
       'populate[owner]': 'true',
+      'populate[paymentQr]': 'true',
     },
   })
   return mapVendor(payload.data)
@@ -213,10 +221,35 @@ export async function updateVendor(
     query: {
       'populate[branch]': 'true',
       'populate[owner]': 'true',
+      'populate[paymentQr]': 'true',
     },
   })
   return mapVendor(payload.data)
 }
+
+/** Uploads one PNG/JPEG/WebP (≤ 5 MB) as the store's payment QR. Vendor JWT must own the store. */
+export async function uploadVendorPaymentQr(
+  vendorId: string,
+  file: File,
+): Promise<{ vendorId: string; paymentQrUrl: string }> {
+  const formData = new FormData()
+  formData.append('files', file)
+  const payload = await apiUpload<{
+    data: {
+      vendorDocumentId?: string
+      paymentQr?: StrapiMedia | null
+    }
+  }>(`/vendors/${vendorId}/payment-qr`, formData)
+  const url = resolveMediaUrl(payload.data?.paymentQr?.url)
+  if (!url) {
+    throw new ApiError('Upload succeeded but no QR image URL was returned.', 502)
+  }
+  return {
+    vendorId: payload.data.vendorDocumentId ?? vendorId,
+    paymentQrUrl: url,
+  }
+}
+
 
 export async function fetchProducts(): Promise<Product[]> {
   const rows = await apiFetchAll<StrapiProduct>('/products', {
@@ -245,6 +278,7 @@ export async function createProduct(
         category: input.category,
         unit: input.unit,
         vendorPrice: input.vendorPrice,
+        weightKg: input.weightKg,
         stock: input.stock,
         imageUrl: input.imageUrl.trim(),
         isAvailable: input.isAvailable,
@@ -274,6 +308,7 @@ export async function updateProduct(
   if (input.category !== undefined) data.category = input.category
   if (input.unit !== undefined) data.unit = input.unit
   if (input.vendorPrice !== undefined) data.vendorPrice = input.vendorPrice
+  if (input.weightKg !== undefined) data.weightKg = input.weightKg
   if (input.stock !== undefined) data.stock = input.stock
   if (input.imageUrl !== undefined) data.imageUrl = input.imageUrl.trim()
   if (input.isAvailable !== undefined) data.isAvailable = input.isAvailable

@@ -9,22 +9,23 @@ import type {
 export const BRAND_NAME = 'Palengke mo, Keri ko'
 export const BRAND_TAGLINE = 'Preskong Pamalengke, Mas Madaling Mamili.'
 export const STORAGE_PREFIX = 'paranaque-customerfront-v1'
-/** How many top-rated vendors to feature on the customer home page. */
-export const HOME_TOP_RATED_VENDOR_COUNT = 3
 
 /** Show an "Only N left" badge at or below this stock level. */
 export const LOW_STOCK_THRESHOLD = 5
 export const PRICE_DISCLAIMER =
   'Illustrative LGU price ranges — vendors set their own price within the range.'
 /**
- * Demo Keri delivery fee (PHP). Placeholder only — production fee is dynamic.
+ * Keri delivery fee (PHP). Placeholder only — production fee is dynamic.
  * Used for cart/checkout totals until a real fee engine exists.
  */
 export const DELIVERY_FEE_PLACEHOLDER = 100
 /** @deprecated Use DELIVERY_FEE_PLACEHOLDER — kept as alias for existing imports. */
 export const DELIVERY_FEE = DELIVERY_FEE_PLACEHOLDER
 export const DELIVERY_FEE_NOTE =
-  '₱100 is a demo placeholder. Delivery fee is dynamic in production.'
+  '₱100 is a placeholder. Delivery fee is dynamic in production.'
+/** Max cart weight (kg) for one checkout. */
+export const MAX_BOOKING_WEIGHT_KG = 25
+export const MAX_BOOKING_WEIGHT_MESSAGE = `Total weight must not exceed ${MAX_BOOKING_WEIGHT_KG} kg. Remove some items before continuing.`
 /** Units vendors may choose when marking stock. */
 export const VENDOR_STOCK_UNITS: Array<'kg' | 'piece'> = ['kg', 'piece']
 /**
@@ -90,13 +91,13 @@ export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
 
 export const ORDER_STATUS_MESSAGES: Record<OrderStatus, string> = {
   pending_payment:
-    'Your order is ready. Complete the demo QR payment to continue.',
+    'Your order is ready. Complete the QR payment to continue.',
   awaiting_vendor_confirmation:
-    'Payment submitted. Waiting for the vendor to verify your demo payment.',
+    'Payment submitted. Waiting for the vendor to verify your payment.',
   confirmed:
     'Payment confirmed by the vendor. Keri delivery is underway — track milestones below.',
   payment_rejected:
-    'The vendor could not verify the payment. You may resubmit demo payment details.',
+    'The vendor could not verify the payment. You may resubmit payment details.',
 }
 
 export const ALLOWED_ORDER_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {

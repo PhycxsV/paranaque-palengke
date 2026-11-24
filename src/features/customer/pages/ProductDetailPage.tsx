@@ -1,4 +1,4 @@
-﻿import { useState, type FormEvent } from 'react'
+import { useState, type FormEvent } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import {
   ArrowLeft,
@@ -112,7 +112,7 @@ export default function ProductDetailPage() {
       productId: product.id,
       quantity: offerQty,
       proposedUnitPrice,
-      customerLabel: 'Demo Customer',
+      customerLabel: 'Customer',
       note: offerNote.trim() || undefined,
     }
     const result = createOffer({ form, product, commodities })

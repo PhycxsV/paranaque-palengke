@@ -1,4 +1,4 @@
-/** Max edge length after resize — keeps localStorage demos small. */
+/** Max edge length after resize — keeps localStorage small. */
 const MAX_EDGE = 512
 /** Soft cap on the encoded data URL (~750KB of base64). */
 const MAX_DATA_URL_CHARS = 750_000

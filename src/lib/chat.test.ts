@@ -9,7 +9,7 @@ import type { ChatMessage, ChatThread } from '@/types'
 const thread: ChatThread = {
   id: 'chat-1',
   vendorId: 'v1',
-  customerLabel: 'Demo Customer',
+  customerLabel: 'Customer',
   createdAt: '2026-01-01T10:00:00.000Z',
   updatedAt: '2026-01-01T10:05:00.000Z',
   lastMessagePreview: 'Hi',

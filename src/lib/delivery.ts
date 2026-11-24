@@ -19,7 +19,7 @@ const ADVANCE_LABELS: Record<
 
 /**
  * Normalize persisted / legacy delivery status.
- * Older demos used `awaiting_pickup` (= packing).
+ * Older versions used `awaiting_pickup` (= packing).
  */
 export function normalizeDeliveryStatus(
   status: string | undefined | null,
@@ -46,7 +46,7 @@ export function generatePickupCode(): string {
   return String(Math.floor(10000 + Math.random() * 90000))
 }
 
-/** Text for the Keri rider remarks field (demo surface). */
+/** Text for the Keri rider remarks field. */
 export function formatKeriRiderRemarks(pickupCode: string): string {
   return `Pickup PIN ${pickupCode} — verify with vendor before taking the order.`
 }

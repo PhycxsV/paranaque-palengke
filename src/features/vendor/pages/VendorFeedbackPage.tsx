@@ -5,13 +5,13 @@ import { FeedbackCard, RatingSummary } from '@/components/shared/FeedbackParts'
 import { FilterTabs, type FilterTabItem } from '@/components/shared/FilterTabs'
 import { PortalHeader } from '@/components/shared/PortalHeader'
 import { SectionCard } from '@/components/shared/SectionCard'
-import { useDemoSessionStore } from '@/stores/demo-session-store'
+import { useSessionStore } from '@/stores/session-reset-store'
 import { summarizeFeedback, useFeedbackStore } from '@/stores/feedback-store'
 
 type StarFilter = 'all' | '5' | '4' | '3' | '2' | '1'
 
 export default function VendorFeedbackPage() {
-  const activeVendorId = useDemoSessionStore((s) => s.activeVendorId)
+  const activeVendorId = useSessionStore((s) => s.activeVendorId)
   const allFeedback = useFeedbackStore((s) => s.feedback)
   const [filter, setFilter] = useState<StarFilter>('all')
 

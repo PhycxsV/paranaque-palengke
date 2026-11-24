@@ -35,7 +35,7 @@ import { PortalHeader } from '@/components/shared/PortalHeader'
 import { ProductImage } from '@/components/shared/ProductImage'
 import { SectionCard } from '@/components/shared/SectionCard'
 import { StatusBadge } from '@/components/shared/StatusBadge'
-import { useDemoSessionStore } from '@/stores/demo-session-store'
+import { useSessionStore } from '@/stores/session-reset-store'
 import { useOrderStore } from '@/stores/order-store'
 import { formatPeso, formatDateTime } from '@/lib/utils'
 import type { Order } from '@/types'
@@ -69,7 +69,7 @@ function Field({
 
 export default function VendorOrderDetailPage() {
   const { orderId } = useParams<{ orderId: string }>()
-  const activeVendorId = useDemoSessionStore((s) => s.activeVendorId)
+  const activeVendorId = useSessionStore((s) => s.activeVendorId)
   const orders = useOrderStore((s) => s.orders)
   const confirmPayment = useOrderStore((s) => s.confirmPayment)
   const rejectPayment = useOrderStore((s) => s.rejectPayment)
@@ -344,7 +344,7 @@ export default function VendorOrderDetailPage() {
                       <AlertDialogTitle>Reject payment?</AlertDialogTitle>
                       <AlertDialogDescription>
                         This will mark the payment as rejected. The customer can
-                        resubmit their demo payment details afterwards.
+                        resubmit their payment details afterwards.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>

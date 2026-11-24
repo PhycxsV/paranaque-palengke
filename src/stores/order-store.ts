@@ -20,6 +20,7 @@ import {
   validateCartAgainstStock,
 } from '@/lib/order-logic'
 import { groupCartItemsByVendor } from '@/lib/pricing'
+import { distanceKm } from '@/lib/coordinates'
 import { generateId } from '@/lib/utils'
 import { isVendorAcceptingOrders } from '@/lib/vendor-hours'
 import { useBranchStore } from '@/stores/branch-store'
@@ -59,7 +60,7 @@ interface OrderState {
     vendors: Vendor[]
     customer: CheckoutFormInput
   }) => Promise<CheckoutResult>
-  submitDemoPayment: (
+  submitPayment: (
     orderId: string,
     transactionReference?: string,
   ) => Promise<ActionResult>
@@ -86,6 +87,25 @@ export const useOrderStore = create<OrderState>()(
       }) => {
         if (isApiConfigured()) {
           try {
+            const dropLat = customer.dropoffLat
+            const dropLng = customer.dropoffLng
+            if (
+              dropLat === null ||
+              dropLng === null ||
+              !Number.isFinite(dropLat) ||
+              !Number.isFinite(dropLng)
+            ) {
+              return {
+                ok: false,
+                message: 'Set your drop-off pin before checking out.',
+              }
+            }
+
+            const branches = useBranchStore.getState().branches
+            const vendorDistances: Array<{ vendorId: string; distanceKm: number }> =
+              []
+            const seenVendors = new Set<string>()
+
             for (const item of items) {
               const product = products.find((p) => p.id === item.productId)
               const vendor = vendors.find((v) => v.id === item.vendorId)
@@ -98,13 +118,35 @@ export const useOrderStore = create<OrderState>()(
                   message: `${vendor.name} is past cut-off and cannot accept orders.`,
                 }
               }
+              if (seenVendors.has(vendor.id)) continue
+              seenVendors.add(vendor.id)
+
+              const branch = branches.find((b) => b.id === vendor.branchId)
+              if (
+                !branch ||
+                !Number.isFinite(branch.lat) ||
+                !Number.isFinite(branch.lng)
+              ) {
+                return {
+                  ok: false,
+                  message: `Missing branch coordinates for ${vendor.name}.`,
+                }
+              }
+              vendorDistances.push({
+                vendorId: vendor.id,
+                distanceKm: Number(
+                  distanceKm(dropLat, dropLng, branch.lat, branch.lng).toFixed(2),
+                ),
+              })
             }
+
             const created = await checkoutOrders({
               customer,
               items: items.map((item) => ({
                 productId: item.productId,
                 quantity: item.quantity,
               })),
+              vendorDistances,
             })
             set({ orders: [...created, ...get().orders.filter((o) => !created.some((c) => c.id === o.id))] })
             return {
@@ -205,11 +247,11 @@ export const useOrderStore = create<OrderState>()(
         set({ orders: [...created, ...get().orders] })
         return { ok: true, orders: created, bookingGroupId }
       },
-      submitDemoPayment: async (orderId, transactionReference) => {
+      submitPayment: async (orderId, transactionReference) => {
         const order = get().orders.find((o) => o.id === orderId)
         if (!order) return { ok: false, message: 'Order not found.' }
         const reference =
-          transactionReference?.trim() || `DEMO-${Date.now().toString(36).toUpperCase()}`
+          transactionReference?.trim() || `TXN-${Date.now().toString(36).toUpperCase()}`
 
         if (isApiConfigured()) {
           try {

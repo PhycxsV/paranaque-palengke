@@ -1,3 +1,4 @@
+import { resolveMediaUrl } from './client'
 import type {
   Branch,
   ChatMessage,
@@ -15,6 +16,13 @@ import type {
   Vendor,
   VendorUser,
 } from '@/types'
+
+export interface StrapiMedia {
+  url?: string
+  documentId?: string
+  name?: string
+  mime?: string
+}
 
 export type StrapiRelation<T> = T | { documentId?: string; id?: number | string } | null
 
@@ -61,6 +69,7 @@ export interface StrapiUser {
   phone?: string
   blocked?: boolean
   role?: { type?: string; name?: string } | null
+  ownedVendors?: Array<StrapiRelation<{ documentId?: string }>> | null
 }
 
 export interface StrapiVendor {
@@ -74,8 +83,8 @@ export interface StrapiVendor {
   opensAt?: string | null
   cutoffTime?: string | null
   rating?: number | string
-  isDemo?: boolean
   demoQrLabel?: string
+  paymentQr?: StrapiMedia | null
   branch?: StrapiRelation<StrapiBranch>
   owner?: StrapiRelation<StrapiUser>
 }
@@ -87,6 +96,7 @@ export interface StrapiProduct {
   category?: ProductCategory
   unit?: ProductUnit
   vendorPrice?: number | string
+  weightKg?: number | string
   stock?: number
   imageUrl?: string
   isAvailable?: boolean
@@ -122,8 +132,11 @@ export interface StrapiOrder {
   items?: StrapiOrderItem[]
   subtotal?: number | string
   deliveryFee?: number | string
+  distance?: number | string
   total?: number | string
+  /** @deprecated Prefer paymentStatus — kept briefly for older API payloads. */
   status?: OrderStatus
+  paymentStatus?: OrderStatus
   deliveryStatus?: DeliveryStatus | null
   pickupLat?: number | string
   pickupLng?: number | string
@@ -163,7 +176,7 @@ function num(value: number | string | null | undefined, fallback = 0): number {
   return Number.isFinite(n) ? n : fallback
 }
 
-function relationId(value: StrapiRelation<{ documentId?: string }> | undefined): string {
+export function relationId(value: StrapiRelation<{ documentId?: string }> | undefined): string {
   if (!value || typeof value !== 'object') return ''
   return value.documentId ?? ''
 }
@@ -239,8 +252,8 @@ export function mapVendor(raw: StrapiVendor): Vendor {
     opensAt: normalizeTime(raw.opensAt, '05:00'),
     cutoffTime: normalizeTime(raw.cutoffTime, '17:00'),
     rating: num(raw.rating, 0),
-    isDemo: Boolean(raw.isDemo),
-    demoQrLabel: raw.demoQrLabel ?? 'QR Payment',
+    qrLabel: raw.demoQrLabel ?? 'QR Payment',
+    paymentQrUrl: resolveMediaUrl(raw.paymentQr?.url),
     ownerUserId: relationId(raw.owner),
   }
 }
@@ -255,6 +268,7 @@ export function mapProduct(raw: StrapiProduct): Product {
     category: (raw.category ?? 'Vegetables') as ProductCategory,
     unit: (raw.unit ?? 'kg') as ProductUnit,
     vendorPrice: num(raw.vendorPrice),
+    weightKg: num(raw.weightKg),
     stock: Math.max(0, Math.trunc(num(raw.stock))),
     imageUrl: raw.imageUrl ?? '',
     isAvailable: raw.isAvailable ?? true,
@@ -293,8 +307,12 @@ export function mapOrder(raw: StrapiOrder): Order {
     items: (raw.items ?? []).map(mapOrderItem),
     subtotal: num(raw.subtotal),
     deliveryFee: num(raw.deliveryFee),
+    distanceKm:
+      raw.distance === undefined || raw.distance === null
+        ? undefined
+        : num(raw.distance),
     total: num(raw.total),
-    status: (raw.status ?? 'pending_payment') as OrderStatus,
+    status: (raw.paymentStatus ?? raw.status ?? 'pending_payment') as OrderStatus,
     deliveryStatus: raw.deliveryStatus ?? undefined,
     pickupLat: num(raw.pickupLat),
     pickupLng: num(raw.pickupLng),

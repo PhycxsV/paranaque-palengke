@@ -49,7 +49,7 @@ const DEFAULT_STORE_FORM: VendorCreateInput = {
   imageUrl: '',
   opensAt: '05:00',
   cutoffTime: '17:00',
-  demoQrLabel: '',
+  qrLabel: '',
   isAvailable: true,
   rating: 4.5,
   ownerUserId: '',
@@ -282,12 +282,12 @@ function CreateStoreDialog() {
               </div>
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="vendor-qr">Demo QR label</Label>
+              <Label htmlFor="vendor-qr">QR label</Label>
               <Input
                 id="vendor-qr"
-                value={form.demoQrLabel}
+                value={form.qrLabel}
                 onChange={(e) =>
-                  setForm((f) => ({ ...f, demoQrLabel: e.target.value }))
+                  setForm((f) => ({ ...f, qrLabel: e.target.value }))
                 }
                 placeholder="e.g. QRPH · Aling Nena"
               />
@@ -388,7 +388,7 @@ export default function AdminVendorsPage() {
         <EmptyState
           icon={Store}
           title="No stores"
-          description="No stores are registered in the demo yet."
+          description="No stores are registered yet."
         />
       ) : filtered.length === 0 ? (
         <EmptyState

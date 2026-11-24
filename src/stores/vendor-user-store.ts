@@ -152,9 +152,9 @@ export const useVendorUserStore = create<VendorUserState>()(
               email:
                 u.email?.trim().toLowerCase() ||
                 seed?.email ||
-                `user${i + 1}@demo.palengke.ph`,
+                `user${i + 1}@palengke.ph`,
               phone: u.phone?.trim() || seed?.phone || `0917000${1000 + i}`,
-              password: u.password || seed?.password || 'demo1234',
+              password: u.password || seed?.password || 'palengke1234',
               isActive: u.isActive ?? true,
             }
           }),

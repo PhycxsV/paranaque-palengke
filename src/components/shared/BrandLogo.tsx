@@ -89,3 +89,31 @@ export function PartnerLogos({ className }: { className?: string }) {
     </ul>
   )
 }
+
+/** "Powered by Keri" lockup for footers. */
+export function PoweredByKeri({
+  tone = 'onDark',
+  className,
+}: {
+  tone?: 'onLight' | 'onDark'
+  className?: string
+}) {
+  const dark = tone === 'onDark'
+  return (
+    <p
+      className={cn(
+        'inline-flex items-center justify-center gap-3 text-xs font-semibold tracking-wide sm:text-sm',
+        dark ? 'text-white/70' : 'text-muted',
+        className,
+      )}
+    >
+      <span>Powered by</span>
+      <img
+        src={LOGOS.keri}
+        alt="Keri"
+        loading="lazy"
+        className="h-12 w-auto object-contain sm:h-14"
+      />
+    </p>
+  )
+}

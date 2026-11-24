@@ -15,7 +15,8 @@ import { useAuthStore } from '@/stores/auth-store'
 import { useBranchStore } from '@/stores/branch-store'
 import { useChatStore } from '@/stores/chat-store'
 import { useCommodityStore } from '@/stores/commodity-store'
-import { useDemoSessionStore } from '@/stores/demo-session-store'
+import { hydrateCustomerProfile } from '@/stores/customer-profile-store'
+import { useSessionStore } from '@/stores/session-reset-store'
 import { useOrderStore } from '@/stores/order-store'
 import { useProductStore } from '@/stores/product-store'
 import { useVendorStore } from '@/stores/vendor-store'
@@ -64,12 +65,12 @@ export function useBackendSync() {
         })
         useProductStore.setState({ products })
 
-        const session = useDemoSessionStore.getState()
+        const session = useSessionStore.getState()
         if (
           !vendorBundle.vendors.some((v) => v.id === session.activeVendorId) &&
           vendorBundle.vendors[0]
         ) {
-          useDemoSessionStore.setState({
+          useSessionStore.setState({
             activeVendorId: vendorBundle.vendors[0].id,
           })
         }
@@ -123,6 +124,11 @@ export function useBackendSync() {
         // Price history is LGU-only.
       }
 
+      if (user!.role === 'customer') {
+        // Restores saved drop-off details after a session restore or sign-in.
+        await hydrateCustomerProfile()
+      }
+
       try {
         if (user!.role === 'customer' || user!.role === 'vendor') {
           const [threads, messages] = await Promise.all([
@@ -142,9 +148,9 @@ export function useBackendSync() {
           .getState()
           .vendors.filter((v) => v.ownerUserId === user!.id)
         if (owned[0]) {
-          const current = useDemoSessionStore.getState().activeVendorId
+          const current = useSessionStore.getState().activeVendorId
           if (!owned.some((v) => v.id === current)) {
-            useDemoSessionStore.setState({ activeVendorId: owned[0].id })
+            useSessionStore.setState({ activeVendorId: owned[0].id })
           }
         }
       }

@@ -4,11 +4,13 @@ import {
   ClipboardList,
   Download,
   Hourglass,
+  RefreshCw,
   Search,
   Truck,
   Wallet,
   X,
 } from 'lucide-react'
+import { toast } from 'sonner'
 import { EmptyState } from '@/components/shared/EmptyState'
 import { FilterTabs, type FilterTabItem } from '@/components/shared/FilterTabs'
 import { PortalHeader } from '@/components/shared/PortalHeader'
@@ -25,6 +27,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { DELIVERY_STATUS_LABELS, ORDER_STATUS_LABELS } from '@/constants'
+import { isApiConfigured, retryKeriDraft } from '@/lib/api'
 import { normalizeDeliveryStatus } from '@/lib/delivery'
 import {
   filterOrders,
@@ -65,6 +68,37 @@ function itemSummary(order: Order) {
   return rest > 0 ? `${first.name} +${rest} more` : first.name
 }
 
+function isReadyForKeri(order: Order) {
+  return (
+    order.status === 'confirmed' &&
+    normalizeDeliveryStatus(order.deliveryStatus) === 'ready_for_keri'
+  )
+}
+
+function KeriDraftAction({
+  order,
+  retrying,
+  onRetry,
+}: {
+  order: Order
+  retrying: boolean
+  onRetry: (bookingGroupId: string) => void
+}) {
+  return (
+    <Button
+      type="button"
+      variant="outline"
+      size="sm"
+      disabled={retrying}
+      onClick={() => onRetry(order.bookingGroupId)}
+      title={`Booking group ${order.bookingGroupId}`}
+    >
+      <RefreshCw className={retrying ? 'h-3.5 w-3.5 animate-spin' : 'h-3.5 w-3.5'} />
+      {retrying ? 'Sending…' : 'Retry Keri draft'}
+    </Button>
+  )
+}
+
 export default function AdminOrdersPage() {
   const orders = useOrderStore((s) => s.orders)
   const vendors = useVendorStore((s) => s.vendors)
@@ -77,6 +111,42 @@ export default function AdminOrdersPage() {
   const [period, setPeriod] = useState<PeriodPreset>('all')
   const [query, setQuery] = useState('')
   const [exportOpen, setExportOpen] = useState(false)
+  const [retryingGroupId, setRetryingGroupId] = useState<string | null>(null)
+
+  async function handleRetryKeriDraft(bookingGroupId: string) {
+    setRetryingGroupId(bookingGroupId)
+    try {
+      const result = await retryKeriDraft(bookingGroupId)
+      switch (result.status) {
+        case 'created':
+          toast.success(
+            result.alreadyCreated
+              ? 'Keri draft was already created for this booking group.'
+              : 'Keri draft created.',
+          )
+          break
+        case 'sending':
+          toast.info('A Keri draft is already being sent for this booking group.')
+          break
+        case 'blocked':
+        case 'failed':
+          toast.error(
+            result.error
+              ? `Keri draft ${result.status}: ${result.error}`
+              : `Keri draft ${result.status}. Try again shortly.`,
+          )
+          break
+        default:
+          toast.error('This booking group is not ready for Keri yet.')
+      }
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : 'Unable to retry the Keri draft.',
+      )
+    } finally {
+      setRetryingGroupId(null)
+    }
+  }
 
   const visibleVendors =
     branchId === 'all' ? vendors : vendors.filter((v) => v.branchId === branchId)
@@ -101,6 +171,20 @@ export default function AdminOrdersPage() {
     [base, status],
   )
   const totals = useMemo(() => computeTotals(filtered), [filtered])
+
+  // One retry action per booking group: shown on the first ready order listed.
+  const keriActionOrderIds = useMemo(() => {
+    const ids = new Set<string>()
+    if (!isApiConfigured()) return ids
+    const seenGroups = new Set<string>()
+    for (const order of filtered) {
+      if (!isReadyForKeri(order) || seenGroups.has(order.bookingGroupId)) continue
+      seenGroups.add(order.bookingGroupId)
+      ids.add(order.id)
+    }
+    return ids
+  }, [filtered])
+  const showKeriColumn = keriActionOrderIds.size > 0
 
   const tabs = useMemo<FilterTabItem<StatusFilter>[]>(
     () =>
@@ -301,6 +385,9 @@ export default function AdminOrdersPage() {
                   <th className="px-4 py-3.5 text-right">Total</th>
                   <th className="px-4 py-3.5">Status</th>
                   <th className="px-4 py-3.5">Placed</th>
+                  {showKeriColumn ? (
+                    <th className="px-4 py-3.5">Keri</th>
+                  ) : null}
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -352,6 +439,17 @@ export default function AdminOrdersPage() {
                     <td className="whitespace-nowrap px-4 py-3.5 text-xs text-muted">
                       {formatDateTime(order.createdAt)}
                     </td>
+                    {showKeriColumn ? (
+                      <td className="whitespace-nowrap px-4 py-3.5">
+                        {keriActionOrderIds.has(order.id) ? (
+                          <KeriDraftAction
+                            order={order}
+                            retrying={retryingGroupId === order.bookingGroupId}
+                            onRetry={handleRetryKeriDraft}
+                          />
+                        ) : null}
+                      </td>
+                    ) : null}
                   </tr>
                 ))}
               </tbody>
@@ -394,6 +492,15 @@ export default function AdminOrdersPage() {
                     {formatDateTime(order.createdAt)}
                   </span>
                 </div>
+                {keriActionOrderIds.has(order.id) ? (
+                  <div className="mt-3">
+                    <KeriDraftAction
+                      order={order}
+                      retrying={retryingGroupId === order.bookingGroupId}
+                      onRetry={handleRetryKeriDraft}
+                    />
+                  </div>
+                ) : null}
               </li>
             ))}
           </ul>

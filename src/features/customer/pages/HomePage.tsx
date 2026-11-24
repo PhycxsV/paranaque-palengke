@@ -13,20 +13,17 @@ import {
   MapPin,
   ShoppingBag,
   ShoppingCart,
-  Star,
-  Truck,
+  Store,
 } from 'lucide-react'
 import {
-  BRAND_NAME,
   BRAND_TAGLINE,
   CATEGORIES,
   CATEGORY_ICONS,
-  HOME_TOP_RATED_VENDOR_COUNT,
 } from '@/constants'
 import { Button } from '@/components/ui/button'
 import { RevealOnScroll } from '@/components/shared/RevealOnScroll'
 import { SectionHeading } from '@/components/shared/SectionHeading'
-import { VendorCard } from '@/components/shared/VendorCard'
+import { VendorCarousel } from '@/features/customer/components/VendorCarousel'
 import { LOGOS } from '@/lib/assets'
 import { cn } from '@/lib/utils'
 import { useVendorStore } from '@/stores/vendor-store'
@@ -52,9 +49,8 @@ const CATEGORY_TINTS = [
 ]
 
 const HERO_HIGHLIGHTS = [
-  { icon: Star, label: 'Top-rated vendors' },
+  { icon: Store, label: 'Local vendors' },
   { icon: MapPin, label: 'Pickup per palengke' },
-  { icon: Truck, label: 'Keri delivery' },
 ]
 
 function getCategoryIcon(category: ProductCategory) {
@@ -65,10 +61,9 @@ function getCategoryIcon(category: ProductCategory) {
 export default function HomePage() {
   const vendors = useVendorStore((s) => s.vendors)
 
-  const topRatedVendors = [...vendors]
+  const carouselVendors = [...vendors]
     .filter((v) => v.isAvailable)
-    .sort((a, b) => b.rating - a.rating || a.name.localeCompare(b.name))
-    .slice(0, HOME_TOP_RATED_VENDOR_COUNT)
+    .sort((a, b) => a.name.localeCompare(b.name))
 
   const [taglineLead, ...taglineRest] = BRAND_TAGLINE.split(', ')
 
@@ -89,11 +84,7 @@ export default function HomePage() {
 
         <div className="relative mx-auto grid w-full max-w-7xl items-center gap-12 px-4 pb-40 pt-28 sm:px-6 sm:pt-32 lg:grid-cols-[1.15fr_0.85fr]">
           <div className="max-w-2xl">
-            <p className="animate-hero-in mb-4 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3.5 py-1.5 text-xs font-bold uppercase tracking-[0.18em] text-lime backdrop-blur">
-              <span className="h-1.5 w-1.5 rounded-full bg-lime" aria-hidden />
-              {BRAND_NAME}
-            </p>
-            <h1 className="animate-hero-in animate-hero-in-delay-1 text-4xl font-extrabold leading-[1.05] text-white sm:text-5xl lg:text-6xl">
+            <h1 className="animate-hero-in text-4xl font-extrabold leading-[1.05] text-white sm:text-5xl lg:text-6xl">
               {taglineLead},
               {taglineRest.length > 0 ? (
                 <>
@@ -102,11 +93,10 @@ export default function HomePage() {
                 </>
               ) : null}
             </h1>
-            <p className="animate-hero-in animate-hero-in-delay-2 mt-5 max-w-lg text-base text-white/85 sm:text-lg">
-              Fresh gulay, isda, and karne from Parañaque palengke vendors — order
-              for Keri delivery.
+            <p className="animate-hero-in animate-hero-in-delay-1 mt-5 max-w-lg text-base text-white/85 sm:text-lg">
+              Fresh gulay, isda, and karne from Parañaque palengke vendors.
             </p>
-            <div className="animate-hero-in animate-hero-in-delay-3 mt-8 flex flex-wrap gap-3">
+            <div className="animate-hero-in animate-hero-in-delay-2 mt-8 flex flex-wrap gap-3">
               <Button asChild size="lg" variant="lime">
                 <Link to="/customer/products">
                   <ShoppingBag className="h-5 w-5" />
@@ -188,15 +178,15 @@ export default function HomePage() {
         </svg>
       </section>
 
-      {topRatedVendors.length > 0 && (
+      {carouselVendors.length > 0 && (
         <section id="vendors" className="scroll-mt-20 bg-warm-white pb-16 pt-8">
           <div className="mx-auto max-w-7xl px-4 sm:px-6">
             <RevealOnScroll>
               <SectionHeading
                 className="mb-10"
-                eyebrow="Top-rated stalls"
+                eyebrow="Vendors"
                 title="Meet Our Vendors"
-                description="Pick a store first, then shop — ranked by customer rating."
+                description="Browse every stall, then pick a store to shop."
                 action={
                   <Button asChild variant="outline" className="hidden sm:inline-flex">
                     <Link to="/customer/vendors">
@@ -206,13 +196,9 @@ export default function HomePage() {
                 }
               />
             </RevealOnScroll>
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {topRatedVendors.map((v, index) => (
-                <RevealOnScroll key={v.id} delayMs={index * 90} className="h-full">
-                  <VendorCard vendor={v} />
-                </RevealOnScroll>
-              ))}
-            </div>
+            <RevealOnScroll>
+              <VendorCarousel vendors={carouselVendors} />
+            </RevealOnScroll>
             <RevealOnScroll delayMs={200}>
               <div className="mt-8 text-center sm:hidden">
                 <Button asChild variant="secondary">

@@ -1,18 +1,19 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState, type ChangeEvent } from 'react'
 import { toast } from 'sonner'
-import { Clock, MapPin, QrCode, Save, Star, Store } from 'lucide-react'
+import { Clock, MapPin, QrCode, Save, Star, Store, Upload } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
-import { DemoQrPlaceholder } from '@/components/shared/DemoQrPlaceholder'
+import { PaymentQrCard } from '@/components/shared/PaymentQrCard'
 import { EmptyState } from '@/components/shared/EmptyState'
 import { PortalHeader } from '@/components/shared/PortalHeader'
 import { SectionCard } from '@/components/shared/SectionCard'
 import { useBranchStore } from '@/stores/branch-store'
-import { useDemoSessionStore } from '@/stores/demo-session-store'
+import { useSessionStore } from '@/stores/session-reset-store'
 import { useVendorStore } from '@/stores/vendor-store'
+import { isApiConfigured } from '@/lib/api'
 import {
   formatVendorTime,
   isVendorAcceptingOrders,
@@ -20,6 +21,9 @@ import {
 } from '@/lib/vendor-hours'
 import { cn } from '@/lib/utils'
 import type { VendorUpdateInput } from '@/types'
+
+const PAYMENT_QR_MAX_BYTES = 5 * 1024 * 1024
+const PAYMENT_QR_TYPES = ['image/png', 'image/jpeg', 'image/webp']
 
 interface FormErrors {
   name?: string
@@ -30,11 +34,12 @@ interface FormErrors {
 }
 
 export default function VendorStorePage() {
-  const activeVendorId = useDemoSessionStore((s) => s.activeVendorId)
+  const activeVendorId = useSessionStore((s) => s.activeVendorId)
   const vendor = useVendorStore((s) =>
     s.vendors.find((v) => v.id === activeVendorId),
   )
   const updateVendor = useVendorStore((s) => s.updateVendor)
+  const uploadPaymentQr = useVendorStore((s) => s.uploadPaymentQr)
   const branches = useBranchStore((s) => s.branches)
 
   const [form, setForm] = useState<VendorUpdateInput>({
@@ -46,6 +51,9 @@ export default function VendorStorePage() {
     cutoffTime: '17:00',
   })
   const [errors, setErrors] = useState<FormErrors>({})
+  const [qrFile, setQrFile] = useState<File | null>(null)
+  const [qrUploading, setQrUploading] = useState(false)
+  const qrInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     if (vendor) {
@@ -65,7 +73,7 @@ export default function VendorStorePage() {
       <EmptyState
         icon={Store}
         title="Vendor not found"
-        description="No active vendor selected. Please select a vendor from the demo switcher."
+        description="No active vendor selected. Please select a vendor from the store switcher."
       />
     )
   }
@@ -111,6 +119,41 @@ export default function VendorStorePage() {
     }
     setErrors({})
     toast.success('Store profile updated')
+  }
+
+  const handlePickQr = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] ?? null
+    if (!file) {
+      setQrFile(null)
+      return
+    }
+    if (!PAYMENT_QR_TYPES.includes(file.type)) {
+      toast.error('Payment QR must be a PNG, JPEG or WebP image.')
+      e.target.value = ''
+      setQrFile(null)
+      return
+    }
+    if (file.size > PAYMENT_QR_MAX_BYTES) {
+      toast.error('Payment QR image must be 5 MB or smaller.')
+      e.target.value = ''
+      setQrFile(null)
+      return
+    }
+    setQrFile(file)
+  }
+
+  const handleUploadQr = async () => {
+    if (!qrFile) return
+    setQrUploading(true)
+    const result = await uploadPaymentQr(vendor.id, qrFile)
+    setQrUploading(false)
+    if (!result.ok) {
+      toast.error(result.message)
+      return
+    }
+    setQrFile(null)
+    if (qrInputRef.current) qrInputRef.current.value = ''
+    toast.success('Payment QR uploaded')
   }
 
   const updateField = <K extends keyof VendorUpdateInput>(
@@ -285,9 +328,36 @@ export default function VendorStorePage() {
           </div>
 
           <SectionCard title="Payment QR code" icon={QrCode}>
-            <DemoQrPlaceholder label={vendor.demoQrLabel} />
+            <PaymentQrCard
+              label={vendor.qrLabel}
+              imageUrl={vendor.paymentQrUrl}
+            />
+            {isApiConfigured() ? (
+              <div className="mt-4 grid gap-2">
+                <Label htmlFor="vs-qr-file">Upload payment QR</Label>
+                <Input
+                  id="vs-qr-file"
+                  ref={qrInputRef}
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  onChange={handlePickQr}
+                />
+                <p className="text-xs text-muted">
+                  PNG, JPEG or WebP, up to 5 MB.
+                </p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={!qrFile || qrUploading}
+                  onClick={handleUploadQr}
+                >
+                  <Upload className="h-4 w-4" />
+                  {qrUploading ? 'Uploading…' : 'Upload'}
+                </Button>
+              </div>
+            ) : null}
             <p className="mt-3 text-center text-xs text-muted">
-              Customers scan this QR to submit their demo payment.
+              Customers scan this QR to submit their payment.
             </p>
           </SectionCard>
         </aside>

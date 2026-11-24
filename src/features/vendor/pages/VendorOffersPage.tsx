@@ -17,7 +17,7 @@ import {
 } from '@/components/ui/dialog'
 import { EmptyState } from '@/components/shared/EmptyState'
 import { ProductImage } from '@/components/shared/ProductImage'
-import { useDemoSessionStore } from '@/stores/demo-session-store'
+import { useSessionStore } from '@/stores/session-reset-store'
 import { useOfferStore } from '@/stores/offer-store'
 import { useProductStore } from '@/stores/product-store'
 import { OFFER_STATUS_LABELS } from '@/constants'
@@ -37,7 +37,7 @@ const FILTER_TABS: { value: FilterTab; label: string }[] = [
 ]
 
 export default function VendorOffersPage() {
-  const activeVendorId = useDemoSessionStore((s) => s.activeVendorId)
+  const activeVendorId = useSessionStore((s) => s.activeVendorId)
   const getOffersByVendor = useOfferStore((s) => s.getOffersByVendor)
   const acceptOffer = useOfferStore((s) => s.acceptOffer)
   const rejectOffer = useOfferStore((s) => s.rejectOffer)

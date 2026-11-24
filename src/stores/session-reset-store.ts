@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { STORAGE_PREFIX } from '@/constants'
 import { seedVendors } from '@/data/vendors'
-import type { DemoRole } from '@/types'
+import type { AppRole } from '@/types'
 import { useCartStore } from './cart-store'
 import { useCommodityStore } from './commodity-store'
 import { useChatStore } from './chat-store'
@@ -14,22 +14,22 @@ import { useProductStore } from './product-store'
 import { useVendorStore } from './vendor-store'
 import { useVendorUserStore } from './vendor-user-store'
 
-interface DemoSessionState {
-  role: DemoRole
+interface SessionState {
+  role: AppRole
   activeVendorId: string
-  setRole: (role: DemoRole) => void
+  setRole: (role: AppRole) => void
   setActiveVendorId: (vendorId: string) => void
-  resetDemoData: () => void
+  resetAppData: () => void
 }
 
-export const useDemoSessionStore = create<DemoSessionState>()(
+export const useSessionStore = create<SessionState>()(
   persist(
     (set) => ({
       role: 'customer',
       activeVendorId: seedVendors[0]?.id ?? 'vendor-aling-nena',
       setRole: (role) => set({ role }),
       setActiveVendorId: (vendorId) => set({ activeVendorId: vendorId }),
-      resetDemoData: () => {
+      resetAppData: () => {
         useCommodityStore.getState().resetCommodities()
         useProductStore.getState().resetProducts()
         useVendorStore.getState().resetVendors()

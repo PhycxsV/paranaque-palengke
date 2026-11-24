@@ -1,6 +1,6 @@
 import type { Branch } from '@/types'
 
-/** Demo Parañaque palengke / market branches — Keri pickup pins live here. */
+/** Parañaque palengke / market branches — Keri pickup pins live here. */
 export const seedBranches: Branch[] = [
   {
     id: 'branch-baclaran',

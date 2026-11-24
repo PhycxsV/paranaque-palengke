@@ -1,6 +1,6 @@
 import type { VendorFeedback } from '@/types'
 
-/** Demo feedback so vendor and LGU views are not empty on first load. */
+/** Seed feedback so vendor and LGU views are not empty on first load. */
 export const seedFeedback: VendorFeedback[] = [
   {
     id: 'fb-seed-1',

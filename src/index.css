@@ -239,6 +239,26 @@
   }
 }
 
+@keyframes vendor-marquee {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+.animate-vendor-marquee {
+  animation: vendor-marquee 45s linear infinite;
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-vendor-marquee {
+    animation: none;
+  }
+}
+
 /* ---------- Brand utilities ---------- */
 .brand-ribbon {
   background: linear-gradient(90deg, var(--color-lime), var(--color-bay) 55%, var(--color-primary));
@@ -342,4 +362,9 @@
 
 .dialog-scroll::-webkit-scrollbar-corner {
   background: transparent;
+}
+
+/* Places suggestion list sits above page chrome. */
+.pac-container {
+  z-index: 10000;
 }

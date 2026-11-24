@@ -1,6 +1,10 @@
 import { Link } from 'react-router-dom'
 import { BRAND_TAGLINE, FEATURE_TAWAD_ENABLED } from '@/constants'
-import { BrandMark, PartnerLogos } from '@/components/shared/BrandLogo'
+import {
+  BrandMark,
+  PartnerLogos,
+  PoweredByKeri,
+} from '@/components/shared/BrandLogo'
 
 const linkClass = 'transition-colors hover:text-lime'
 
@@ -13,6 +17,9 @@ export function CustomerFooter() {
             Parañaque City initiatives
           </p>
           <PartnerLogos />
+          <div className="mt-8 flex justify-center border-t border-border pt-8">
+            <PoweredByKeri tone="onLight" />
+          </div>
         </div>
       </div>
 
@@ -27,12 +34,11 @@ export function CustomerFooter() {
           aria-hidden
         />
 
-        <div className="relative mx-auto grid max-w-7xl gap-10 px-4 py-12 sm:px-6 md:grid-cols-[1.4fr_1fr_1.2fr]">
+        <div className="relative mx-auto grid max-w-7xl gap-10 px-4 py-12 sm:px-6 md:grid-cols-[1.4fr_1fr]">
           <div>
             <BrandMark tone="onDark" subtitle="Lungsod ng Parañaque" />
             <p className="mt-4 max-w-sm text-sm leading-relaxed text-white/75">
-              {BRAND_TAGLINE} A frontend-only marketplace prototype inspired by
-              Parañaque&apos;s civic identity. Demo vendors are fictional.
+              {BRAND_TAGLINE} Shop fresh goods from Parañaque palengke vendors.
             </p>
           </div>
 
@@ -70,20 +76,10 @@ export function CustomerFooter() {
               ) : null}
             </ul>
           </div>
-
-          <div>
-            <p className="text-xs font-bold uppercase tracking-[0.18em] text-lime">
-              Prototype notes
-            </p>
-            <p className="mt-4 rounded-xl bg-white/8 p-4 text-sm leading-relaxed text-white/80 ring-1 ring-white/10">
-              No real payments, delivery, or government endorsement. QR payment
-              is simulated for demonstration only.
-            </p>
-          </div>
         </div>
 
         <div className="relative border-t border-white/10 px-4 py-4 text-center text-xs text-white/60">
-          © {new Date().getFullYear()} Palengke mo, Keri ko — Frontend prototype
+          © {new Date().getFullYear()} Palengke mo, Keri ko
         </div>
       </div>
     </footer>

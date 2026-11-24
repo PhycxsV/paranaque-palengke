@@ -26,7 +26,7 @@ import { isVendorAcceptingOrders, formatVendorTime } from '@/lib/vendor-hours'
 import { cn, formatDateTime, formatPeso } from '@/lib/utils'
 import { useBranchStore } from '@/stores/branch-store'
 import { useChatStore } from '@/stores/chat-store'
-import { useDemoSessionStore } from '@/stores/demo-session-store'
+import { useSessionStore } from '@/stores/session-reset-store'
 import { summarizeFeedback, useFeedbackStore } from '@/stores/feedback-store'
 import { useOfferStore } from '@/stores/offer-store'
 import { useOrderStore } from '@/stores/order-store'
@@ -51,7 +51,7 @@ function greeting() {
 }
 
 export default function VendorDashboardPage() {
-  const activeVendorId = useDemoSessionStore((s) => s.activeVendorId)
+  const activeVendorId = useSessionStore((s) => s.activeVendorId)
   const vendor = useVendorStore((s) =>
     s.vendors.find((v) => v.id === activeVendorId),
   )

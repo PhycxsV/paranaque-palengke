@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { CheckoutSteps } from '@/components/shared/CheckoutSteps'
 import { DeliveryMilestoneTracker } from '@/components/shared/DeliveryMilestoneTracker'
-import { DemoQrPlaceholder } from '@/components/shared/DemoQrPlaceholder'
+import { PaymentQrCard } from '@/components/shared/PaymentQrCard'
 import { EmptyState } from '@/components/shared/EmptyState'
 import { Notice } from '@/components/shared/Notice'
 import { PageHeader } from '@/components/shared/PageHeader'
@@ -27,7 +27,7 @@ function VendorPaymentCard({
   onPaid: () => void
 }) {
   const vendors = useVendorStore((s) => s.vendors)
-  const submitDemoPayment = useOrderStore((s) => s.submitDemoPayment)
+  const submitPayment = useOrderStore((s) => s.submitPayment)
   const vendor = vendors.find((v) => v.id === order.vendorId)
   const [ref, setRef] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -39,7 +39,7 @@ function VendorPaymentCard({
 
   const handlePay = async () => {
     setSubmitting(true)
-    const result = await submitDemoPayment(order.id, ref)
+    const result = await submitPayment(order.id, ref)
     if (!result.ok) {
       toast.error(result.message)
       setSubmitting(false)
@@ -84,9 +84,10 @@ function VendorPaymentCard({
 
       {canPay && (
         <div className="space-y-5">
-          <DemoQrPlaceholder
-            label={vendor?.demoQrLabel ?? 'Demo QR'}
+          <PaymentQrCard
+            label={vendor?.qrLabel ?? 'QR Payment'}
             amountLabel={formatPeso(order.total)}
+            imageUrl={vendor?.paymentQrUrl}
           />
           <div className="grid gap-1.5">
             <Label htmlFor={`ref-${order.id}`}>
@@ -96,7 +97,7 @@ function VendorPaymentCard({
               id={`ref-${order.id}`}
               value={ref}
               onChange={(e) => setRef(e.target.value)}
-              placeholder="e.g. DEMO-REF-12345"
+              placeholder="e.g. TXN-REF-12345"
             />
           </div>
           <Button
