@@ -70,7 +70,10 @@ function normalizeVendor(raw: LegacyVendor, index: number): Vendor {
     opensAt: raw.opensAt || seed?.opensAt || '05:00',
     cutoffTime: raw.cutoffTime || seed?.cutoffTime || '17:00',
     rating: raw.rating ?? seed?.rating ?? 4.5,
-    qrLabel: raw.qrLabel || seed?.qrLabel || 'QR Payment',
+    qrLabel: (raw.qrLabel || seed?.qrLabel || 'Payment QR').replace(
+      /\bDEMO\s+/gi,
+      '',
+    ).trim() || 'Payment QR',
     paymentQrUrl: raw.paymentQrUrl || seed?.paymentQrUrl || '',
     ownerUserId,
   }

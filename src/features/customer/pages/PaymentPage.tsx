@@ -1,4 +1,4 @@
-import { useState } from 'react'
+﻿import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { Clock, ListChecks } from 'lucide-react'
 import { toast } from 'sonner'
@@ -153,7 +153,7 @@ export default function PaymentPage() {
             )}
 
             <PaymentQrCard
-              label={vendor?.qrLabel ?? 'QR Payment'}
+              label={vendor?.qrLabel ?? 'Payment QR'}
               amountLabel={formatPeso(order.total)}
               imageUrl={vendor?.paymentQrUrl}
             />

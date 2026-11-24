@@ -239,6 +239,11 @@ export function mapVendorUser(raw: StrapiUser): VendorUser {
   }
 }
 
+function mapPaymentQrLabel(raw?: string | null): string {
+  const cleaned = (raw ?? '').replace(/\bDEMO\s+/gi, '').trim()
+  return cleaned || 'Payment QR'
+}
+
 export function mapVendor(raw: StrapiVendor): Vendor {
   return {
     id: raw.documentId,
@@ -252,7 +257,8 @@ export function mapVendor(raw: StrapiVendor): Vendor {
     opensAt: normalizeTime(raw.opensAt, '05:00'),
     cutoffTime: normalizeTime(raw.cutoffTime, '17:00'),
     rating: num(raw.rating, 0),
-    qrLabel: raw.demoQrLabel ?? 'QR Payment',
+    // seed still stores demoQrLabel with a DEMO prefix — don't show that
+    qrLabel: mapPaymentQrLabel(raw.demoQrLabel),
     paymentQrUrl: resolveMediaUrl(raw.paymentQr?.url),
     ownerUserId: relationId(raw.owner),
   }

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type FormEvent } from 'react'
+﻿import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { CreditCard, Store, UserRound } from 'lucide-react'
 import { toast } from 'sonner'
@@ -515,7 +515,7 @@ export default function CheckoutPage() {
                   </div>
                   <div className="mt-5">
                     <PaymentQrCard
-                      label={vendor?.qrLabel ?? 'QR Payment'}
+                      label={vendor?.qrLabel ?? 'Payment QR'}
                       amountLabel={formatPeso(vendorTotal)}
                       imageUrl={vendor?.paymentQrUrl}
                     />

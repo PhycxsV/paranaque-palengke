@@ -3,11 +3,17 @@ import { QrCode } from 'lucide-react'
 interface PaymentQrCardProps {
   label: string
   amountLabel?: string
-  /** When set (vendor-uploaded QR from the API), show that image instead of the placeholder pattern. */
+  /** Vendor-uploaded QR from the API. Falls back to the placeholder pattern. */
   imageUrl?: string
 }
 
 const FILLED = [0, 1, 2, 4, 5, 6, 8, 10, 12, 14, 16, 18, 19, 20, 22, 23, 24]
+
+// seed / old local cache still has "DEMO QR — …"; never show that word
+function displayQrLabel(label: string): string {
+  const cleaned = label.replace(/\bDEMO\s+/gi, '').trim()
+  return cleaned || 'Payment QR'
+}
 
 export function PaymentQrCard({
   label,
@@ -15,15 +21,16 @@ export function PaymentQrCard({
   imageUrl,
 }: PaymentQrCardProps) {
   const hasUploadedQr = Boolean(imageUrl?.trim())
+  const title = displayQrLabel(label)
 
   return (
-    <div className="mx-auto flex w-full max-w-xs flex-col items-center gap-4 rounded-2xl border-2 border-dashed border-gold bg-gradient-to-b from-gold-50 to-surface p-5 text-center">
-      <div className="relative flex h-44 w-44 items-center justify-center overflow-hidden rounded-2xl bg-white shadow-[var(--shadow-soft)] ring-1 ring-primary/10">
+    <div className="mx-auto flex w-full max-w-md flex-col items-center gap-4 rounded-2xl border-2 border-dashed border-gold bg-gradient-to-b from-gold-50 to-surface p-4 text-center sm:p-5">
+      <div className="relative flex aspect-square w-full max-w-sm items-center justify-center overflow-hidden rounded-2xl bg-white shadow-[var(--shadow-soft)] ring-1 ring-primary/10">
         {hasUploadedQr ? (
           <img
             src={imageUrl}
-            alt={label}
-            className="h-full w-full object-contain p-2"
+            alt={title}
+            className="h-full w-full object-contain p-1 sm:p-2"
           />
         ) : (
           <>
@@ -60,7 +67,9 @@ export function PaymentQrCard({
         )}
       </div>
       <div>
-        <p className="font-display text-base font-bold text-primary-deep">{label}</p>
+        <p className="font-display text-base font-bold text-primary-deep">
+          {title}
+        </p>
         {amountLabel ? (
           <p className="mt-1 text-sm text-muted">
             Amount due:{' '}

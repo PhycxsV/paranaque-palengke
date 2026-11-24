@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+﻿import { useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { Clock, CreditCard, Store } from 'lucide-react'
 import { toast } from 'sonner'
@@ -85,7 +85,7 @@ function VendorPaymentCard({
       {canPay && (
         <div className="space-y-5">
           <PaymentQrCard
-            label={vendor?.qrLabel ?? 'QR Payment'}
+            label={vendor?.qrLabel ?? 'Payment QR'}
             amountLabel={formatPeso(order.total)}
             imageUrl={vendor?.paymentQrUrl}
           />
