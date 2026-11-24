@@ -6,7 +6,12 @@ export type CustomerProfileRemote = Omit<CustomerProfile, 'photoUrl'>
 
 export type CustomerProfileUpdateInput = Pick<
   CustomerProfile,
-  'deliveryAddress' | 'dropoffLat' | 'dropoffLng' | 'dropoffLandmark' | 'notes'
+  | 'deliveryAddress'
+  | 'dropoffLat'
+  | 'dropoffLng'
+  | 'dropoffLandmark'
+  | 'dropoffPlace'
+  | 'notes'
 >
 
 interface ApiCustomerProfile {
@@ -16,6 +21,7 @@ interface ApiCustomerProfile {
   dropoffLat?: number | string | null
   dropoffLng?: number | string | null
   dropoffLandmark?: string | null
+  dropoffPlace?: string | null
   defaultNotes?: string | null
 }
 
@@ -33,6 +39,7 @@ export function mapCustomerProfile(raw: ApiCustomerProfile): CustomerProfileRemo
     dropoffLat: toCoordinate(raw.dropoffLat),
     dropoffLng: toCoordinate(raw.dropoffLng),
     dropoffLandmark: raw.dropoffLandmark?.trim() ?? '',
+    dropoffPlace: raw.dropoffPlace?.trim() ?? '',
     notes: raw.defaultNotes?.trim() ?? '',
   }
 }
@@ -64,6 +71,7 @@ export async function updateCustomerProfile(
       body: {
         dropoffAddress: input.deliveryAddress.trim(),
         dropoffLandmark: input.dropoffLandmark.trim(),
+        dropoffPlace: input.dropoffPlace.trim(),
         defaultNotes: input.notes.trim(),
         ...(hasCoordinates
           ? { dropoffLat: input.dropoffLat, dropoffLng: input.dropoffLng }

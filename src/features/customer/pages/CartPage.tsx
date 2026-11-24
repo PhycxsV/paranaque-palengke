@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { ArrowRight, ShoppingCart, Store, Trash2, Truck } from 'lucide-react'
+import { ArrowRight, ShoppingCart, Store, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { CheckoutSteps } from '@/components/shared/CheckoutSteps'
@@ -15,8 +15,6 @@ import { useVendorStore } from '@/stores/vendor-store'
 import { useCommodityStore } from '@/stores/commodity-store'
 import { useOfferStore } from '@/stores/offer-store'
 import {
-  DELIVERY_FEE,
-  DELIVERY_FEE_NOTE,
   MAX_BOOKING_WEIGHT_KG,
   MAX_BOOKING_WEIGHT_MESSAGE,
 } from '@/constants'
@@ -41,7 +39,6 @@ export default function CartPage() {
     [items, products],
   )
   const vendorCount = groups.size || 1
-  const deliveryShare = Number((DELIVERY_FEE / vendorCount).toFixed(2))
 
   const subtotal = calculateCartTotalWithPricing(
     items,
@@ -49,7 +46,6 @@ export default function CartPage() {
     commodities,
     allOffers,
   )
-  const total = subtotal + DELIVERY_FEE
   const totalWeightKg = useMemo(
     () => calculateCartWeightKg(items, products),
     [items, products],
@@ -112,8 +108,7 @@ export default function CartPage() {
                       {vendor?.name ?? 'Vendor'}
                     </p>
                     <p className="text-xs text-muted">
-                      Delivery share ≈ {formatPeso(deliveryShare)} (placeholder ₱
-                      {DELIVERY_FEE} ÷ {vendorCount})
+                      {vendorItems.length} item{vendorItems.length === 1 ? '' : 's'}
                     </p>
                   </div>
                 </div>
@@ -204,26 +199,15 @@ export default function CartPage() {
             </h2>
             <div className="space-y-3 p-5">
               <div className="flex items-center justify-between text-sm text-ink/80">
-                <span>Subtotal</span>
-                <span className="font-semibold">{formatPeso(subtotal)}</span>
-              </div>
-              <div className="flex items-start justify-between gap-3 text-sm text-ink/80">
-                <span className="flex items-center gap-1.5">
-                  <Truck className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
-                  Delivery fee (placeholder)
-                </span>
-                <span className="font-semibold">{formatPeso(DELIVERY_FEE)}</span>
-              </div>
-              <div className="flex items-center justify-between text-sm text-ink/80">
                 <span>Total weight</span>
                 <span className="font-semibold">
                   {totalWeightKg.toFixed(3)} kg / {MAX_BOOKING_WEIGHT_KG} kg
                 </span>
               </div>
               <div className="flex items-center justify-between border-t border-dashed border-border pt-4">
-                <span className="font-bold text-primary-deep">Total</span>
+                <span className="font-bold text-primary-deep">Subtotal</span>
                 <span className="font-display text-2xl font-extrabold text-primary">
-                  {formatPeso(total)}
+                  {formatPeso(subtotal)}
                 </span>
               </div>
               {overWeightLimit ? (
@@ -232,9 +216,10 @@ export default function CartPage() {
                 </Notice>
               ) : null}
               <p className="rounded-xl bg-primary-50 p-3 text-xs leading-relaxed text-muted">
-                {DELIVERY_FEE_NOTE} At checkout you get a separate QR per vendor;
-                each total includes their share of the placeholder Keri fee. All
-                vendor orders in this checkout share one booking group for Keri.
+                The delivery fee is calculated at checkout from your drop-off
+                pin. At checkout you get a separate QR per vendor, and each total
+                includes their share of the delivery fee. All vendor orders in
+                this checkout share one booking group for Keri.
               </p>
               <Button
                 type="button"

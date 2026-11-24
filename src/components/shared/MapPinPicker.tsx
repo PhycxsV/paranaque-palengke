@@ -24,6 +24,7 @@ export function MapPinPicker({
   lng,
   onChange,
   onPlaceSelected,
+  initialSearch = '',
   className,
   markerTitle = 'Drop-off pin',
 }: {
@@ -32,6 +33,8 @@ export function MapPinPicker({
   onChange: (next: LatLng) => void
   /** Fills the address field when search finds a place. */
   onPlaceSelected?: (place: { address: string; lat: number; lng: number }) => void
+  /** Previously picked place, shown in the search box when it's still empty. */
+  initialSearch?: string
   className?: string
   markerTitle?: string
 }) {
@@ -60,6 +63,13 @@ export function MapPinPicker({
   useEffect(() => {
     onPlaceSelectedRef.current = onPlaceSelected
   }, [onPlaceSelected])
+
+  // the saved profile loads after the picker mounts, so fill the box once it
+  // arrives. skip it if the customer already typed something
+  useEffect(() => {
+    const input = searchInputRef.current
+    if (input && initialSearch && !input.value) input.value = initialSearch
+  }, [initialSearch])
 
   function applyPlace(coords: LatLng, address: string) {
     if (!mapRef.current || !markerRef.current) return
@@ -142,9 +152,9 @@ export function MapPinPicker({
             const place = autocomplete.getPlace()
             const location = place.geometry?.location
             if (!location) {
-              setSearchHint(
-                'Pick a suggestion from the list, or press Search for a geocode match.',
-              )
+              // happens when Enter is pressed on plain text with no suggestion
+              // picked. don't leave them hanging, just search what they typed
+              void runSearch()
               return
             }
             const coords = { lat: location.lat(), lng: location.lng() }
@@ -240,6 +250,13 @@ export function MapPinPicker({
           <Input
             id="map-pin-search"
             ref={searchInputRef}
+            onKeyDown={(e) => {
+              // Enter also submits the form, and that geocodes the text again
+              // right after a suggestion was picked, which can move the pin to
+              // a different spot. Google still handles Enter for the pick, and
+              // place_changed falls back to a search if nothing was picked
+              if (e.key === 'Enter') e.preventDefault()
+            }}
             placeholder="e.g. San Dionisio, Parañaque"
             disabled={status !== 'ready' || searchBusy}
             autoComplete="off"

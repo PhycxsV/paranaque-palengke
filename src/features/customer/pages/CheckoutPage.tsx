@@ -26,11 +26,13 @@ import {
 import { useOfferStore } from '@/stores/offer-store'
 import {
   DELIVERY_FEE,
+  DELIVERY_FEE_ERROR_NOTE,
+  DELIVERY_FEE_LOADING_NOTE,
   DELIVERY_FEE_NOTE,
   MAX_BOOKING_WEIGHT_KG,
   MAX_BOOKING_WEIGHT_MESSAGE,
 } from '@/constants'
-import { isApiConfigured } from '@/lib/api'
+import { isApiConfigured, quoteDeliveryFee } from '@/lib/api'
 import {
   formatCoordinate,
   mapPinFromText,
@@ -62,6 +64,17 @@ export default function CheckoutPage() {
   const [latText, setLatText] = useState(() => formatCoordinate(profile.dropoffLat))
   const [lngText, setLngText] = useState(() => formatCoordinate(profile.dropoffLng))
   const [submitting, setSubmitting] = useState(false)
+  // what they picked in Find place on this page. null = nothing picked yet,
+  // so we keep showing (and saving) the place from their profile
+  const [pickedPlace, setPickedPlace] = useState<string | null>(null)
+  const [quotedFee, setQuotedFee] = useState<number | null>(null)
+  // distance + branch that the quote was based on, shown so the fee isn't a black box
+  const [quotedDistance, setQuotedDistance] = useState<{
+    km: number
+    branchName: string
+  } | null>(null)
+  const [quoteLoading, setQuoteLoading] = useState(false)
+  const [quoteError, setQuoteError] = useState<string | null>(null)
   const apiMode = isApiConfigured()
 
   // The profile may finish loading from the API after this page mounts; fill
@@ -84,19 +97,81 @@ export default function CheckoutPage() {
     [items, products],
   )
   const vendorCount = groups.size || 1
-  const deliveryShare = Number((DELIVERY_FEE / vendorCount).toFixed(2))
+  const productIds = useMemo(
+    () => [...new Set(items.map((item) => item.productId))],
+    [items],
+  )
+  const dropoffCoords = useMemo(() => {
+    const parsed = parseDropoffCoordinates(latText, lngText)
+    if (!parsed.ok || parsed.lat == null || parsed.lng == null) return null
+    return { lat: parsed.lat, lng: parsed.lng }
+  }, [latText, lngText])
+
+  useEffect(() => {
+    if (!apiMode) {
+      setQuotedFee(DELIVERY_FEE)
+      setQuotedDistance(null)
+      setQuoteLoading(false)
+      setQuoteError(null)
+      return
+    }
+    if (!dropoffCoords || productIds.length === 0) {
+      setQuotedFee(null)
+      setQuotedDistance(null)
+      setQuoteLoading(false)
+      setQuoteError(null)
+      return
+    }
+
+    let cancelled = false
+    const timer = window.setTimeout(() => {
+      setQuoteLoading(true)
+      setQuoteError(null)
+      void quoteDeliveryFee({
+        dropoffLat: dropoffCoords.lat,
+        dropoffLng: dropoffCoords.lng,
+        productIds,
+      })
+        .then((quote) => {
+          if (cancelled) return
+          setQuotedFee(quote.deliveryCost)
+          setQuotedDistance({ km: quote.distanceKm, branchName: quote.branchName })
+          setQuoteError(null)
+        })
+        .catch((error) => {
+          if (cancelled) return
+          setQuotedFee(null)
+          setQuotedDistance(null)
+          setQuoteError(
+            error instanceof Error ? error.message : DELIVERY_FEE_ERROR_NOTE,
+          )
+        })
+        .finally(() => {
+          if (!cancelled) setQuoteLoading(false)
+        })
+    }, 300)
+
+    return () => {
+      cancelled = true
+      window.clearTimeout(timer)
+    }
+  }, [apiMode, dropoffCoords, productIds])
+
+  const deliveryFee = quotedFee ?? DELIVERY_FEE
+  const deliveryShare = Number((deliveryFee / vendorCount).toFixed(2))
   const subtotal = calculateCartTotalWithPricing(
     items,
     products,
     commodities,
     allOffers,
   )
-  const total = subtotal + DELIVERY_FEE
+  const total = subtotal + (quotedFee ?? (apiMode ? 0 : DELIVERY_FEE))
   const totalWeightKg = useMemo(
     () => calculateCartWeightKg(items, products),
     [items, products],
   )
   const overWeightLimit = totalWeightKg > MAX_BOOKING_WEIGHT_KG
+  const quoteReady = !apiMode || (quotedFee != null && !quoteLoading && !quoteError)
 
   useEffect(() => {
     if (items.length === 0 && !submitting) {
@@ -111,6 +186,11 @@ export default function CheckoutPage() {
 
     if (overWeightLimit) {
       toast.error(MAX_BOOKING_WEIGHT_MESSAGE)
+      return
+    }
+
+    if (apiMode && !quoteReady) {
+      toast.error(quoteError ?? DELIVERY_FEE_ERROR_NOTE)
       return
     }
 
@@ -175,6 +255,8 @@ export default function CheckoutPage() {
           dropoffLat: customer.dropoffLat,
           dropoffLng: customer.dropoffLng,
           dropoffLandmark: customer.dropoffLandmark,
+          dropoffPlace:
+            pickedPlace ?? useCustomerProfileStore.getState().profile.dropoffPlace,
           notes: customer.notes ?? '',
         })
       } catch {
@@ -277,6 +359,7 @@ export default function CheckoutPage() {
               </div>
               <MapPinPicker
                 {...mapPinFromText(latText, lngText, DEFAULT_DROPOFF_PIN)}
+                initialSearch={pickedPlace ?? profile.dropoffPlace}
                 onChange={({ lat, lng }) => {
                   setLatText(formatCoordinate(lat))
                   setLngText(formatCoordinate(lng))
@@ -287,6 +370,7 @@ export default function CheckoutPage() {
                   }))
                 }}
                 onPlaceSelected={({ address, lat, lng }) => {
+                  setPickedPlace(address)
                   setLatText(formatCoordinate(lat))
                   setLngText(formatCoordinate(lng))
                   setForm((f) => ({
@@ -366,7 +450,7 @@ export default function CheckoutPage() {
                 deliveryShare +
                 (index === 0
                   ? Number(
-                      (DELIVERY_FEE - deliveryShare * vendorCount).toFixed(2),
+                      (deliveryFee - deliveryShare * vendorCount).toFixed(2),
                     )
                   : 0)
               const vendorTotal = vendorSubtotal + fee
@@ -421,7 +505,7 @@ export default function CheckoutPage() {
                       <span>{formatPeso(vendorSubtotal)}</span>
                     </div>
                     <div className="flex justify-between text-ink/80">
-                      <span>Delivery share (placeholder)</span>
+                      <span>Delivery share</span>
                       <span>{formatPeso(fee)}</span>
                     </div>
                     <div className="flex justify-between border-t border-dashed border-primary/20 pt-2 font-bold text-primary-deep">
@@ -453,9 +537,34 @@ export default function CheckoutPage() {
                 <span className="font-semibold">{formatPeso(subtotal)}</span>
               </div>
               <div className="flex justify-between text-sm text-ink/80">
-                <span>Delivery (placeholder)</span>
-                <span className="font-semibold">{formatPeso(DELIVERY_FEE)}</span>
+                <span>Delivery</span>
+                <span className="font-semibold">
+                  {quoteLoading
+                    ? '…'
+                    : quotedFee != null
+                      ? formatPeso(quotedFee)
+                      : apiMode
+                        ? '—'
+                        : formatPeso(DELIVERY_FEE)}
+                </span>
               </div>
+              {apiMode ? (
+                <div className="flex justify-between gap-3 text-sm text-ink/80">
+                  <span>
+                    Distance
+                    {quotedDistance?.branchName
+                      ? ` from ${quotedDistance.branchName}`
+                      : ''}
+                  </span>
+                  <span className="shrink-0 font-semibold">
+                    {quoteLoading
+                      ? '…'
+                      : quotedDistance
+                        ? `${quotedDistance.km.toFixed(2)} km`
+                        : '—'}
+                  </span>
+                </div>
+              ) : null}
               <div className="flex justify-between text-sm text-ink/80">
                 <span>Total weight</span>
                 <span className="font-semibold">
@@ -465,7 +574,9 @@ export default function CheckoutPage() {
               <div className="flex items-center justify-between border-t border-dashed border-border pt-4">
                 <span className="font-bold text-primary-deep">Grand total</span>
                 <span className="font-display text-2xl font-extrabold text-primary">
-                  {formatPeso(total)}
+                  {quoteLoading || (apiMode && quotedFee == null)
+                    ? '…'
+                    : formatPeso(total)}
                 </span>
               </div>
               {overWeightLimit ? (
@@ -473,12 +584,20 @@ export default function CheckoutPage() {
                   {MAX_BOOKING_WEIGHT_MESSAGE}
                 </Notice>
               ) : null}
-              <p className="text-xs text-muted">{DELIVERY_FEE_NOTE}</p>
+              {quoteError ? (
+                <Notice tone="warning" title="Delivery fee">
+                  {quoteError}
+                </Notice>
+              ) : (
+                <p className="text-xs text-muted">
+                  {quoteLoading ? DELIVERY_FEE_LOADING_NOTE : DELIVERY_FEE_NOTE}
+                </p>
+              )}
               <Button
                 type="submit"
                 size="lg"
                 className="w-full"
-                disabled={submitting || overWeightLimit}
+                disabled={submitting || overWeightLimit || !quoteReady}
               >
                 {submitting ? 'Placing order...' : 'Place Order & Pay'}
               </Button>

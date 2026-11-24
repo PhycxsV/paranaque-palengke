@@ -14,6 +14,51 @@ export async function fetchOrders(): Promise<Order[]> {
   return rows.map(mapOrder)
 }
 
+export interface DeliveryQuote {
+  deliveryCost: number
+  distanceKm: number
+  branchId: string
+  branchName: string
+}
+
+/** Quote Keri delivery fee for the cart before the customer pays. */
+export async function quoteDeliveryFee(input: {
+  dropoffLat: number
+  dropoffLng: number
+  productIds: string[]
+}): Promise<DeliveryQuote> {
+  if (
+    !Number.isFinite(input.dropoffLat) ||
+    !Number.isFinite(input.dropoffLng)
+  ) {
+    throw new Error('Enter valid drop-off latitude and longitude.')
+  }
+  if (!input.productIds.length) {
+    throw new Error('Cart is empty.')
+  }
+
+  const payload = await apiRequest<{ data: DeliveryQuote }>(
+    '/orders/delivery-quote',
+    {
+      method: 'POST',
+      body: {
+        dropoffLat: input.dropoffLat,
+        dropoffLng: input.dropoffLng,
+        productIds: input.productIds,
+      },
+    },
+  )
+  const quote = payload.data
+  if (
+    !quote ||
+    !Number.isFinite(quote.deliveryCost) ||
+    quote.deliveryCost < 0
+  ) {
+    throw new Error('Delivery quote returned an invalid fee.')
+  }
+  return quote
+}
+
 export async function checkoutOrders(input: {
   customer: CheckoutFormInput
   items: Array<{ productId: string; quantity: number }>

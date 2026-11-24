@@ -15,14 +15,16 @@ export const LOW_STOCK_THRESHOLD = 5
 export const PRICE_DISCLAIMER =
   'Illustrative LGU price ranges — vendors set their own price within the range.'
 /**
- * Keri delivery fee (PHP). Placeholder only — production fee is dynamic.
- * Used for cart/checkout totals until a real fee engine exists.
+ * Offline / no-API fallback only. Live checkout quotes the fee from Keri.
  */
 export const DELIVERY_FEE_PLACEHOLDER = 100
 /** @deprecated Use DELIVERY_FEE_PLACEHOLDER — kept as alias for existing imports. */
 export const DELIVERY_FEE = DELIVERY_FEE_PLACEHOLDER
 export const DELIVERY_FEE_NOTE =
-  '₱100 is a placeholder. Delivery fee is dynamic in production.'
+  'Delivery fee is quoted from your drop-off pin to the palengke branch.'
+export const DELIVERY_FEE_LOADING_NOTE = 'Calculating delivery fee…'
+export const DELIVERY_FEE_ERROR_NOTE =
+  'Could not calculate delivery fee. Check your pin and try again.'
 /** Max cart weight (kg) for one checkout. */
 export const MAX_BOOKING_WEIGHT_KG = 25
 export const MAX_BOOKING_WEIGHT_MESSAGE = `Total weight must not exceed ${MAX_BOOKING_WEIGHT_KG} kg. Remove some items before continuing.`

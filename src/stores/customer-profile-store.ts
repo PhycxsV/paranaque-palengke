@@ -20,6 +20,8 @@ export interface CustomerProfile {
   dropoffLng: number | null
   /** Landmark / handoff hint for the rider. */
   dropoffLandmark: string
+  /** What the customer picked in Find place, kept so the search box isn't empty after a reload. */
+  dropoffPlace: string
   /** Default notes prefilled on checkout (optional). */
   notes: string
   /** Local profile photo as a data URL. */
@@ -45,6 +47,7 @@ export const EMPTY_CUSTOMER_PROFILE: CustomerProfile = {
   dropoffLat: null,
   dropoffLng: null,
   dropoffLandmark: '',
+  dropoffPlace: '',
   notes: '',
   photoUrl: '',
 }
@@ -77,6 +80,9 @@ export const useCustomerProfileStore = create<CustomerProfileState>()(
           if (patch.dropoffLandmark !== undefined) {
             next.dropoffLandmark = patch.dropoffLandmark.trim()
           }
+          if (patch.dropoffPlace !== undefined) {
+            next.dropoffPlace = patch.dropoffPlace.trim()
+          }
           if (patch.notes !== undefined) next.notes = patch.notes.trim()
           if (patch.photoUrl !== undefined) next.photoUrl = patch.photoUrl
           return { hasSaved: true, profile: next }
@@ -99,6 +105,9 @@ export const useCustomerProfileStore = create<CustomerProfileState>()(
           }
           if (remote.dropoffLandmark !== undefined) {
             next.dropoffLandmark = remote.dropoffLandmark.trim()
+          }
+          if (remote.dropoffPlace !== undefined) {
+            next.dropoffPlace = remote.dropoffPlace.trim()
           }
           if (remote.notes !== undefined) next.notes = remote.notes.trim()
           return {
@@ -136,6 +145,7 @@ export const useCustomerProfileStore = create<CustomerProfileState>()(
             dropoffLat: finiteOrNull(p?.profile?.dropoffLat),
             dropoffLng: finiteOrNull(p?.profile?.dropoffLng),
             dropoffLandmark: p?.profile?.dropoffLandmark ?? '',
+            dropoffPlace: p?.profile?.dropoffPlace ?? '',
             photoUrl: p?.profile?.photoUrl ?? '',
           },
         }
