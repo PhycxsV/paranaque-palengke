@@ -39,7 +39,7 @@ export function RequireAuth({
     user.role === 'vendor' ||
     user.role === 'lgu-admin'
 
-  if (roles && knownRole && !roles.includes(user.role as AllowedRole)) {
+  if (roles && (!knownRole || !roles.includes(user.role as AllowedRole))) {
     return <Navigate to={LOGIN_PATH} replace />
   }
 

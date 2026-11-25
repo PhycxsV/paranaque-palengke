@@ -145,6 +145,7 @@ export interface StrapiOrder {
   transactionReference?: string
   paymentSubmittedAt?: string
   keriTrackingId?: string
+  podUrl?: string | null
   pickupCode?: string
   createdAt?: string
   updatedAt?: string
@@ -329,6 +330,7 @@ export function mapOrder(raw: StrapiOrder): Order {
     transactionReference: raw.transactionReference || undefined,
     paymentSubmittedAt: raw.paymentSubmittedAt || undefined,
     keriTrackingId: raw.keriTrackingId || undefined,
+    podUrl: raw.podUrl?.trim() || undefined,
     pickupCode: raw.pickupCode || undefined,
   }
 }

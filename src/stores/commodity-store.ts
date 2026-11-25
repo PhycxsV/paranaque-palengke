@@ -196,6 +196,18 @@ export const useCommodityStore = create<CommodityState>()(
     }),
     {
       name: `${STORAGE_PREFIX}-commodities`,
+      partialize: (state) =>
+        isApiConfigured()
+          ? {}
+          : {
+              commodities: state.commodities,
+              priceHistory: state.priceHistory,
+            },
+      merge: (persisted, current) => {
+        if (isApiConfigured()) return { ...current }
+        const p = persisted as Partial<CommodityState> | undefined
+        return { ...current, ...p }
+      },
     },
   ),
 )

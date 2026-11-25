@@ -9,8 +9,8 @@ export function validateVendorCredentials(input: {
   if (input.phone.replace(/\D/g, '').length < 10) {
     return 'Enter a valid phone number (at least 10 digits).'
   }
-  if (input.password.length < 6) {
-    return 'Password must be at least 6 characters.'
+  if (input.password.length < 8) {
+    return 'Password must be at least 8 characters.'
   }
   return null
 }

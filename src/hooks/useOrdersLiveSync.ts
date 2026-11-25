@@ -50,6 +50,7 @@ export function useOrdersLiveSync(options?: {
               transactionReference: remote.transactionReference,
               paymentSubmittedAt: remote.paymentSubmittedAt,
               keriTrackingId: remote.keriTrackingId,
+              podUrl: remote.podUrl,
               pickupCode: remote.pickupCode,
               updatedAt: remote.updatedAt,
               items: remote.items?.length ? remote.items : local.items,

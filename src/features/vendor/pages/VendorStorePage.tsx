@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type ChangeEvent } from 'react'
 import { toast } from 'sonner'
-import { Clock, MapPin, QrCode, Save, Star, Store, Upload } from 'lucide-react'
+import { Clock, KeyRound, MapPin, QrCode, Save, Star, Store, Upload } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -13,7 +13,7 @@ import { SectionCard } from '@/components/shared/SectionCard'
 import { useBranchStore } from '@/stores/branch-store'
 import { useSessionStore } from '@/stores/session-reset-store'
 import { useVendorStore } from '@/stores/vendor-store'
-import { isApiConfigured } from '@/lib/api'
+import { isApiConfigured, updateVendorProfile } from '@/lib/api'
 import {
   formatVendorTime,
   isVendorAcceptingOrders,
@@ -54,6 +54,10 @@ export default function VendorStorePage() {
   const [qrFile, setQrFile] = useState<File | null>(null)
   const [qrUploading, setQrUploading] = useState(false)
   const qrInputRef = useRef<HTMLInputElement>(null)
+  const [currentPassword, setCurrentPassword] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [passwordSaving, setPasswordSaving] = useState(false)
 
   useEffect(() => {
     if (vendor) {
@@ -154,6 +158,42 @@ export default function VendorStorePage() {
     setQrFile(null)
     if (qrInputRef.current) qrInputRef.current.value = ''
     toast.success('Payment QR uploaded')
+  }
+
+  const handleChangePassword = async () => {
+    if (!isApiConfigured()) {
+      toast.error('Password changes require the API.')
+      return
+    }
+    if (newPassword.length < 8) {
+      toast.error('New password must be at least 8 characters.')
+      return
+    }
+    if (newPassword !== confirmPassword) {
+      toast.error('New password and confirmation do not match.')
+      return
+    }
+    if (!currentPassword) {
+      toast.error('Enter your current password.')
+      return
+    }
+    setPasswordSaving(true)
+    try {
+      await updateVendorProfile({
+        currentPassword,
+        password: newPassword,
+      })
+      setCurrentPassword('')
+      setNewPassword('')
+      setConfirmPassword('')
+      toast.success('Password updated')
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : 'Unable to update password.',
+      )
+    } finally {
+      setPasswordSaving(false)
+    }
   }
 
   const updateField = <K extends keyof VendorUpdateInput>(
@@ -360,6 +400,53 @@ export default function VendorStorePage() {
               Customers scan this QR to submit their payment.
             </p>
           </SectionCard>
+
+          {isApiConfigured() ? (
+            <SectionCard title="Account password" icon={KeyRound}>
+              <div className="grid gap-3">
+                <div className="grid gap-1.5">
+                  <Label htmlFor="vs-current-password">Current password</Label>
+                  <Input
+                    id="vs-current-password"
+                    type="password"
+                    autoComplete="current-password"
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                  />
+                </div>
+                <div className="grid gap-1.5">
+                  <Label htmlFor="vs-new-password">New password</Label>
+                  <Input
+                    id="vs-new-password"
+                    type="password"
+                    autoComplete="new-password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="At least 8 characters"
+                  />
+                </div>
+                <div className="grid gap-1.5">
+                  <Label htmlFor="vs-confirm-password">Confirm new password</Label>
+                  <Input
+                    id="vs-confirm-password"
+                    type="password"
+                    autoComplete="new-password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                  />
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={passwordSaving}
+                  onClick={handleChangePassword}
+                >
+                  <KeyRound className="h-4 w-4" />
+                  {passwordSaving ? 'Updating…' : 'Update password'}
+                </Button>
+              </div>
+            </SectionCard>
+          ) : null}
         </aside>
       </div>
     </div>

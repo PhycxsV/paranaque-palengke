@@ -1,4 +1,5 @@
 import { Check, Package, PackageCheck, Truck } from 'lucide-react'
+import { ProofOfDeliveryButton } from '@/components/shared/ProofOfDeliveryButton'
 import { DELIVERY_MILESTONES } from '@/constants'
 import { DELIVERY_FLOW, normalizeDeliveryStatus } from '@/lib/delivery'
 import { cn } from '@/lib/utils'
@@ -17,14 +18,19 @@ function stepIndex(status: DeliveryStatus): number {
 
 interface DeliveryMilestoneTrackerProps {
   deliveryStatus: DeliveryStatus | string
+  /** Keri proof-of-delivery image URL when the order is delivered. */
+  podUrl?: string | null
   className?: string
 }
 
 export function DeliveryMilestoneTracker({
   deliveryStatus,
+  podUrl,
   className,
 }: DeliveryMilestoneTrackerProps) {
-  const current = stepIndex(normalizeDeliveryStatus(deliveryStatus))
+  const status = normalizeDeliveryStatus(deliveryStatus)
+  const current = stepIndex(status)
+  const showPod = status === 'delivered' && Boolean(podUrl?.trim())
 
   return (
     <section
@@ -34,11 +40,12 @@ export function DeliveryMilestoneTracker({
       )}
     >
       <span className="brand-ribbon absolute inset-x-0 top-0 h-1" aria-hidden />
-      <div className="mb-1 flex items-center gap-2.5">
+      <div className="mb-1 flex flex-wrap items-center gap-2.5">
         <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-lime-50 text-primary ring-1 ring-lime/50">
           <Truck className="h-5 w-5" />
         </span>
         <h2 className="text-lg font-bold text-primary-deep">Keri delivery</h2>
+        {showPod ? <ProofOfDeliveryButton podUrl={podUrl} /> : null}
       </div>
       <p className="mb-6 text-xs text-muted">
         Track your order after payment confirmation.

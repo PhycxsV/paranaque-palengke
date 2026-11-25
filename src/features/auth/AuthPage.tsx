@@ -150,7 +150,7 @@ export default function AuthPage({ portal }: { portal: AuthPortal }) {
     }
 
     const role = useAuthStore.getState().user?.role
-    if (isKnownRole(role) && role !== portal) {
+    if (!isKnownRole(role) || role !== portal) {
       logout()
       toast.error(
         portal === 'vendor'

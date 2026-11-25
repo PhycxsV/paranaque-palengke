@@ -84,7 +84,7 @@ export default function VendorDashboardPage() {
         (o) => o.status === 'awaiting_vendor_confirmation',
       ).length,
       confirmed: confirmedOrders.length,
-      sales: confirmedOrders.reduce((sum, o) => sum + o.total, 0),
+      sales: confirmedOrders.reduce((sum, o) => sum + o.subtotal, 0),
       rejected: vendorOrders.filter((o) => o.status === 'payment_rejected')
         .length,
       pendingOffers: vendorOffers.filter((o) => o.status === 'pending').length,
@@ -330,7 +330,7 @@ export default function VendorDashboardPage() {
                     <div className="flex flex-col items-end gap-1.5 sm:flex-row sm:items-center sm:gap-4">
                       <StatusBadge status={order.status} />
                       <span className="text-sm font-extrabold text-primary-deep">
-                        {formatPeso(order.total)}
+                        {formatPeso(order.subtotal)}
                       </span>
                     </div>
                   </Link>

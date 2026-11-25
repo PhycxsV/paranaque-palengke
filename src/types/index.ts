@@ -201,6 +201,8 @@ export interface Order {
    * (first sibling moves to out_for_delivery).
    */
   keriTrackingId?: string
+  /** Keri proof-of-delivery image URL from the status webhook. */
+  podUrl?: string
   /**
    * 5-digit pickup PIN — generated when order becomes Ready for Keri.
    * Shown to the vendor; copied into Keri rider remarks for handoff verification.

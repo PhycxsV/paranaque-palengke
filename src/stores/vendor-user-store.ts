@@ -2,7 +2,12 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { STORAGE_PREFIX } from '@/constants'
 import { seedVendorUsers } from '@/data/vendor-users'
-import { createVendorAccount, fetchVendors, isApiConfigured } from '@/lib/api'
+import {
+  createVendorAccount,
+  fetchVendors,
+  isApiConfigured,
+  updateVendorAccount,
+} from '@/lib/api'
 import { validateVendorCredentials } from '@/lib/vendor-credentials'
 import { generateId } from '@/lib/utils'
 import { useVendorStore } from '@/stores/vendor-store'
@@ -89,14 +94,6 @@ export const useVendorUserStore = create<VendorUserState>()(
         const current = get().users.find((u) => u.id === userId)
         if (!current) return { ok: false, message: 'User not found.' }
 
-        if (isApiConfigured()) {
-          return {
-            ok: false,
-            message:
-              'Vendor account profile edits are managed in the admin panel. Reassign stores from the store detail page.',
-          }
-        }
-
         const name =
           input.name !== undefined ? input.name.trim() : current.name
         const email =
@@ -109,6 +106,59 @@ export const useVendorUserStore = create<VendorUserState>()(
           input.password !== undefined ? input.password : current.password
 
         if (!name) return { ok: false, message: 'Name is required.' }
+        if (!email.includes('@')) {
+          return { ok: false, message: 'Enter a valid email address.' }
+        }
+        if (phone.replace(/\D/g, '').length < 10) {
+          return {
+            ok: false,
+            message: 'Enter a valid phone number (at least 10 digits).',
+          }
+        }
+        if (input.password !== undefined && input.password.length < 8) {
+          return {
+            ok: false,
+            message: 'Password must be at least 8 characters.',
+          }
+        }
+
+        if (isApiConfigured()) {
+          try {
+            const updated = await updateVendorAccount(userId, {
+              name,
+              email,
+              phone,
+              isActive: input.isActive ?? current.isActive,
+              ...(input.password !== undefined
+                ? { password: input.password }
+                : {}),
+            })
+            set({
+              users: get().users.map((u) =>
+                u.id === userId
+                  ? {
+                      ...u,
+                      name: updated.name || name,
+                      email: updated.email || email,
+                      phone: updated.phone || phone,
+                      password: '',
+                      isActive: updated.isActive,
+                    }
+                  : u,
+              ),
+            })
+            return { ok: true }
+          } catch (error) {
+            return {
+              ok: false,
+              message:
+                error instanceof Error
+                  ? error.message
+                  : 'Unable to update vendor account.',
+            }
+          }
+        }
+
         const credError = validateVendorCredentials({ email, phone, password })
         if (credError) return { ok: false, message: credError }
         if (get().users.some((u) => u.id !== userId && u.email === email)) {

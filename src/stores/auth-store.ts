@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { STORAGE_PREFIX } from '@/constants'
 import {
+  ApiError,
   fetchCurrentUser,
   getStoredToken,
   isApiConfigured,
@@ -101,17 +102,18 @@ export const useAuthStore = create<AuthState>()(
           if (cached && cached.id === user.id) {
             if (!user.name?.trim() && cached.name) user.name = cached.name
             if (!user.phone?.trim() && cached.phone) user.phone = cached.phone
-            if (
-              (!user.role || user.role === 'authenticated') &&
-              cached.role &&
-              cached.role !== 'authenticated'
-            ) {
-              user.role = cached.role
-            }
+            // Do not copy role from cache — that previously stamped portal
+            // hints onto accounts whose /users/me omitted role.type.
           }
           set({ user, jwt: token, hydrated: true })
-        } catch {
-          // Preserve an existing session when /users/me is unavailable.
+        } catch (error) {
+          // Expired/invalid token → clear so we don't look signed in with empty data.
+          if (error instanceof ApiError && (error.status === 401 || error.status === 403)) {
+            logoutLocal()
+            set({ user: null, jwt: null, hydrated: true })
+            return
+          }
+          // Keep the session only when the API is temporarily unreachable.
           const latestUser = get().user
           const latestJwt = get().jwt || getStoredToken() || token
           if (latestUser && latestJwt) {

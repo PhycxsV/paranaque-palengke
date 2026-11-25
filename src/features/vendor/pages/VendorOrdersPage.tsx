@@ -211,7 +211,7 @@ export default function VendorOrdersPage() {
                       {formatDateTime(order.createdAt)}
                     </td>
                     <td className="px-4 py-3.5 text-right font-extrabold text-primary-deep">
-                      {formatPeso(order.total)}
+                      {formatPeso(order.subtotal)}
                     </td>
                     <td className="px-4 py-3.5">
                       <div className="flex flex-col items-start gap-1">
@@ -258,7 +258,7 @@ export default function VendorOrdersPage() {
                       </p>
                     </div>
                     <p className="text-base font-extrabold text-primary-deep">
-                      {formatPeso(order.total)}
+                      {formatPeso(order.subtotal)}
                     </p>
                   </div>
                   <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-border pt-3">

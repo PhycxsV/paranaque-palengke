@@ -24,6 +24,7 @@ import { distanceKm } from '@/lib/coordinates'
 import { generateId } from '@/lib/utils'
 import { isVendorAcceptingOrders } from '@/lib/vendor-hours'
 import { useBranchStore } from '@/stores/branch-store'
+import { useProductStore } from '@/stores/product-store'
 import type {
   CartItem,
   CheckoutFormInput,
@@ -314,6 +315,13 @@ export const useOrderStore = create<OrderState>()(
           }
         }
 
+        const deductStock = () => {
+          const adjustStock = useProductStore.getState().adjustStock
+          for (const item of order.items) {
+            adjustStock(item.productId, -item.quantity)
+          }
+        }
+
         if (isApiConfigured()) {
           try {
             const result = await vendorDecideOrder(orderId, 'confirmed')
@@ -326,6 +334,7 @@ export const useOrderStore = create<OrderState>()(
             set({
               orders: get().orders.map((o) => (o.id === orderId ? updated : o)),
             })
+            deductStock()
             return { ok: true, order: updated }
           } catch (error) {
             return {
@@ -345,6 +354,7 @@ export const useOrderStore = create<OrderState>()(
           set({
             orders: get().orders.map((o) => (o.id === orderId ? updated : o)),
           })
+          deductStock()
           return { ok: true, order: updated }
         } catch (error) {
           return {

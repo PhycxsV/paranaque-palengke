@@ -69,7 +69,10 @@ function VendorPaymentCard({
         <div className="space-y-4">
           <Notice tone="success" layout="panel" title="Payment confirmed by vendor" />
           {order.deliveryStatus ? (
-            <DeliveryMilestoneTracker deliveryStatus={order.deliveryStatus} />
+            <DeliveryMilestoneTracker
+              deliveryStatus={order.deliveryStatus}
+              podUrl={order.podUrl}
+            />
           ) : null}
         </div>
       )}

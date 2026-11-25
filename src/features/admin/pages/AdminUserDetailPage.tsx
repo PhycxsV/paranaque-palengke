@@ -66,8 +66,8 @@ export default function AdminUserDetailPage() {
   }
 
   const handleSave = async () => {
-    if (changePassword && password.trim().length < 6) {
-      toast.error('Password must be at least 6 characters.')
+    if (changePassword && password.trim().length < 8) {
+      toast.error('Password must be at least 8 characters.')
       return
     }
     const result = await updateUser(user.id, {
@@ -124,8 +124,8 @@ export default function AdminUserDetailPage() {
         <CardHeader>
           <CardTitle className="text-lg">Account credentials</CardTitle>
           <CardDescription>
-            Email, phone, and password for this vendor user. Login is not wired
-            yet.
+            Email, phone, and optional password reset for this vendor login.
+            Changes sync to the backend and vendor app sign-in.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -181,12 +181,13 @@ export default function AdminUserDetailPage() {
                   autoComplete="new-password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="At least 6 characters"
+                  placeholder="At least 8 characters"
                 />
               </div>
             ) : (
               <p className="text-xs text-muted">
-                Current password is set ({user.password.length} characters).
+                Password is write-only. Leave unchecked to keep the current
+                password.
               </p>
             )}
           </div>

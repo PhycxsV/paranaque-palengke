@@ -1,4 +1,4 @@
-import { apiRequest, setStoredToken } from './client'
+import { ApiError, apiRequest, setStoredToken } from './client'
 import type { StrapiUser } from './mappers'
 
 export type AuthRole = 'customer' | 'vendor' | 'lgu-admin' | 'authenticated' | string
@@ -17,14 +17,16 @@ export interface AuthSession {
   user: AuthUser
 }
 
-function mapAuthUser(raw: StrapiUser, roleFallback?: AuthRole): AuthUser {
+function mapAuthUser(raw: StrapiUser): AuthUser {
   return {
     id: raw.documentId || String(raw.id ?? ''),
     username: raw.username ?? '',
     email: raw.email ?? '',
     name: raw.name?.trim() || raw.username || '',
     phone: raw.phone ?? '',
-    role: (raw.role?.type || roleFallback || 'authenticated') as AuthRole,
+    // Never invent a role from the login portal hint — that let wrong
+    // accounts into LGU/vendor when /users/me omitted role.type.
+    role: (raw.role?.type || 'authenticated') as AuthRole,
   }
 }
 
@@ -39,23 +41,29 @@ export function inferRoleFromPath(path: string): AuthRole | undefined {
   return undefined
 }
 
-async function hydrateRole(
-  jwt: string,
-  loginUser: StrapiUser,
-  roleHint?: AuthRole,
-): Promise<AuthUser> {
+async function hydrateRole(jwt: string, loginUser: StrapiUser): Promise<AuthUser> {
   try {
     const me = await apiRequest<StrapiUser>('/users/me', {
       query: { 'populate[role]': 'true' },
       token: jwt,
     })
-    return mapAuthUser(
-      { ...loginUser, ...me, role: me.role ?? loginUser.role },
-      roleHint,
-    )
+    return mapAuthUser({
+      ...loginUser,
+      ...me,
+      role: me.role ?? loginUser.role,
+    })
   } catch {
-    return mapAuthUser(loginUser, roleHint)
+    return mapAuthUser(loginUser)
   }
+}
+
+function portalRoleError(roleHint: AuthRole): string {
+  if (roleHint === 'vendor') return 'This account is not a vendor account.'
+  if (roleHint === 'lgu-admin') return 'This account is not an LGU admin account.'
+  if (roleHint === 'customer') {
+    return 'This account cannot use the customer storefront login.'
+  }
+  return 'This account cannot sign in to this portal.'
 }
 
 export async function loginWithPassword(
@@ -72,7 +80,11 @@ export async function loginWithPassword(
     },
   )
   setStoredToken(payload.jwt)
-  const user = await hydrateRole(payload.jwt, payload.user, roleHint)
+  const user = await hydrateRole(payload.jwt, payload.user)
+  if (roleHint && user.role !== roleHint) {
+    setStoredToken(null)
+    throw new ApiError(portalRoleError(roleHint), 403)
+  }
   return { jwt: payload.jwt, user }
 }
 

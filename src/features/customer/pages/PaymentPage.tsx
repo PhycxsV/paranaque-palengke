@@ -123,6 +123,7 @@ export default function PaymentPage() {
             </Notice>
             <DeliveryMilestoneTracker
               deliveryStatus={order.deliveryStatus ?? 'packing'}
+              podUrl={order.podUrl}
             />
           </div>
         )}
