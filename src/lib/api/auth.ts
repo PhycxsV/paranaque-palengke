@@ -17,16 +17,25 @@ export interface AuthSession {
   user: AuthUser
 }
 
-function mapAuthUser(raw: StrapiUser): AuthUser {
+type SessionMe = {
+  documentId?: string
+  id?: number | string
+  username?: string
+  email?: string
+  name?: string
+  phone?: string
+  role?: { type?: string } | null
+}
+
+function mapAuthUser(raw: StrapiUser, roleType?: string | null): AuthUser {
   return {
     id: raw.documentId || String(raw.id ?? ''),
     username: raw.username ?? '',
     email: raw.email ?? '',
     name: raw.name?.trim() || raw.username || '',
     phone: raw.phone ?? '',
-    // Never invent a role from the login portal hint — that let wrong
-    // accounts into LGU/vendor when /users/me omitted role.type.
-    role: (raw.role?.type || 'authenticated') as AuthRole,
+    // Prefer /session/me role — Strapi /users/me omits role entirely.
+    role: (roleType || raw.role?.type || 'authenticated') as AuthRole,
   }
 }
 
@@ -41,19 +50,32 @@ export function inferRoleFromPath(path: string): AuthRole | undefined {
   return undefined
 }
 
+async function fetchSessionRole(jwt: string): Promise<string | null> {
+  try {
+    const payload = await apiRequest<{ data: SessionMe }>('/session/me', { token: jwt })
+    return payload.data?.role?.type ?? null
+  } catch {
+    return null
+  }
+}
+
 async function hydrateRole(jwt: string, loginUser: StrapiUser): Promise<AuthUser> {
+  const roleType = await fetchSessionRole(jwt)
   try {
     const me = await apiRequest<StrapiUser>('/users/me', {
       query: { 'populate[role]': 'true' },
       token: jwt,
     })
-    return mapAuthUser({
-      ...loginUser,
-      ...me,
-      role: me.role ?? loginUser.role,
-    })
+    return mapAuthUser(
+      {
+        ...loginUser,
+        ...me,
+        role: me.role ?? loginUser.role,
+      },
+      roleType,
+    )
   } catch {
-    return mapAuthUser(loginUser)
+    return mapAuthUser(loginUser, roleType)
   }
 }
 
@@ -134,11 +156,13 @@ export async function registerCustomer(input: {
 }
 
 export async function fetchCurrentUser(token?: string): Promise<AuthUser> {
+  const jwt = token
+  const roleType = jwt ? await fetchSessionRole(jwt) : null
   const me = await apiRequest<StrapiUser>('/users/me', {
     query: { 'populate[role]': 'true' },
     token,
   })
-  return mapAuthUser(me)
+  return mapAuthUser(me, roleType)
 }
 
 export function logoutLocal(): void {

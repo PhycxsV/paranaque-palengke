@@ -5,6 +5,7 @@ import {
   createChatThread,
   isApiConfigured,
   markChatThreadRead,
+  sendChatImageMessage,
   sendChatMessage,
 } from '@/lib/api'
 import { generateId } from '@/lib/utils'
@@ -31,6 +32,7 @@ interface ChatState {
     threadId: string
     sender: ChatSender
     body: string
+    imageFile?: File | null
   }) => Promise<{ ok: true; message: ChatMessage } | { ok: false; message: string }>
   markThreadRead: (threadId: string, reader: ChatSender) => Promise<void>
   getThreadById: (threadId: string) => ChatThread | undefined
@@ -76,9 +78,9 @@ export const useChatStore = create<ChatState>()(
         set({ threads: [thread, ...get().threads.map(withReadDefaults)] })
         return thread
       },
-      sendMessage: async ({ threadId, sender, body }) => {
+      sendMessage: async ({ threadId, sender, body, imageFile }) => {
         const trimmed = body.trim()
-        if (!trimmed) {
+        if (!trimmed && !imageFile) {
           return { ok: false, message: 'Message cannot be empty.' }
         }
         const thread = get().threads.find((t) => t.id === threadId)
@@ -88,7 +90,10 @@ export const useChatStore = create<ChatState>()(
 
         if (isApiConfigured()) {
           try {
-            const message = await sendChatMessage(threadId, trimmed)
+            const message = imageFile
+              ? await sendChatImageMessage(threadId, imageFile, trimmed)
+              : await sendChatMessage(threadId, trimmed)
+            const preview = message.body || (imageFile ? '[Photo]' : '')
             const now = message.createdAt
             set({
               messages: [...get().messages, message],
@@ -98,7 +103,7 @@ export const useChatStore = create<ChatState>()(
                   ...withReadDefaults(t),
                   updatedAt: now,
                   lastMessagePreview:
-                    trimmed.length > 80 ? `${trimmed.slice(0, 77)}...` : trimmed,
+                    preview.length > 80 ? `${preview.slice(0, 77)}...` : preview,
                   ...(sender === 'customer'
                     ? { customerLastReadAt: now }
                     : { vendorLastReadAt: now }),
@@ -114,6 +119,13 @@ export const useChatStore = create<ChatState>()(
                   ? error.message
                   : 'Unable to send message.',
             }
+          }
+        }
+
+        if (imageFile) {
+          return {
+            ok: false,
+            message: 'Photo chat needs the live API connection.',
           }
         }
 

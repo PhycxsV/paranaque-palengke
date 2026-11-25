@@ -1,4 +1,4 @@
-import { apiFetchAll, apiRequest } from './client'
+import { apiFetchAll, apiRequest, apiUpload } from './client'
 import {
   mapChatMessage,
   mapChatThread,
@@ -21,6 +21,7 @@ export async function fetchChatMessages(threadId?: string): Promise<ChatMessage[
   const rows = await apiFetchAll<StrapiChatMessage>('/chat-messages', {
     query: {
       'populate[thread]': 'true',
+      'populate[image]': 'true',
       'sort[0]': 'createdAt:asc',
       ...(threadId
         ? { 'filters[thread][documentId][$eq]': threadId }
@@ -51,8 +52,28 @@ export async function sendChatMessage(
         body: body.trim(),
       },
     },
-    query: { 'populate[thread]': 'true' },
+    query: {
+      'populate[thread]': 'true',
+      'populate[image]': 'true',
+    },
   })
+  return mapChatMessage(payload.data)
+}
+
+export async function sendChatImageMessage(
+  threadId: string,
+  imageFile: File,
+  caption = '',
+): Promise<ChatMessage> {
+  const formData = new FormData()
+  formData.append('thread', threadId)
+  if (caption.trim()) formData.append('body', caption.trim())
+  formData.append('files', imageFile)
+
+  const payload = await apiUpload<{ data: StrapiChatMessage }>(
+    '/chat-messages/with-image',
+    formData,
+  )
   return mapChatMessage(payload.data)
 }
 

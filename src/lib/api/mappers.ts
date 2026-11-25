@@ -169,6 +169,7 @@ export interface StrapiChatMessage {
   sender?: ChatSender
   body?: string
   createdAt?: string
+  image?: StrapiMedia | null
   thread?: StrapiRelation<StrapiChatThread>
 }
 
@@ -354,6 +355,7 @@ export function mapChatMessage(raw: StrapiChatMessage): ChatMessage {
     threadId: relationId(raw.thread),
     sender: raw.sender === 'vendor' ? 'vendor' : 'customer',
     body: raw.body ?? '',
+    imageUrl: resolveMediaUrl(raw.image?.url) || undefined,
     createdAt: raw.createdAt ?? new Date().toISOString(),
   }
 }

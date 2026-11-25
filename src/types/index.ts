@@ -345,6 +345,8 @@ export interface ChatMessage {
   threadId: string
   sender: ChatSender
   body: string
+  /** Optional photo attached to the message. */
+  imageUrl?: string
   createdAt: string
 }
 

@@ -85,11 +85,12 @@ export default function VendorChatPage() {
           selfSender="vendor"
           selfLabel={vendor.name}
           peerLabel={activeThread.customerLabel}
-          onSend={async (body) => {
+          onSend={async ({ body, imageFile }) => {
             const result = await sendMessage({
               threadId: activeThread.id,
               sender: 'vendor',
               body,
+              imageFile,
             })
             if (!result.ok) {
               toast.error(result.message)
