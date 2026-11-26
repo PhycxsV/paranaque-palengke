@@ -204,6 +204,37 @@ export async function advanceOrderDelivery(
   }
 }
 
+export async function cancelOrderApi(
+  orderId: string,
+  reason?: string,
+): Promise<{
+  id: string
+  status: Order['status']
+  cancelledBy?: 'customer' | 'vendor'
+  cancelledAt?: string
+  cancelReason?: string
+}> {
+  const payload = await apiRequest<{
+    data: {
+      documentId: string
+      paymentStatus?: Order['status']
+      cancelledBy?: 'customer' | 'vendor'
+      cancelledAt?: string
+      cancelReason?: string | null
+    }
+  }>(`/orders/${orderId}/cancel`, {
+    method: 'POST',
+    body: reason?.trim() ? { reason: reason.trim() } : {},
+  })
+  return {
+    id: payload.data.documentId,
+    status: payload.data.paymentStatus ?? 'cancelled',
+    cancelledBy: payload.data.cancelledBy,
+    cancelledAt: payload.data.cancelledAt,
+    cancelReason: payload.data.cancelReason || undefined,
+  }
+}
+
 export type KeriDraftStatus =
   | 'created'
   | 'sending'

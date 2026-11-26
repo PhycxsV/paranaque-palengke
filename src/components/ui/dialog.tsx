@@ -56,12 +56,12 @@ export function DialogContent({
         />
         {mobileSheet ? (
           <span
-            className="absolute left-1/2 top-2.5 z-20 h-1 w-10 -translate-x-1/2 rounded-full bg-border sm:hidden"
+            className="absolute left-1/2 top-2.5 z-20 h-1 w-10 -translate-x-1/2 rounded-full bg-white/40 sm:hidden"
             aria-hidden
           />
         ) : null}
         {children}
-        <DialogPrimitive.Close className="absolute right-3.5 top-3.5 z-20 rounded-full p-1.5 text-muted transition hover:bg-primary-50 hover:text-primary-deep">
+        <DialogPrimitive.Close className="absolute right-3.5 top-4 z-20 rounded-full p-1.5 text-white/80 transition hover:bg-white/15 hover:text-white">
           <X className="h-4 w-4" />
           <span className="sr-only">Close</span>
         </DialogPrimitive.Close>
@@ -77,7 +77,7 @@ export function DialogHeader({
   return (
     <div
       className={cn(
-        'shrink-0 space-y-1.5 border-b border-border bg-surface px-6 pb-4 pt-7 pr-12 text-left',
+        'shrink-0 space-y-1.5 border-b border-primary-deep/15 bg-gradient-to-br from-primary-deep via-primary-deep to-primary px-6 pb-4 pt-6 pr-12 text-left text-white',
         className,
       )}
       {...props}
@@ -128,7 +128,7 @@ export function DialogTitle({
   return (
     <DialogPrimitive.Title
       className={cn(
-        'font-display text-xl font-bold tracking-tight text-primary-deep',
+        'font-display text-xl font-bold tracking-tight text-white',
         className,
       )}
       {...props}
@@ -142,7 +142,7 @@ export function DialogDescription({
 }: React.ComponentProps<typeof DialogPrimitive.Description>) {
   return (
     <DialogPrimitive.Description
-      className={cn('text-sm text-muted', className)}
+      className={cn('text-sm text-white/80', className)}
       {...props}
     />
   )

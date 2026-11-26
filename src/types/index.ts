@@ -15,6 +15,7 @@ export type OrderStatus =
   | 'awaiting_vendor_confirmation'
   | 'confirmed'
   | 'payment_rejected'
+  | 'cancelled'
 
 export type DeliveryStatus =
   | 'packing'
@@ -218,6 +219,9 @@ export interface Order {
   updatedAt: string
   transactionReference?: string
   paymentSubmittedAt?: string
+  cancelledBy?: 'customer' | 'vendor'
+  cancelledAt?: string
+  cancelReason?: string
 }
 
 export interface CommodityFormInput {

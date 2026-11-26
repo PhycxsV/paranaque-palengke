@@ -64,6 +64,15 @@ export default function OrdersPage() {
                       </p>
                       <StatusBadge status={order.status} />
                     </div>
+                    {order.status === 'cancelled' && order.cancelledBy === 'vendor' ? (
+                      <p className="mt-1 text-xs font-semibold text-red-700">
+                        Cancelled by {order.vendorName}
+                      </p>
+                    ) : order.status === 'payment_rejected' ? (
+                      <p className="mt-1 text-xs font-semibold text-red-700">
+                        {order.vendorName} rejected your payment — tap to resubmit
+                      </p>
+                    ) : null}
                     <p className="mt-1 text-xs text-muted">
                       <span className="font-mono">{order.id}</span>
                       {' · '}

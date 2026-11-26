@@ -1,7 +1,6 @@
 ﻿import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import {
-  AtSign,
   Camera,
   Check,
   LogOut,
@@ -10,6 +9,7 @@ import {
   Package,
   Phone,
   Trash2,
+  User,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { MapPinPicker, DEFAULT_DROPOFF_PIN } from '@/components/shared/MapPinPicker'
@@ -59,10 +59,8 @@ export default function CustomerProfilePage() {
   const updateProfile = useCustomerProfileStore((s) => s.updateProfile)
   const fileRef = useRef<HTMLInputElement>(null)
 
-  const accountName =
-    authUser?.name?.trim() || authUser?.username?.trim() || ''
+  const accountName = authUser?.name?.trim() || ''
   const accountEmail = authUser?.email?.trim() || ''
-  const accountUsername = authUser?.username?.trim() || ''
   const accountPhone = authUser?.phone?.trim() || ''
 
   const [form, setFormRaw] = useState<CustomerProfile>(() => withPhotoDefaults(profile))
@@ -290,14 +288,25 @@ export default function CustomerProfilePage() {
                   <p className="truncate text-lg font-extrabold text-primary-deep">
                     {displayName}
                   </p>
-                  <p className="truncate text-sm text-muted">
-                    {accountUsername
-                      ? `@${accountUsername}`
-                      : 'Sign in to load your account details.'}
-                  </p>
+                  {!signedIn ? (
+                    <p className="truncate text-sm text-muted">
+                      Sign in to load your account details.
+                    </p>
+                  ) : null}
                 </div>
 
                 <dl className="mt-4 divide-y divide-border rounded-xl border border-border bg-warm-white/60 text-sm">
+                  <div className="flex items-center gap-3 px-3.5 py-2.5">
+                    <User className="h-4 w-4 shrink-0 text-primary" />
+                    <div className="min-w-0">
+                      <dt className="text-[11px] font-bold uppercase tracking-wide text-muted">
+                        Full name
+                      </dt>
+                      <dd className="truncate font-semibold text-primary-deep">
+                        {accountName || form.name.trim() || '—'}
+                      </dd>
+                    </div>
+                  </div>
                   <div className="flex items-center gap-3 px-3.5 py-2.5">
                     <Mail className="h-4 w-4 shrink-0 text-primary" />
                     <div className="min-w-0">
@@ -317,17 +326,6 @@ export default function CustomerProfilePage() {
                       </dt>
                       <dd className="truncate font-semibold text-primary-deep">
                         {accountPhone || form.contactNumber || '—'}
-                      </dd>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3 px-3.5 py-2.5">
-                    <AtSign className="h-4 w-4 shrink-0 text-primary" />
-                    <div className="min-w-0">
-                      <dt className="text-[11px] font-bold uppercase tracking-wide text-muted">
-                        Username
-                      </dt>
-                      <dd className="truncate font-semibold text-primary-deep">
-                        {accountUsername || '—'}
                       </dd>
                     </div>
                   </div>

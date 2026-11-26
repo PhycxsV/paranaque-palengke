@@ -13,7 +13,10 @@ export function AlertDialogOverlay({
 }: React.ComponentProps<typeof AlertDialogPrimitive.Overlay>) {
   return (
     <AlertDialogPrimitive.Overlay
-      className={cn('dialog-overlay fixed inset-0 z-50 bg-primary-deep/55 backdrop-blur-sm', className)}
+      className={cn(
+        'dialog-overlay fixed inset-0 z-50 bg-primary-deep/55 backdrop-blur-sm',
+        className,
+      )}
       {...props}
     />
   )
@@ -29,15 +32,12 @@ export function AlertDialogContent({
       <AlertDialogOverlay />
       <AlertDialogPrimitive.Content
         className={cn(
-          'dialog-content fixed left-1/2 top-1/2 z-50 grid w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 gap-4 rounded-2xl border border-border bg-surface p-6 pt-7 shadow-[var(--shadow-lift)]',
+          'dialog-content fixed left-1/2 top-1/2 z-50 flex w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 flex-col gap-0 overflow-hidden rounded-2xl border border-border bg-surface p-0 shadow-[var(--shadow-lift)]',
           className,
         )}
         {...props}
       >
-        <span
-          className="brand-ribbon absolute inset-x-0 top-0 h-1.5 rounded-t-2xl"
-          aria-hidden
-        />
+        <span className="brand-ribbon h-1.5 w-full shrink-0" aria-hidden />
         {children}
       </AlertDialogPrimitive.Content>
     </AlertDialogPortal>
@@ -48,7 +48,15 @@ export function AlertDialogHeader({
   className,
   ...props
 }: React.HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn('flex flex-col gap-2 text-left', className)} {...props} />
+  return (
+    <div
+      className={cn(
+        'relative overflow-hidden bg-gradient-to-br from-primary-deep via-primary-deep to-primary px-6 py-5 text-left text-white',
+        className,
+      )}
+      {...props}
+    />
+  )
 }
 
 export function AlertDialogFooter({
@@ -58,7 +66,7 @@ export function AlertDialogFooter({
   return (
     <div
       className={cn(
-        'flex flex-col-reverse gap-2 sm:flex-row sm:justify-end',
+        'flex flex-col-reverse gap-2 border-t border-border bg-warm-white/95 px-6 py-4 sm:flex-row sm:justify-end',
         className,
       )}
       {...props}
@@ -72,7 +80,10 @@ export function AlertDialogTitle({
 }: React.ComponentProps<typeof AlertDialogPrimitive.Title>) {
   return (
     <AlertDialogPrimitive.Title
-      className={cn('font-display text-xl font-bold tracking-tight text-primary-deep', className)}
+      className={cn(
+        'font-display text-xl font-bold tracking-tight text-white',
+        className,
+      )}
       {...props}
     />
   )
@@ -84,7 +95,7 @@ export function AlertDialogDescription({
 }: React.ComponentProps<typeof AlertDialogPrimitive.Description>) {
   return (
     <AlertDialogPrimitive.Description
-      className={cn('text-sm text-muted', className)}
+      className={cn('mt-1.5 text-sm leading-relaxed text-white/85', className)}
       {...props}
     />
   )

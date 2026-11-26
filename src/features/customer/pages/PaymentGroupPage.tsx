@@ -1,7 +1,18 @@
 ﻿import { useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { Clock, CreditCard, Store } from 'lucide-react'
+import { Clock, CreditCard, Store, XCircle } from 'lucide-react'
 import { toast } from 'sonner'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -28,14 +39,18 @@ function VendorPaymentCard({
 }) {
   const vendors = useVendorStore((s) => s.vendors)
   const submitPayment = useOrderStore((s) => s.submitPayment)
+  const cancelOrder = useOrderStore((s) => s.cancelOrder)
   const vendor = vendors.find((v) => v.id === order.vendorId)
   const [ref, setRef] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [cancelling, setCancelling] = useState(false)
 
   const canPay =
     order.status === 'pending_payment' || order.status === 'payment_rejected'
   const awaiting = order.status === 'awaiting_vendor_confirmation'
   const confirmed = order.status === 'confirmed'
+  const cancelled = order.status === 'cancelled'
+  const canCustomerCancel = canPay
 
   const handlePay = async () => {
     setSubmitting(true)
@@ -48,6 +63,19 @@ function VendorPaymentCard({
     toast.success(`Payment submitted for ${order.vendorName}`)
     setSubmitting(false)
     onPaid()
+  }
+
+  const handleCancel = async () => {
+    if (cancelling) return
+    setCancelling(true)
+    const result = await cancelOrder(order.id, 'customer')
+    if (result.ok) {
+      toast.success(`Cancelled order for ${order.vendorName}`)
+      onPaid()
+    } else {
+      toast.error(result.message)
+    }
+    setCancelling(false)
   }
 
   return (
@@ -77,6 +105,22 @@ function VendorPaymentCard({
         </div>
       )}
 
+      {cancelled && (
+        <Notice
+          tone="danger"
+          layout="panel"
+          title={
+            order.cancelledBy === 'vendor'
+              ? `Cancelled by ${order.vendorName}`
+              : 'Order cancelled'
+          }
+        >
+          {order.cancelledBy === 'vendor'
+            ? `This order was cancelled by ${order.vendorName}.`
+            : 'You cancelled this order.'}
+        </Notice>
+      )}
+
       {awaiting && (
         <Notice tone="pending" layout="panel" title="Awaiting vendor confirmation">
           {order.transactionReference ? (
@@ -87,6 +131,15 @@ function VendorPaymentCard({
 
       {canPay && (
         <div className="space-y-5">
+          {order.status === 'payment_rejected' && (
+            <Notice
+              tone="danger"
+              title={`${order.vendorName} rejected your payment`}
+            >
+              {order.vendorName} could not verify your previous payment. Please
+              resubmit with the correct transaction reference.
+            </Notice>
+          )}
           <PaymentQrCard
             label={vendor?.qrLabel ?? 'Payment QR'}
             amountLabel={formatPeso(order.total)}
@@ -112,6 +165,42 @@ function VendorPaymentCard({
             <CreditCard className="h-4 w-4" />
             {submitting ? 'Submitting...' : `I've Paid ${order.vendorName}`}
           </Button>
+        </div>
+      )}
+
+      {canCustomerCancel && (
+        <div className="mt-3">
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={cancelling}
+                className="w-full border-red-200 text-red-700 hover:bg-red-50 hover:text-red-800"
+              >
+                <XCircle className="h-4 w-4" />
+                Cancel order with {order.vendorName}
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Cancel this order?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This will cancel only your order with {order.vendorName}. Other
+                  vendors in this checkout are not affected.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Keep order</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={handleCancel}
+                  className="bg-red-600 text-white hover:bg-red-700"
+                >
+                  Yes, cancel order
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       )}
     </SectionCard>

@@ -1,5 +1,18 @@
+import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { CreditCard, ListOrdered, Package, ReceiptText } from 'lucide-react'
+import { CreditCard, ListOrdered, Package, ReceiptText, XCircle } from 'lucide-react'
+import { toast } from 'sonner'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
 import { DeliveryMilestoneTracker } from '@/components/shared/DeliveryMilestoneTracker'
 import { EmptyState } from '@/components/shared/EmptyState'
@@ -46,7 +59,9 @@ export default function OrderDetailPage() {
   const { orderId } = useParams<{ orderId: string }>()
   const navigate = useNavigate()
   const orders = useOrderStore((s) => s.orders)
+  const cancelOrder = useOrderStore((s) => s.cancelOrder)
   const getOrdersByBookingGroup = useOrderStore((s) => s.getOrdersByBookingGroup)
+  const [cancelling, setCancelling] = useState(false)
   const order = orders.find((o) => o.id === orderId)
   const live =
     !order ||
@@ -72,20 +87,47 @@ export default function OrderDetailPage() {
   }
 
   const canPay = order.status === 'pending_payment' || order.status === 'payment_rejected'
-  const groupOrders = getOrdersByBookingGroup(order.bookingGroupId)
+  const canCustomerCancel =
+    order.status === 'pending_payment' || order.status === 'payment_rejected'
+  const groupOrders = getOrdersByBookingGroup(order.bookingGroupId).filter(
+    (o) => o.status !== 'cancelled',
+  )
   const allGroupConfirmed =
-    groupOrders.length > 0 && groupOrders.every((o) => o.status === 'confirmed')
+    order.status === 'confirmed' &&
+    groupOrders.length > 0 &&
+    groupOrders.every((o) => o.status === 'confirmed')
   const waitingOnOtherVendors =
     order.status === 'confirmed' && !allGroupConfirmed
+
+  const handleCancelOrder = async () => {
+    if (cancelling) return
+    setCancelling(true)
+    const result = await cancelOrder(order.id, 'customer')
+    if (result.ok) {
+      toast.success('Order cancelled')
+    } else {
+      toast.error(result.message)
+    }
+    setCancelling(false)
+  }
 
   const statusTone =
     order.status === 'confirmed'
       ? 'success'
-      : order.status === 'payment_rejected'
+      : order.status === 'payment_rejected' || order.status === 'cancelled'
         ? 'danger'
         : order.status === 'awaiting_vendor_confirmation'
           ? 'pending'
           : 'info'
+
+  const statusText =
+    order.status === 'cancelled'
+      ? order.cancelledBy === 'vendor'
+        ? `Cancelled by ${order.vendorName}.`
+        : 'You cancelled this order.'
+      : order.status === 'payment_rejected'
+        ? `${order.vendorName} has rejected your payment. Please resubmit your payment details.`
+        : ORDER_STATUS_MESSAGES[order.status]
 
   return (
     <>
@@ -99,8 +141,19 @@ export default function OrderDetailPage() {
       />
 
       <div className="mx-auto max-w-3xl space-y-6 px-4 py-8 sm:px-6">
-        <Notice tone={statusTone}>
-          <span className="font-semibold">{ORDER_STATUS_MESSAGES[order.status]}</span>
+        <Notice
+          tone={statusTone}
+          title={
+            order.status === 'cancelled'
+              ? order.cancelledBy === 'vendor'
+                ? `Cancelled by ${order.vendorName}`
+                : 'Order cancelled'
+              : order.status === 'payment_rejected'
+                ? `${order.vendorName} rejected your payment`
+                : undefined
+          }
+        >
+          <span className="font-semibold">{statusText}</span>
         </Notice>
 
         {allGroupConfirmed ? (
@@ -115,13 +168,52 @@ export default function OrderDetailPage() {
           </Notice>
         ) : null}
 
-        {canPay && (
-          <Button asChild size="lg" className="w-full">
-            <Link to={`/customer/payment/${order.id}`}>
-              <CreditCard className="h-5 w-5" />
-              {order.status === 'payment_rejected' ? 'Resubmit Payment' : 'Complete Payment'}
-            </Link>
-          </Button>
+        {(canPay || canCustomerCancel) && (
+          <div className="flex flex-col gap-3 sm:flex-row">
+            {canPay && (
+              <Button asChild size="lg" className="w-full sm:flex-1">
+                <Link to={`/customer/payment/${order.id}`}>
+                  <CreditCard className="h-5 w-5" />
+                  {order.status === 'payment_rejected'
+                    ? 'Resubmit Payment'
+                    : 'Complete Payment'}
+                </Link>
+              </Button>
+            )}
+            {canCustomerCancel && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    disabled={cancelling}
+                    className="w-full border-red-200 text-red-700 hover:bg-red-50 hover:text-red-800 sm:w-auto"
+                  >
+                    <XCircle className="h-5 w-5" />
+                    Cancel order
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Cancel this order?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This will cancel your order with {order.vendorName}. You can
+                      cancel until you submit your payment.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Keep order</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={handleCancelOrder}
+                      className="bg-red-600 text-white hover:bg-red-700"
+                    >
+                      Yes, cancel order
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
+          </div>
         )}
 
         <SectionCard title="Order information" icon={ReceiptText}>

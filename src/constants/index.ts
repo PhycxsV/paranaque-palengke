@@ -89,6 +89,7 @@ export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
   awaiting_vendor_confirmation: 'Awaiting Vendor Confirmation',
   confirmed: 'Confirmed',
   payment_rejected: 'Payment Rejected',
+  cancelled: 'Cancelled',
 }
 
 export const ORDER_STATUS_MESSAGES: Record<OrderStatus, string> = {
@@ -100,13 +101,15 @@ export const ORDER_STATUS_MESSAGES: Record<OrderStatus, string> = {
     'Payment confirmed by the vendor. Keri delivery is underway — track milestones below.',
   payment_rejected:
     'The vendor could not verify the payment. You may resubmit payment details.',
+  cancelled: 'This order has been cancelled.',
 }
 
 export const ALLOWED_ORDER_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
-  pending_payment: ['awaiting_vendor_confirmation'],
-  awaiting_vendor_confirmation: ['confirmed', 'payment_rejected'],
-  confirmed: [],
-  payment_rejected: ['awaiting_vendor_confirmation'],
+  pending_payment: ['awaiting_vendor_confirmation', 'cancelled'],
+  awaiting_vendor_confirmation: ['confirmed', 'payment_rejected', 'cancelled'],
+  confirmed: ['cancelled'],
+  payment_rejected: ['awaiting_vendor_confirmation', 'cancelled'],
+  cancelled: [],
 }
 
 export const CATEGORY_ICONS: Record<ProductCategory, string> = {

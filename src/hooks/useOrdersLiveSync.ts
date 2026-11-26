@@ -49,6 +49,9 @@ export function useOrdersLiveSync(options?: {
               deliveryStatus: remote.deliveryStatus,
               transactionReference: remote.transactionReference,
               paymentSubmittedAt: remote.paymentSubmittedAt,
+              cancelledBy: remote.cancelledBy,
+              cancelledAt: remote.cancelledAt,
+              cancelReason: remote.cancelReason,
               keriTrackingId: remote.keriTrackingId,
               podUrl: remote.podUrl,
               pickupCode: remote.pickupCode,
@@ -56,7 +59,8 @@ export function useOrdersLiveSync(options?: {
               items: remote.items?.length ? remote.items : local.items,
             }
           })
-          for (const remote of incoming.values()) merged.push(remote)
+          for (const remote of incoming.values()) merged.unshift(remote)
+          merged.sort((a, b) => b.createdAt.localeCompare(a.createdAt))
           return { orders: merged }
         })
       } catch {

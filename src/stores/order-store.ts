@@ -3,6 +3,7 @@ import { persist } from 'zustand/middleware'
 import { DELIVERY_FEE, STORAGE_PREFIX } from '@/constants'
 import {
   advanceOrderDelivery,
+  cancelOrderApi,
   checkoutOrders,
   isApiConfigured,
   submitOrderPayment,
@@ -68,6 +69,11 @@ interface OrderState {
   confirmPayment: (orderId: string, vendorId: string) => Promise<ActionResult>
   rejectPayment: (orderId: string, vendorId: string) => Promise<ActionResult>
   advanceDelivery: (orderId: string, vendorId: string) => Promise<ActionResult>
+  cancelOrder: (
+    orderId: string,
+    actor: 'customer' | 'vendor',
+    reason?: string,
+  ) => Promise<ActionResult>
   getOrderById: (orderId: string) => Order | undefined
   getOrdersByVendor: (vendorId: string) => Order[]
   getOrdersByBookingGroup: (bookingGroupId: string) => Order[]
@@ -518,6 +524,92 @@ export const useOrderStore = create<OrderState>()(
               error instanceof Error ? error.message : 'Unable to reject payment.',
           }
         }
+      },
+      cancelOrder: async (orderId, actor, reason) => {
+        const order = get().orders.find((o) => o.id === orderId)
+        if (!order) return { ok: false, message: 'Order not found.' }
+        if (order.status === 'cancelled') {
+          return { ok: false, message: 'Order is already cancelled.' }
+        }
+
+        if (actor === 'customer') {
+        if (
+          order.status !== 'pending_payment' &&
+          order.status !== 'payment_rejected'
+        ) {
+          return {
+            ok: false,
+            message: 'You can only cancel before submitting payment.',
+          }
+        }
+        } else {
+          if (order.status !== 'confirmed') {
+            return {
+              ok: false,
+              message: 'Only confirmed orders in packing can be cancelled.',
+            }
+          }
+          const delivery = normalizeDeliveryStatus(order.deliveryStatus)
+          if (delivery !== 'packing') {
+            return {
+              ok: false,
+              message: 'Orders that are Ready for Keri or later cannot be cancelled.',
+            }
+          }
+        }
+
+        if (isApiConfigured()) {
+          try {
+            const result = await cancelOrderApi(orderId, reason)
+            const now = new Date().toISOString()
+            const updated: Order = {
+              ...order,
+              status: result.status,
+              cancelledBy: result.cancelledBy ?? actor,
+              cancelledAt: result.cancelledAt ?? now,
+              cancelReason: result.cancelReason ?? (reason?.trim() || undefined),
+              updatedAt: now,
+            }
+            set({
+              orders: get().orders.map((o) => (o.id === orderId ? updated : o)),
+            })
+            return { ok: true, order: updated }
+          } catch (error) {
+            return {
+              ok: false,
+              message:
+                error instanceof Error
+                  ? error.message
+                  : 'Unable to cancel order.',
+            }
+          }
+        }
+
+        if (actor === 'vendor') {
+          const productStore = useProductStore.getState()
+          for (const item of order.items) {
+            const product = productStore.products.find((p) => p.id === item.productId)
+            if (product) {
+              await productStore.updateProduct(product.id, {
+                stock: product.stock + item.quantity,
+              })
+            }
+          }
+        }
+
+        const now = new Date().toISOString()
+        const updated: Order = {
+          ...order,
+          status: 'cancelled',
+          cancelledBy: actor,
+          cancelledAt: now,
+          cancelReason: reason?.trim() || undefined,
+          updatedAt: now,
+        }
+        set({
+          orders: get().orders.map((o) => (o.id === orderId ? updated : o)),
+        })
+        return { ok: true, order: updated }
       },
       getOrderById: (orderId) => get().orders.find((o) => o.id === orderId),
       getOrdersByVendor: (vendorId) =>

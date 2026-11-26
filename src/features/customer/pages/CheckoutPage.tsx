@@ -14,6 +14,7 @@ import { PageHeader } from '@/components/shared/PageHeader'
 import { ProductImage } from '@/components/shared/ProductImage'
 import { SectionCard } from '@/components/shared/SectionCard'
 import { useCartStore } from '@/stores/cart-store'
+import { useAuthStore } from '@/stores/auth-store'
 import { useProductStore } from '@/stores/product-store'
 import { useVendorStore } from '@/stores/vendor-store'
 import { useOrderStore } from '@/stores/order-store'
@@ -55,12 +56,22 @@ export default function CheckoutPage() {
   const createCheckoutOrders = useOrderStore((s) => s.createCheckoutOrders)
   const commodities = useCommodityStore((s) => s.commodities)
   const allOffers = useOfferStore((s) => s.offers)
+  const authUser = useAuthStore((s) => s.user)
   const profile = useCustomerProfileStore((s) => s.profile)
   const saveFromCheckout = useCustomerProfileStore((s) => s.saveFromCheckout)
 
-  const [form, setForm] = useState<CheckoutFormInput>(() =>
-    profileToCheckoutForm(profile),
-  )
+  const fallbackName = profile.name.trim() || authUser?.name?.trim() || ''
+  const fallbackPhone =
+    profile.contactNumber.trim() || authUser?.phone?.trim() || ''
+
+  const [form, setForm] = useState<CheckoutFormInput>(() => {
+    const base = profileToCheckoutForm(profile)
+    return {
+      ...base,
+      customerName: base.customerName || fallbackName,
+      contactNumber: base.contactNumber || fallbackPhone,
+    }
+  })
   const [latText, setLatText] = useState(() => formatCoordinate(profile.dropoffLat))
   const [lngText, setLngText] = useState(() => formatCoordinate(profile.dropoffLng))
   const [submitting, setSubmitting] = useState(false)
@@ -77,20 +88,23 @@ export default function CheckoutPage() {
   const [quoteError, setQuoteError] = useState<string | null>(null)
   const apiMode = isApiConfigured()
 
-  // The profile may finish loading from the API after this page mounts; fill
+  // The profile or auth user may finish loading after this page mounts; fill
   // only the fields the customer has not typed into yet.
   useEffect(() => {
+    const resolvedName = profile.name.trim() || authUser?.name?.trim() || ''
+    const resolvedPhone =
+      profile.contactNumber.trim() || authUser?.phone?.trim() || ''
     setForm((f) => ({
       ...f,
-      customerName: f.customerName || profile.name,
-      contactNumber: f.contactNumber || profile.contactNumber,
+      customerName: f.customerName || resolvedName,
+      contactNumber: f.contactNumber || resolvedPhone,
       deliveryAddress: f.deliveryAddress || profile.deliveryAddress,
       dropoffLandmark: f.dropoffLandmark || profile.dropoffLandmark,
       notes: f.notes || profile.notes,
     }))
     setLatText((v) => v || formatCoordinate(profile.dropoffLat))
     setLngText((v) => v || formatCoordinate(profile.dropoffLng))
-  }, [profile])
+  }, [profile, authUser])
 
   const groups = useMemo(
     () => groupCartItemsByVendor(items, products),
@@ -579,6 +593,19 @@ export default function CheckoutPage() {
                     : formatPeso(total)}
                 </span>
               </div>
+              {apiMode && !dropoffCoords ? (
+                <Notice tone="warning" title="Delivery address not set">
+                  Distance and delivery fee can&apos;t be calculated yet because
+                  no drop-off location is set.{' '}
+                  <Link
+                    to="/customer/profile"
+                    className="font-bold underline underline-offset-2"
+                  >
+                    Set your address in My Profile
+                  </Link>{' '}
+                  or pin your location on the map on this page.
+                </Notice>
+              ) : null}
               {overWeightLimit ? (
                 <Notice tone="warning" title="Weight limit exceeded">
                   {MAX_BOOKING_WEIGHT_MESSAGE}

@@ -144,6 +144,9 @@ export interface StrapiOrder {
   branchName?: string
   transactionReference?: string
   paymentSubmittedAt?: string
+  cancelledBy?: 'customer' | 'vendor' | null
+  cancelledAt?: string | null
+  cancelReason?: string | null
   keriTrackingId?: string
   podUrl?: string | null
   pickupCode?: string
@@ -330,6 +333,12 @@ export function mapOrder(raw: StrapiOrder): Order {
     updatedAt: raw.updatedAt ?? new Date().toISOString(),
     transactionReference: raw.transactionReference || undefined,
     paymentSubmittedAt: raw.paymentSubmittedAt || undefined,
+    cancelledBy:
+      raw.cancelledBy === 'customer' || raw.cancelledBy === 'vendor'
+        ? raw.cancelledBy
+        : undefined,
+    cancelledAt: raw.cancelledAt || undefined,
+    cancelReason: raw.cancelReason || undefined,
     keriTrackingId: raw.keriTrackingId || undefined,
     podUrl: raw.podUrl?.trim() || undefined,
     pickupCode: raw.pickupCode || undefined,
