@@ -24,6 +24,7 @@ import {
   calculateCartWeightKg,
   groupCartItemsByVendor,
 } from '@/lib/pricing'
+import { getSellableStock } from '@/lib/stock'
 import { formatPeso } from '@/lib/utils'
 
 export default function CartPage() {
@@ -159,7 +160,7 @@ export default function CartPage() {
                               size="sm"
                               value={item.quantity}
                               min={0}
-                              max={product.stock}
+                              max={Math.max(item.quantity, getSellableStock(product))}
                               onChange={(next) => setQuantity(item.productId, next)}
                             />
                             <Button

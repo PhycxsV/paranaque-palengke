@@ -1,6 +1,7 @@
 import { Navigate, useLocation } from 'react-router-dom'
 import { isApiConfigured } from '@/lib/api'
 import { useAuthStore } from '@/stores/auth-store'
+import { BrandLoader } from '@/components/shared/BrandLoader'
 
 type AllowedRole = 'customer' | 'vendor' | 'lgu-admin'
 
@@ -20,11 +21,7 @@ export function RequireAuth({
 
   if (!isApiConfigured()) return <>{children}</>
   if (!hydrated) {
-    return (
-      <div className="flex min-h-[40vh] items-center justify-center text-sm text-muted-foreground">
-        Checking session…
-      </div>
-    )
+    return <BrandLoader label="Checking session" />
   }
 
   if (!jwt || !user) {

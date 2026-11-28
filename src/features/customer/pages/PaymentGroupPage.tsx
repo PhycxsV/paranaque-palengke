@@ -1,4 +1,4 @@
-﻿import { useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { Clock, CreditCard, Store, XCircle } from 'lucide-react'
 import { toast } from 'sonner'
@@ -19,6 +19,8 @@ import { Label } from '@/components/ui/label'
 import { CheckoutSteps } from '@/components/shared/CheckoutSteps'
 import { DeliveryMilestoneTracker } from '@/components/shared/DeliveryMilestoneTracker'
 import { PaymentQrCard } from '@/components/shared/PaymentQrCard'
+import { PaymentProofField } from '@/components/shared/PaymentProofField'
+import { ReservationCountdownNotice } from '@/components/shared/ReservationCountdownNotice'
 import { EmptyState } from '@/components/shared/EmptyState'
 import { Notice } from '@/components/shared/Notice'
 import { PageHeader } from '@/components/shared/PageHeader'
@@ -42,6 +44,7 @@ function VendorPaymentCard({
   const cancelOrder = useOrderStore((s) => s.cancelOrder)
   const vendor = vendors.find((v) => v.id === order.vendorId)
   const [ref, setRef] = useState('')
+  const [proofFile, setProofFile] = useState<File | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [cancelling, setCancelling] = useState(false)
 
@@ -53,8 +56,12 @@ function VendorPaymentCard({
   const canCustomerCancel = canPay
 
   const handlePay = async () => {
+    if (!proofFile) {
+      toast.error(`Upload your proof of payment for ${order.vendorName} first.`)
+      return
+    }
     setSubmitting(true)
-    const result = await submitPayment(order.id, ref)
+    const result = await submitPayment(order.id, ref, proofFile)
     if (!result.ok) {
       toast.error(result.message)
       setSubmitting(false)
@@ -112,12 +119,17 @@ function VendorPaymentCard({
           title={
             order.cancelledBy === 'vendor'
               ? `Cancelled by ${order.vendorName}`
-              : 'Order cancelled'
+              : order.cancelledBy === 'system'
+                ? 'Reservation expired — order cancelled'
+                : 'Order cancelled'
           }
         >
           {order.cancelledBy === 'vendor'
             ? `This order was cancelled by ${order.vendorName}.`
-            : 'You cancelled this order.'}
+            : order.cancelledBy === 'system'
+              ? order.cancelReason ??
+                'Your 10-minute payment window expired, so your reserved items were returned to the store.'
+              : 'You cancelled this order.'}
         </Notice>
       )}
 
@@ -131,6 +143,9 @@ function VendorPaymentCard({
 
       {canPay && (
         <div className="space-y-5">
+          {order.status === 'pending_payment' ? (
+            <ReservationCountdownNotice expiresAt={order.reservationExpiresAt} />
+          ) : null}
           {order.status === 'payment_rejected' && (
             <Notice
               tone="danger"
@@ -144,6 +159,11 @@ function VendorPaymentCard({
             label={vendor?.qrLabel ?? 'Payment QR'}
             amountLabel={formatPeso(order.total)}
             imageUrl={vendor?.paymentQrUrl}
+          />
+          <PaymentProofField
+            file={proofFile}
+            onChange={setProofFile}
+            disabled={submitting}
           />
           <div className="grid gap-1.5">
             <Label htmlFor={`ref-${order.id}`}>
@@ -160,7 +180,7 @@ function VendorPaymentCard({
             className="w-full"
             size="lg"
             onClick={handlePay}
-            disabled={submitting}
+            disabled={submitting || !proofFile}
           >
             <CreditCard className="h-4 w-4" />
             {submitting ? 'Submitting...' : `I've Paid ${order.vendorName}`}

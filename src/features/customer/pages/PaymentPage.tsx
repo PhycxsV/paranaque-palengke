@@ -1,4 +1,4 @@
-﻿import { useState } from 'react'
+import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { Clock, ListChecks, XCircle } from 'lucide-react'
 import { toast } from 'sonner'
@@ -19,6 +19,8 @@ import { Label } from '@/components/ui/label'
 import { CheckoutSteps } from '@/components/shared/CheckoutSteps'
 import { DeliveryMilestoneTracker } from '@/components/shared/DeliveryMilestoneTracker'
 import { PaymentQrCard } from '@/components/shared/PaymentQrCard'
+import { PaymentProofField } from '@/components/shared/PaymentProofField'
+import { ReservationCountdownNotice } from '@/components/shared/ReservationCountdownNotice'
 import { EmptyState } from '@/components/shared/EmptyState'
 import { Notice } from '@/components/shared/Notice'
 import { PageHeader } from '@/components/shared/PageHeader'
@@ -38,6 +40,7 @@ export default function PaymentPage() {
   const vendors = useVendorStore((s) => s.vendors)
 
   const [transactionRef, setTransactionRef] = useState('')
+  const [proofFile, setProofFile] = useState<File | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [cancelling, setCancelling] = useState(false)
 
@@ -46,7 +49,10 @@ export default function PaymentPage() {
   useOrdersLiveSync({
     enabled: Boolean(orderId),
     intervalMs:
-      order?.status === 'awaiting_vendor_confirmation' ? 4_000 : 12_000,
+      order?.status === 'awaiting_vendor_confirmation' ||
+      order?.status === 'pending_payment'
+        ? 4_000
+        : 12_000,
   })
 
   if (!order) {
@@ -82,8 +88,12 @@ export default function PaymentPage() {
   }
 
   const handleSubmitPayment = async () => {
+    if (!proofFile) {
+      toast.error('Upload a photo of your proof of payment first.')
+      return
+    }
     setSubmitting(true)
-    const result = await submitPayment(order.id, transactionRef)
+    const result = await submitPayment(order.id, transactionRef, proofFile)
     if (!result.ok) {
       toast.error(result.message)
       setSubmitting(false)
@@ -162,13 +172,18 @@ export default function PaymentPage() {
             title={
               order.cancelledBy === 'vendor'
                 ? `Cancelled by ${order.vendorName}`
-                : 'Order cancelled'
+                : order.cancelledBy === 'system'
+                  ? 'Reservation expired — order cancelled'
+                  : 'Order cancelled'
             }
             action={viewOrder}
           >
             {order.cancelledBy === 'vendor'
               ? `This order was cancelled by ${order.vendorName}.`
-              : 'You cancelled this order.'}
+              : order.cancelledBy === 'system'
+                ? order.cancelReason ??
+                  'Your 10-minute payment window expired, so your reserved items were returned to the store.'
+                : 'You cancelled this order.'}
           </Notice>
         )}
 
@@ -190,6 +205,10 @@ export default function PaymentPage() {
 
         {canPay && (
           <>
+            {order.status === 'pending_payment' ? (
+              <ReservationCountdownNotice expiresAt={order.reservationExpiresAt} />
+            ) : null}
+
             {order.status === 'payment_rejected' && (
               <Notice
                 tone="danger"
@@ -210,7 +229,7 @@ export default function PaymentPage() {
               <ol className="space-y-3 text-sm text-ink/80">
                 {[
                   'Scan the QR code above using your e-wallet or banking app.',
-                  'Optionally enter a transaction reference below.',
+                  'Upload a photo of your payment receipt below.',
                   'Click "I\'ve Paid" to submit your payment.',
                   'Wait for the vendor to confirm the payment in the vendor portal.',
                 ].map((step, i) => (
@@ -223,6 +242,12 @@ export default function PaymentPage() {
                 ))}
               </ol>
             </SectionCard>
+
+            <PaymentProofField
+              file={proofFile}
+              onChange={setProofFile}
+              disabled={submitting}
+            />
 
             <div className="grid gap-1.5">
               <Label htmlFor="transactionRef">Transaction Reference (optional)</Label>
@@ -238,7 +263,7 @@ export default function PaymentPage() {
               size="lg"
               className="w-full"
               onClick={handleSubmitPayment}
-              disabled={submitting}
+              disabled={submitting || !proofFile}
             >
               {submitting ? 'Submitting...' : "I've Paid"}
             </Button>

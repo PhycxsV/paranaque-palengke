@@ -4,6 +4,8 @@ import { FEATURE_TAWAD_ENABLED } from '@/constants'
 import '@/stores/text-size-store'
 import { useBackendSync } from '@/hooks/useBackendSync'
 import { useIdleLogout } from '@/hooks/useIdleLogout'
+import { useProductsLiveSync } from '@/hooks/useProductsLiveSync'
+import { BrandLoader } from '@/components/shared/BrandLoader'
 import { RequireAuth } from '@/components/shared/RequireAuth'
 import { CustomerLayout } from '@/features/customer/layouts/CustomerLayout'
 import AuthPage from '@/features/auth/AuthPage'
@@ -26,13 +28,10 @@ import NotFoundPage from '@/features/customer/pages/NotFoundPage'
 function AppShell() {
   const { catalogReady, catalogError, apiConfigured } = useBackendSync()
   useIdleLogout()
+  useProductsLiveSync({ enabled: catalogReady })
 
   if (apiConfigured && !catalogReady) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-warm-white text-sm text-muted-foreground">
-        Connecting to Palengke API…
-      </div>
-    )
+    return <BrandLoader fullScreen label="Loading Palengke" />
   }
 
   return (

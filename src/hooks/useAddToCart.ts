@@ -1,16 +1,31 @@
 import { toast } from 'sonner'
 import { useCartStore } from '@/stores/cart-store'
 import { useVendorStore } from '@/stores/vendor-store'
+import { getSellableStock, isAllStockReserved } from '@/lib/stock'
 import { isVendorAcceptingOrders } from '@/lib/vendor-hours'
 import type { Product } from '@/types'
 
 export function useAddToCart() {
   const addItem = useCartStore((s) => s.addItem)
+  const items = useCartStore((s) => s.items)
   const vendors = useVendorStore((s) => s.vendors)
 
   const addToCart = (product: Product, quantity = 1, acceptedOfferId?: string) => {
-    if (!product.isAvailable || product.stock <= 0) {
-      toast.error('This product is currently unavailable.')
+    const sellable = getSellableStock(product)
+    if (!product.isAvailable || sellable <= 0) {
+      toast.error(
+        isAllStockReserved(product)
+          ? 'This item is currently reserved in another checkout. Please try again in a few minutes.'
+          : 'This product is currently unavailable.',
+      )
+      return
+    }
+    const existingQty =
+      items.find((i) => i.productId === product.id)?.quantity ?? 0
+    if (existingQty + quantity > sellable) {
+      toast.error(
+        `Only ${sellable} ${product.unit} of ${product.name} available right now.`,
+      )
       return
     }
 

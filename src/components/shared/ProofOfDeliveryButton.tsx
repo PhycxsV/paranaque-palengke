@@ -11,6 +11,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
+import { ZoomableImage } from '@/components/shared/ZoomableImage'
 import { cn } from '@/lib/utils'
 
 /** Opens Keri's proof-of-delivery photo when `podUrl` is present. */
@@ -49,13 +50,7 @@ export function ProofOfDeliveryButton({
           </DialogDescription>
         </DialogHeader>
         <DialogBody>
-          <div className="overflow-hidden rounded-xl border border-border bg-warm-white">
-            <img
-              src={url}
-              alt="Proof of delivery"
-              className="mx-auto max-h-[min(70vh,520px)] w-full object-contain"
-            />
-          </div>
+          <ZoomableImage src={url} alt="Proof of delivery" />
           <a
             href={url}
             target="_blank"

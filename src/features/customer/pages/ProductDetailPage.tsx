@@ -31,6 +31,7 @@ import {
   getCommodityRange,
   getVendorPrice,
 } from '@/lib/pricing'
+import { getSellableStock, isAllStockReserved } from '@/lib/stock'
 import { formatVendorTime, isVendorAcceptingOrders } from '@/lib/vendor-hours'
 import {
   FEATURE_TAWAD_ENABLED,
@@ -83,8 +84,10 @@ export default function ProductDetailPage() {
   }
 
   const vendorClosed = vendor ? !isVendorAcceptingOrders(vendor) : false
+  const sellable = getSellableStock(product)
+  const allReserved = isAllStockReserved(product)
   const unavailable =
-    !product.isAvailable || product.stock <= 0 || vendorClosed
+    !product.isAvailable || sellable <= 0 || vendorClosed
 
   const relatedProducts = products
     .filter(
@@ -157,10 +160,12 @@ export default function ProductDetailPage() {
     }
   } else if (product.stock <= 0) {
     statusBadge = { label: 'Out of stock', variant: 'muted' }
+  } else if (allReserved) {
+    statusBadge = { label: 'Reserved — in another checkout', variant: 'gold' }
   } else if (!product.isAvailable) {
     statusBadge = { label: 'Unavailable', variant: 'muted' }
-  } else if (product.stock <= LOW_STOCK_THRESHOLD) {
-    statusBadge = { label: `Only ${product.stock} left`, variant: 'gold' }
+  } else if (sellable <= LOW_STOCK_THRESHOLD) {
+    statusBadge = { label: `Only ${sellable} left`, variant: 'gold' }
   }
 
   return (
@@ -214,6 +219,9 @@ export default function ProductDetailPage() {
                   /{product.unit === 'piece' ? 'pcs' : product.unit}
                 </span>
               </p>
+              <p className="text-xs font-medium italic text-muted">
+                Price may vary
+              </p>
             </div>
             <p className="mt-3 text-[11px] italic text-muted">{PRICE_DISCLAIMER}</p>
           </div>
@@ -255,7 +263,7 @@ export default function ProductDetailPage() {
                 value={quantity}
                 onChange={setQuantity}
                 min={1}
-                max={Math.max(1, product.stock)}
+                max={Math.max(1, sellable)}
                 disabled={unavailable}
               />
               <p className="text-right">
@@ -324,7 +332,7 @@ export default function ProductDetailPage() {
                       id="offer-qty"
                       type="number"
                       min={1}
-                      max={product.stock}
+                      max={Math.max(1, sellable)}
                       value={offerQty}
                       onChange={(e) => setOfferQty(Number(e.target.value))}
                       required

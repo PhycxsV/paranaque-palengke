@@ -98,6 +98,7 @@ export interface StrapiProduct {
   vendorPrice?: number | string
   weightKg?: number | string
   stock?: number
+  reservedStock?: number
   imageUrl?: string
   isAvailable?: boolean
   isFeatured?: boolean
@@ -144,11 +145,13 @@ export interface StrapiOrder {
   branchName?: string
   transactionReference?: string
   paymentSubmittedAt?: string
-  cancelledBy?: 'customer' | 'vendor' | null
+  reservationExpiresAt?: string | null
+  cancelledBy?: 'customer' | 'vendor' | 'system' | null
   cancelledAt?: string | null
   cancelReason?: string | null
   keriTrackingId?: string
   podUrl?: string | null
+  paymentProof?: StrapiMedia | null
   pickupCode?: string
   createdAt?: string
   updatedAt?: string
@@ -213,7 +216,7 @@ export function mapCommodity(raw: StrapiCommodity): Commodity {
     unit: (raw.unit ?? 'kg') as ProductUnit,
     priceMin: num(raw.priceMin),
     priceMax: num(raw.priceMax),
-    imageUrl: raw.imageUrl ?? '',
+    imageUrl: resolveMediaUrl(raw.imageUrl),
     effectiveFrom: raw.effectiveFrom ?? new Date().toISOString().slice(0, 10),
     isActive: raw.isActive ?? true,
   }
@@ -281,7 +284,8 @@ export function mapProduct(raw: StrapiProduct): Product {
     vendorPrice: num(raw.vendorPrice),
     weightKg: num(raw.weightKg),
     stock: Math.max(0, Math.trunc(num(raw.stock))),
-    imageUrl: raw.imageUrl ?? '',
+    reservedStock: Math.max(0, Math.trunc(num(raw.reservedStock))),
+    imageUrl: resolveMediaUrl(raw.imageUrl),
     isAvailable: raw.isAvailable ?? true,
     isFeatured: raw.isFeatured ?? false,
     isPopular: raw.isPopular ?? false,
@@ -299,7 +303,7 @@ function mapOrderItem(raw: StrapiOrderItem): OrderItemSnapshot {
     standardUnitPrice: num(raw.standardUnitPrice),
     quantity: num(raw.quantity, 1),
     lineTotal: num(raw.lineTotal),
-    imageUrl: raw.imageUrl ?? '',
+    imageUrl: resolveMediaUrl(raw.imageUrl),
     pricingSource: raw.pricingSource === 'negotiated' ? 'negotiated' : 'standard',
     offerId: raw.offerId || undefined,
   }
@@ -333,14 +337,18 @@ export function mapOrder(raw: StrapiOrder): Order {
     updatedAt: raw.updatedAt ?? new Date().toISOString(),
     transactionReference: raw.transactionReference || undefined,
     paymentSubmittedAt: raw.paymentSubmittedAt || undefined,
+    reservationExpiresAt: raw.reservationExpiresAt || undefined,
     cancelledBy:
-      raw.cancelledBy === 'customer' || raw.cancelledBy === 'vendor'
+      raw.cancelledBy === 'customer' ||
+      raw.cancelledBy === 'vendor' ||
+      raw.cancelledBy === 'system'
         ? raw.cancelledBy
         : undefined,
     cancelledAt: raw.cancelledAt || undefined,
     cancelReason: raw.cancelReason || undefined,
     keriTrackingId: raw.keriTrackingId || undefined,
     podUrl: raw.podUrl?.trim() || undefined,
+    paymentProofUrl: resolveMediaUrl(raw.paymentProof?.url) || undefined,
     pickupCode: raw.pickupCode || undefined,
   }
 }

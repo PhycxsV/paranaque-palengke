@@ -1,9 +1,10 @@
-﻿import { Link } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { Plus, Store } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ProductImage } from '@/components/shared/ProductImage'
 import { LOW_STOCK_THRESHOLD } from '@/constants'
 import { getCommodityRange, getVendorPrice } from '@/lib/pricing'
+import { getSellableStock, isAllStockReserved } from '@/lib/stock'
 import { isVendorAcceptingOrders } from '@/lib/vendor-hours'
 import { useCommodityStore } from '@/stores/commodity-store'
 import { cn, formatPeso } from '@/lib/utils'
@@ -25,16 +26,20 @@ export function ProductCard({ product, vendor, onAdd }: ProductCardProps) {
   const vendorPrice = getVendorPrice(product, commodities)
   const range = getCommodityRange(product, commodities)
   const vendorClosed = vendor ? !isVendorAcceptingOrders(vendor) : false
+  const sellable = getSellableStock(product)
+  const allReserved = isAllStockReserved(product)
   const unavailable =
-    !product.isAvailable || product.stock <= 0 || vendorClosed
+    !product.isAvailable || sellable <= 0 || vendorClosed
 
   // Only call out exceptions — a normal in-stock product needs no badge.
   let badge: CardBadge | null = null
   if (vendorClosed) badge = { label: 'Past cut-off', tone: 'muted' }
   else if (product.stock <= 0) badge = { label: 'Out of stock', tone: 'muted' }
+  else if (allReserved)
+    badge = { label: 'Reserved — in another checkout', tone: 'warn' }
   else if (!product.isAvailable) badge = { label: 'Unavailable', tone: 'muted' }
-  else if (product.stock <= LOW_STOCK_THRESHOLD)
-    badge = { label: `Only ${product.stock} left`, tone: 'warn' }
+  else if (sellable <= LOW_STOCK_THRESHOLD)
+    badge = { label: `Only ${sellable} left`, tone: 'warn' }
 
   return (
     <article
@@ -94,6 +99,7 @@ export function ProductCard({ product, vendor, onAdd }: ProductCardProps) {
               /{product.unit === 'piece' ? 'pcs' : product.unit}
             </span>
           </p>
+          <p className="text-[11px] italic text-muted">Price may vary</p>
         </div>
         <Button
           className="w-full"

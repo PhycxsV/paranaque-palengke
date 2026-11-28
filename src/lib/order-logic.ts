@@ -3,6 +3,7 @@ import {
   calculateLineTotal,
   resolveCartUnitPrice,
 } from '@/lib/pricing'
+import { getSellableStock, isAllStockReserved } from '@/lib/stock'
 import type {
   CartItem,
   Commodity,
@@ -83,10 +84,13 @@ export function validateCartAgainstStock(
         message: `${product?.name ?? 'A product'} is no longer available.`,
       }
     }
-    if (item.quantity > product.stock) {
+    const sellable = getSellableStock(product)
+    if (item.quantity > sellable) {
       return {
         ok: false,
-        message: `Only ${product.stock} ${product.unit} of ${product.name} available.`,
+        message: isAllStockReserved(product)
+          ? `${product.name} is currently reserved in another checkout.`
+          : `Only ${sellable} ${product.unit} of ${product.name} available.`,
       }
     }
     if (item.quantity <= 0) {

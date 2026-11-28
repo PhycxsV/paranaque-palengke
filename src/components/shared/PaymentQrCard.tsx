@@ -1,4 +1,17 @@
 import { QrCode } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogBody,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog'
+import { ZoomableImage } from '@/components/shared/ZoomableImage'
 
 interface PaymentQrCardProps {
   label: string
@@ -27,11 +40,39 @@ export function PaymentQrCard({
     <div className="mx-auto flex w-full max-w-md flex-col items-center gap-4 rounded-2xl border-2 border-dashed border-gold bg-gradient-to-b from-gold-50 to-surface p-4 text-center sm:p-5">
       <div className="relative flex aspect-square w-full max-w-sm items-center justify-center overflow-hidden rounded-2xl bg-white shadow-[var(--shadow-soft)] ring-1 ring-primary/10">
         {hasUploadedQr ? (
-          <img
-            src={imageUrl}
-            alt={title}
-            className="h-full w-full object-contain p-1 sm:p-2"
-          />
+          <Dialog>
+            <DialogTrigger asChild>
+              <button
+                type="button"
+                className="h-full w-full cursor-zoom-in"
+                aria-label="Zoom QR code"
+              >
+                <img
+                  src={imageUrl}
+                  alt={title}
+                  className="h-full w-full object-contain p-1 sm:p-2"
+                />
+              </button>
+            </DialogTrigger>
+            <DialogContent className="max-w-md" mobileSheet>
+              <DialogHeader>
+                <DialogTitle>{title}</DialogTitle>
+                <DialogDescription>
+                  Zoom in to check or scan the QR code.
+                </DialogDescription>
+              </DialogHeader>
+              <DialogBody>
+                <ZoomableImage src={imageUrl ?? ''} alt={title} />
+              </DialogBody>
+              <DialogFooter>
+                <DialogClose asChild>
+                  <Button type="button" variant="outline">
+                    Close
+                  </Button>
+                </DialogClose>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         ) : (
           <>
             <span

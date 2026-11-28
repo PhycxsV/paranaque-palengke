@@ -125,6 +125,8 @@ export interface Product {
   /** Weight per unit in kilograms. Required (> 0) by the backend at checkout. */
   weightKg: number
   stock: number
+  /** Units currently locked in unconfirmed customer checkouts. */
+  reservedStock?: number
   imageUrl: string
   isAvailable: boolean
   isFeatured?: boolean
@@ -204,6 +206,8 @@ export interface Order {
   keriTrackingId?: string
   /** Keri proof-of-delivery image URL from the status webhook. */
   podUrl?: string
+  /** Customer's proof-of-payment photo, sent with the payment. */
+  paymentProofUrl?: string
   /**
    * 5-digit pickup PIN — generated when order becomes Ready for Keri.
    * Shown to the vendor; copied into Keri rider remarks for handoff verification.
@@ -219,7 +223,9 @@ export interface Order {
   updatedAt: string
   transactionReference?: string
   paymentSubmittedAt?: string
-  cancelledBy?: 'customer' | 'vendor'
+  /** ISO timestamp when an unpaid order's 10-minute stock lock expires. */
+  reservationExpiresAt?: string
+  cancelledBy?: 'customer' | 'vendor' | 'system'
   cancelledAt?: string
   cancelReason?: string
 }

@@ -20,6 +20,7 @@ import { useVendorStore } from '@/stores/vendor-store'
 import { useCommodityStore } from '@/stores/commodity-store'
 import { useAddToCart } from '@/hooks/useAddToCart'
 import { getVendorPrice } from '@/lib/pricing'
+import { getSellableStock } from '@/lib/stock'
 import { isVendorAcceptingOrders } from '@/lib/vendor-hours'
 import { cn } from '@/lib/utils'
 
@@ -70,7 +71,7 @@ export default function ProductsPage() {
 
     if (availability === 'available') {
       result = result.filter((p) => {
-        if (!p.isAvailable || p.stock <= 0) return false
+        if (!p.isAvailable || getSellableStock(p) <= 0) return false
         const productVendor = vendors.find((v) => v.id === p.vendorId)
         return productVendor ? isVendorAcceptingOrders(productVendor) : false
       })

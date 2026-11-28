@@ -1,7 +1,18 @@
 ﻿import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { Check, CheckCheck, ImagePlus, Send, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogBody,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { Textarea } from '@/components/ui/textarea'
+import { ZoomableImage } from '@/components/shared/ZoomableImage'
 import { isMessageSeenByPeer } from '@/lib/chat'
 import { cn, formatDateTime } from '@/lib/utils'
 import type { ChatMessage, ChatSender, ChatThread } from '@/types'
@@ -41,6 +52,7 @@ export function ChatThreadView({
   const [imagePreview, setImagePreview] = useState<string | null>(null)
   const [sending, setSending] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [viewerUrl, setViewerUrl] = useState<string | null>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -109,18 +121,18 @@ export function ChatThreadView({
                   )}
                 >
                   {msg.imageUrl ? (
-                    <a
-                      href={msg.imageUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="block"
+                    <button
+                      type="button"
+                      onClick={() => setViewerUrl(msg.imageUrl ?? null)}
+                      className="block w-full cursor-zoom-in"
+                      aria-label="View photo"
                     >
                       <img
                         src={msg.imageUrl}
                         alt={showBody ? msg.body : 'Chat photo'}
                         className="max-h-64 w-full object-cover"
                       />
-                    </a>
+                    </button>
                   ) : null}
                   {showBody ? (
                     <p className={cn('px-3.5 py-2', msg.imageUrl && 'pt-2')}>{msg.body}</p>
@@ -237,6 +249,30 @@ export function ChatThreadView({
         </div>
         {error ? <p className="mt-1.5 text-xs text-red-600">{error}</p> : null}
       </form>
+
+      <Dialog
+        open={viewerUrl !== null}
+        onOpenChange={(open) => {
+          if (!open) setViewerUrl(null)
+        }}
+      >
+        <DialogContent className="max-w-2xl" mobileSheet>
+          <DialogHeader>
+            <DialogTitle>Photo</DialogTitle>
+            <DialogDescription>Photo shared in this chat.</DialogDescription>
+          </DialogHeader>
+          <DialogBody>
+            {viewerUrl ? <ZoomableImage src={viewerUrl} alt="Chat photo" /> : null}
+          </DialogBody>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button type="button" variant="outline">
+                Close
+              </Button>
+            </DialogClose>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

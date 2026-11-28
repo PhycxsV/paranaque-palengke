@@ -1,4 +1,4 @@
-import { apiFetchAll, apiRequest } from './client'
+import { apiFetchAll, apiRequest, apiUpload, resolveMediaUrl } from './client'
 import { mapOrder, type StrapiOrder } from './mappers'
 import type { CheckoutFormInput, DeliveryStatus, Order } from '@/types'
 
@@ -122,26 +122,31 @@ export async function checkoutOrders(input: {
   return fromCheckout
 }
 
+/** Submits the payment reference and the required proof-of-payment photo. */
 export async function submitOrderPayment(
   orderId: string,
   transactionReference: string,
-): Promise<Pick<Order, 'id' | 'status'>> {
-  const payload = await apiRequest<{
+  proofFile: File,
+): Promise<Pick<Order, 'id' | 'status' | 'paymentProofUrl'>> {
+  const formData = new FormData()
+  formData.append('transactionReference', transactionReference)
+  formData.append('files', proofFile)
+
+  const payload = await apiUpload<{
     data: {
       documentId: string
       paymentStatus?: Order['status']
       status?: Order['status']
+      paymentProof?: { url?: string | null } | null
     }
-  }>(`/orders/${orderId}/payment`, {
-    method: 'POST',
-    body: { transactionReference },
-  })
+  }>(`/orders/${orderId}/payment`, formData)
   return {
     id: payload.data.documentId,
     status:
       payload.data.paymentStatus ??
       payload.data.status ??
       'awaiting_vendor_confirmation',
+    paymentProofUrl: resolveMediaUrl(payload.data.paymentProof?.url) || undefined,
   }
 }
 
@@ -210,7 +215,7 @@ export async function cancelOrderApi(
 ): Promise<{
   id: string
   status: Order['status']
-  cancelledBy?: 'customer' | 'vendor'
+  cancelledBy?: 'customer' | 'vendor' | 'system'
   cancelledAt?: string
   cancelReason?: string
 }> {
@@ -218,7 +223,7 @@ export async function cancelOrderApi(
     data: {
       documentId: string
       paymentStatus?: Order['status']
-      cancelledBy?: 'customer' | 'vendor'
+      cancelledBy?: 'customer' | 'vendor' | 'system'
       cancelledAt?: string
       cancelReason?: string | null
     }

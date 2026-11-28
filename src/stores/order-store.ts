@@ -5,6 +5,7 @@ import {
   advanceOrderDelivery,
   cancelOrderApi,
   checkoutOrders,
+  fetchProducts,
   isApiConfigured,
   submitOrderPayment,
   vendorDecideOrder,
@@ -65,6 +66,7 @@ interface OrderState {
   submitPayment: (
     orderId: string,
     transactionReference?: string,
+    proofFile?: File | null,
   ) => Promise<ActionResult>
   confirmPayment: (orderId: string, vendorId: string) => Promise<ActionResult>
   rejectPayment: (orderId: string, vendorId: string) => Promise<ActionResult>
@@ -156,12 +158,18 @@ export const useOrderStore = create<OrderState>()(
               vendorDistances,
             })
             set({ orders: [...created, ...get().orders.filter((o) => !created.some((c) => c.id === o.id))] })
+            void fetchProducts()
+              .then((fresh) => useProductStore.setState({ products: fresh }))
+              .catch(() => undefined)
             return {
               ok: true,
               orders: created,
               bookingGroupId: created[0]?.bookingGroupId ?? '',
             }
           } catch (error) {
+            void fetchProducts()
+              .then((fresh) => useProductStore.setState({ products: fresh }))
+              .catch(() => undefined)
             return {
               ok: false,
               message:
@@ -254,20 +262,28 @@ export const useOrderStore = create<OrderState>()(
         set({ orders: [...created, ...get().orders] })
         return { ok: true, orders: created, bookingGroupId }
       },
-      submitPayment: async (orderId, transactionReference) => {
+      submitPayment: async (orderId, transactionReference, proofFile) => {
         const order = get().orders.find((o) => o.id === orderId)
         if (!order) return { ok: false, message: 'Order not found.' }
         const reference =
           transactionReference?.trim() || `TXN-${Date.now().toString(36).toUpperCase()}`
 
         if (isApiConfigured()) {
+          if (!proofFile) {
+            return {
+              ok: false,
+              message: 'Upload a photo of your proof of payment first.',
+            }
+          }
           try {
-            const result = await submitOrderPayment(orderId, reference)
+            const result = await submitOrderPayment(orderId, reference, proofFile)
             const updated: Order = {
               ...order,
               status: result.status,
               transactionReference: reference,
+              paymentProofUrl: result.paymentProofUrl ?? order.paymentProofUrl,
               paymentSubmittedAt: new Date().toISOString(),
+              reservationExpiresAt: undefined,
               updatedAt: new Date().toISOString(),
             }
             set({
@@ -568,11 +584,15 @@ export const useOrderStore = create<OrderState>()(
               cancelledBy: result.cancelledBy ?? actor,
               cancelledAt: result.cancelledAt ?? now,
               cancelReason: result.cancelReason ?? (reason?.trim() || undefined),
+              reservationExpiresAt: undefined,
               updatedAt: now,
             }
             set({
               orders: get().orders.map((o) => (o.id === orderId ? updated : o)),
             })
+            void fetchProducts()
+              .then((fresh) => useProductStore.setState({ products: fresh }))
+              .catch(() => undefined)
             return { ok: true, order: updated }
           } catch (error) {
             return {

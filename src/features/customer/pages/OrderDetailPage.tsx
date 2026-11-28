@@ -124,7 +124,10 @@ export default function OrderDetailPage() {
     order.status === 'cancelled'
       ? order.cancelledBy === 'vendor'
         ? `Cancelled by ${order.vendorName}.`
-        : 'You cancelled this order.'
+        : order.cancelledBy === 'system'
+          ? order.cancelReason ??
+            'The 10-minute payment window expired and your reserved items were returned to the store.'
+          : 'You cancelled this order.'
       : order.status === 'payment_rejected'
         ? `${order.vendorName} has rejected your payment. Please resubmit your payment details.`
         : ORDER_STATUS_MESSAGES[order.status]
@@ -147,7 +150,9 @@ export default function OrderDetailPage() {
             order.status === 'cancelled'
               ? order.cancelledBy === 'vendor'
                 ? `Cancelled by ${order.vendorName}`
-                : 'Order cancelled'
+                : order.cancelledBy === 'system'
+                  ? 'Reservation expired — order cancelled'
+                  : 'Order cancelled'
               : order.status === 'payment_rejected'
                 ? `${order.vendorName} rejected your payment`
                 : undefined

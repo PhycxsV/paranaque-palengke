@@ -15,7 +15,9 @@ export function ProductImage({
   className,
   imgClassName,
 }: ProductImageProps) {
-  const [failed, setFailed] = useState(false)
+  // Track which URL failed so a new src (e.g. after a photo upload) gets a fresh try.
+  const [failedSrc, setFailedSrc] = useState<string | null>(null)
+  const failed = failedSrc === src
 
   return (
     <div
@@ -34,7 +36,7 @@ export function ProductImage({
           src={src}
           alt={alt}
           loading="lazy"
-          onError={() => setFailed(true)}
+          onError={() => setFailedSrc(src)}
           className={cn('h-full w-full object-cover', imgClassName)}
         />
       )}

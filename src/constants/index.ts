@@ -13,7 +13,7 @@ export const STORAGE_PREFIX = 'paranaque-customerfront-v1'
 /** Show an "Only N left" badge at or below this stock level. */
 export const LOW_STOCK_THRESHOLD = 5
 export const PRICE_DISCLAIMER =
-  'Illustrative LGU price ranges — vendors set their own price within the range.'
+  'Prices may vary. Illustrative LGU price ranges — vendors set their own price within the range.'
 /**
  * Offline / no-API fallback only. Live checkout quotes the fee from Keri.
  */
